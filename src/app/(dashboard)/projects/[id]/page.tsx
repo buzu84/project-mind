@@ -19,9 +19,17 @@ import {
   IconSettings,
   IconUser,
   IconBarChart,
+  IconChat,
 } from "@/components/icons";
 
 const tools = [
+  {
+    href: "chat",
+    label: "AI Chat",
+    description: "Chat with your AI product strategist about this project",
+    icon: IconChat,
+    color: "text-violet-600 bg-violet-50 group-hover:bg-violet-100",
+  },
   {
     href: "prd",
     label: "PRD Generator",
