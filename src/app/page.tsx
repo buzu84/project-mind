@@ -1,4 +1,12 @@
 import Link from "next/link";
+import { JsonLd } from "@/components/json-ld";
+import {
+  organizationJsonLd,
+  softwareApplicationJsonLd,
+  faqPageJsonLd,
+  homeBreadcrumbJsonLd,
+  faqItems,
+} from "@/lib/structured-data";
 
 const features = [
   {
@@ -24,6 +32,12 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
+      {/* Structured Data */}
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={softwareApplicationJsonLd} />
+      <JsonLd data={faqPageJsonLd} />
+      <JsonLd data={homeBreadcrumbJsonLd} />
+
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
         <span className="text-xl font-bold text-brand-700">ProductMind</span>
@@ -87,6 +101,34 @@ export default function LandingPage() {
         ))}
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="mx-auto max-w-3xl px-6 py-20">
+        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+          Frequently Asked Questions
+        </h2>
+        <p className="mt-3 text-center text-gray-500">
+          Everything you need to know about ProductMind
+        </p>
+        <div className="mt-12 space-y-4">
+          {faqItems.map((item) => (
+            <details
+              key={item.question}
+              className="group rounded-xl border border-gray-200 bg-white"
+            >
+              <summary className="flex cursor-pointer items-center justify-between px-6 py-5 text-sm font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+                {item.question}
+                <span className="ml-4 flex-shrink-0 text-gray-400 transition group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <div className="px-6 pb-5 text-sm leading-relaxed text-gray-600">
+                {item.answer}
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500">
         © {new Date().getFullYear()} ProductMind. All rights reserved.
@@ -94,4 +136,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
