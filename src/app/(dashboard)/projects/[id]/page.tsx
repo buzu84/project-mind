@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { JsonLd } from "@/components/json-ld";
 import { createBreadcrumbJsonLd } from "@/lib/structured-data";
-import { deleteProject } from "../actions";
 import { DeleteProjectButton } from "./delete-button";
 import {
   IconDocument,
@@ -17,6 +16,9 @@ import {
   IconArrowLeft,
   IconClock,
   IconChevronRight,
+  IconSettings,
+  IconUser,
+  IconBarChart,
 } from "@/components/icons";
 
 const tools = [
@@ -67,13 +69,11 @@ export default async function ProjectDetailPage({
     where: { id: params.id, userId: user.id },
     include: {
       decisions: { orderBy: { createdAt: "desc" }, take: 10 },
-      _count: { select: { decisions: true, features: true } },
+      _count: { select: { decisions: true, features: true, messages: true, insights: true } },
     },
   });
 
   if (!project) notFound();
-
-  const deleteWithId = deleteProject.bind(null, project.id);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://productmind.app";
   const breadcrumb = createBreadcrumbJsonLd([
@@ -82,10 +82,17 @@ export default async function ProjectDetailPage({
     { name: project.name, url: `${siteUrl}/projects/${project.id}` },
   ]);
 
+  const details = [
+    { label: "Target Users", value: project.targetUsers, icon: IconUser },
+    { label: "Market", value: project.market, icon: IconBarChart },
+    { label: "Business Model", value: project.businessModel, icon: IconTrendingUp },
+    { label: "Goals", value: project.goals, icon: IconTarget },
+  ].filter((d) => d.value);
+
   return (
     <div className="mx-auto max-w-5xl">
       <JsonLd data={breadcrumb} />
-      {/* Back link */}
+
       <Link
         href="/projects"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
@@ -108,11 +115,38 @@ export default async function ProjectDetailPage({
             <div className="mt-2 flex items-center gap-3">
               <Badge variant="info">{project._count.decisions} decisions</Badge>
               <Badge>{project._count.features} features</Badge>
+              <Badge variant="success">{project._count.insights} insights</Badge>
             </div>
           </div>
         </div>
-        <DeleteProjectButton action={deleteWithId} />
+        <div className="flex items-center gap-2">
+          <Link href={`/projects/${project.id}/edit`}>
+            <Button variant="secondary" size="sm" className="gap-1.5">
+              <IconSettings className="h-3.5 w-3.5" />
+              Edit
+            </Button>
+          </Link>
+          <DeleteProjectButton projectId={project.id} projectName={project.name} />
+        </div>
       </div>
+
+      {/* Project Details */}
+      {details.length > 0 && (
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {details.map((d) => (
+            <div
+              key={d.label}
+              className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3"
+            >
+              <d.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+              <div>
+                <p className="text-xs font-medium text-gray-400">{d.label}</p>
+                <p className="mt-0.5 text-sm text-gray-700">{d.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* AI Tools */}
       <div className="mt-8">
@@ -157,13 +191,9 @@ export default async function ProjectDetailPage({
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
                     <IconSparkles className="h-4 w-4 text-gray-400" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={decisionBadgeVariants[d.type]}>
-                        {decisionTypeLabels[d.type]}
-                      </Badge>
-                    </div>
-                  </div>
+                  <Badge variant={decisionBadgeVariants[d.type]}>
+                    {decisionTypeLabels[d.type]}
+                  </Badge>
                 </div>
                 <span className="flex items-center gap-1.5 text-xs text-gray-400">
                   <IconClock className="h-3 w-3" />
