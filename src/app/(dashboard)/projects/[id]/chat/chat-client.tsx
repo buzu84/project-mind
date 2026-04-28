@@ -27,10 +27,11 @@ const suggestions = [
 export function ChatClient({ projectId, projectName, initialMessages }: ChatClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,7 +41,6 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Auto-resize textarea
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setInput(e.target.value);
     e.target.style.height = "auto";
@@ -48,7 +48,7 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
   }
 
   async function sendMessage(content: string) {
-    if (!content.trim() || isLoading) return;
+    if (!content.trim() || isStreaming) return;
 
     setError(null);
     const userMessage: ChatMessage = {
@@ -58,41 +58,112 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
       createdAt: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Add user message + empty assistant placeholder
+    const assistantPlaceholderId = `streaming-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      {
+        id: assistantPlaceholderId,
+        role: "assistant",
+        content: "",
+        createdAt: new Date().toISOString(),
+      },
+    ]);
     setInput("");
-    setIsLoading(true);
+    setIsStreaming(true);
 
-    // Reset textarea height
     if (inputRef.current) {
       inputRef.current.style.height = "auto";
     }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId, message: content.trim() }),
+        signal: controller.signal,
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error ?? "Failed to get a response. Please try again.");
+        const data = await res.json();
+        setError(data.error ?? "Failed to get a response.");
+        // Remove the empty assistant placeholder
+        setMessages((prev) => prev.filter((m) => m.id !== assistantPlaceholderId));
         return;
       }
 
-      const assistantMessage: ChatMessage = {
-        id: data.id,
-        role: "assistant",
-        content: data.content,
-        createdAt: data.createdAt,
-      };
+      const reader = res.body?.getReader();
+      if (!reader) {
+        setError("Failed to read stream.");
+        setMessages((prev) => prev.filter((m) => m.id !== assistantPlaceholderId));
+        return;
+      }
 
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
-      setError("Network error. Please check your connection and try again.");
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE lines
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+
+          const payload = trimmed.slice(6);
+          try {
+            const parsed = JSON.parse(payload) as
+              | string
+              | { done: true; id: string; createdAt: string }
+              | { error: string };
+
+            if (typeof parsed === "string") {
+              // Token delta — append to the streaming message
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantPlaceholderId
+                    ? { ...m, content: m.content + parsed }
+                    : m,
+                ),
+              );
+              scrollToBottom();
+            } else if ("done" in parsed && parsed.done) {
+              // Stream complete — update placeholder with real ID
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantPlaceholderId
+                    ? { ...m, id: parsed.id, createdAt: parsed.createdAt }
+                    : m,
+                ),
+              );
+            } else if ("error" in parsed) {
+              setError(parsed.error);
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // User cancelled — keep partial content
+      } else {
+        setError("Network error. Please check your connection and try again.");
+        setMessages((prev) => prev.filter((m) => m.id !== assistantPlaceholderId));
+      }
     } finally {
-      setIsLoading(false);
+      setIsStreaming(false);
+      abortRef.current = null;
       inputRef.current?.focus();
     }
   }
@@ -109,13 +180,17 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
     }
   }
 
+  function handleStop() {
+    abortRef.current?.abort();
+  }
+
   const visibleMessages = messages.filter((m) => m.role !== "system");
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] flex-col">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-1">
-        {visibleMessages.length === 0 && !isLoading && (
+        {visibleMessages.length === 0 && !isStreaming && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
               <IconSparkles className="h-7 w-7 text-brand-600" />
@@ -126,7 +201,6 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
             <p className="mt-1 max-w-sm text-sm text-gray-500">
               Ask anything about <strong>{projectName}</strong> — strategy, features, market analysis, or product decisions.
             </p>
-
             <div className="mt-8 grid gap-2 sm:grid-cols-2 w-full max-w-lg">
               {suggestions.map((text) => (
                 <button
@@ -147,7 +221,7 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
               <div key={msg.id} className="flex gap-3">
                 {msg.role === "assistant" ? (
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50">
-                    <IconSparkles className="h-4 w-4 text-brand-600" />
+                    <IconSparkles className={`h-4 w-4 text-brand-600 ${msg.id.startsWith("streaming-") ? "animate-pulse" : ""}`} />
                   </div>
                 ) : (
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100">
@@ -159,32 +233,24 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
                     <span className="text-sm font-medium text-gray-900">
                       {msg.role === "assistant" ? "ProductMind AI" : "You"}
                     </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                    {!msg.id.startsWith("streaming-") && !msg.id.startsWith("temp-") && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(msg.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 text-sm leading-relaxed text-gray-600 whitespace-pre-wrap break-words">
                     {msg.content}
+                    {msg.id.startsWith("streaming-") && isStreaming && (
+                      <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" />
+                    )}
                   </div>
                 </div>
               </div>
             ))}
-
-            {isLoading && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50">
-                  <IconSparkles className="h-4 w-4 text-brand-600 animate-pulse" />
-                </div>
-                <div className="flex items-center gap-1.5 pt-2">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-300 [animation-delay:-0.3s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-300 [animation-delay:-0.15s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-300" />
-                </div>
-              </div>
-            )}
 
             <div ref={bottomRef} />
           </div>
@@ -217,16 +283,17 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
           placeholder={`Ask about ${projectName}…`}
           rows={1}
           className="flex-1 resize-none bg-transparent px-1 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-          disabled={isLoading}
+          disabled={isStreaming}
         />
-        <Button
-          type="submit"
-          size="sm"
-          disabled={!input.trim() || isLoading}
-          isLoading={isLoading}
-        >
-          Send
-        </Button>
+        {isStreaming ? (
+          <Button type="button" size="sm" variant="secondary" onClick={handleStop}>
+            Stop
+          </Button>
+        ) : (
+          <Button type="submit" size="sm" disabled={!input.trim()}>
+            Send
+          </Button>
+        )}
       </form>
     </div>
   );

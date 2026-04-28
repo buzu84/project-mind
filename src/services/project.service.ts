@@ -1,29 +1,22 @@
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 
-export async function getProjectsByUserId(userId: string) {
-  return prisma.project.findMany({
-    where: { userId },
-    include: {
-      _count: {
-        select: { decisions: true, features: true, messages: true, insights: true },
-      },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+export async function getProjectsByUserId() {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("projects")
+    .select("*, decisions(count), feature_ideas(count), messages(count), insights(count)")
+    .order("updated_at", { ascending: false });
+  return data ?? [];
 }
 
-export async function getProjectById(projectId: string, userId: string) {
-  return prisma.project.findFirst({
-    where: { id: projectId, userId },
-    include: {
-      decisions: { orderBy: { createdAt: "desc" }, take: 10 },
-      features: { orderBy: { priority: "desc" } },
-      insights: { orderBy: { createdAt: "desc" }, take: 5 },
-      _count: {
-        select: { decisions: true, features: true, messages: true, documents: true, insights: true },
-      },
-    },
-  });
+export async function getProjectById(projectId: string) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("projects")
+    .select("*, decisions(id, type, created_at), feature_ideas(count), messages(count), insights(count)")
+    .eq("id", projectId)
+    .single();
+  return data;
 }
 
 export async function createProject(
@@ -37,9 +30,13 @@ export async function createProject(
   },
   userId: string,
 ) {
-  return prisma.project.create({
-    data: { ...data, userId },
-  });
+  const supabase = createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .insert({ ...data, userId })
+    .select("*")
+    .single();
+  return project;
 }
 
 export async function updateProject(
@@ -54,14 +51,23 @@ export async function updateProject(
     goals?: string;
   },
 ) {
-  return prisma.project.updateMany({
-    where: { id: projectId, userId },
-    data,
-  });
+  const supabase = createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .update(data)
+    .eq("id", projectId)
+    .eq("userId", userId)
+    .select("*")
+    .single();
+  return project;
 }
 
 export async function deleteProject(projectId: string, userId: string) {
-  return prisma.project.deleteMany({
-    where: { id: projectId, userId },
-  });
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("userId", userId);
+  return data;
 }

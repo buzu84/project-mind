@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { IconArrowLeft } from "@/components/icons";
@@ -12,11 +12,16 @@ export default async function EditProjectPage({
   params: { id: string };
 }) {
   const user = await getCurrentUser();
-  if (!user?.id) redirect("/sign-in");
+  if (!user) redirect("/sign-in");
 
-  const project = await prisma.project.findFirst({
-    where: { id: params.id, userId: user.id },
-  });
+  const supabase = createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .select(
+      "id, name, description, target_users, market, business_model, goals"
+    )
+    .eq("id", params.id)
+    .single();
 
   if (!project) notFound();
 

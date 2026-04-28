@@ -7,6 +7,7 @@ AI-powered product decision assistant for product managers, founders, and softwa
 - **PRD Generator** – Generate comprehensive product requirement documents from a simple description
 - **Feature Prioritizer** – Score and rank features using the RICE framework with AI
 - **Competitive Analysis** – Get instant competitive landscape analysis and positioning insights
+- **AI Chat** – Streaming chat with project-aware AI strategist
 - **Project Management** – Organize decisions by project with full history
 
 ## Tech Stack
@@ -14,18 +15,17 @@ AI-powered product decision assistant for product managers, founders, and softwa
 - Next.js 14 (App Router)
 - React 18 + TypeScript (strict)
 - Tailwind CSS 3
-- Prisma + PostgreSQL
-- NextAuth (GitHub & Google)
+- Supabase (Auth, Postgres, RLS, pgvector)
 - OpenAI GPT-4o
+- Vercel deployment
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL database
+- Supabase project (free tier works)
 - OpenAI API key
-- GitHub/Google OAuth credentials
 
 ### Setup
 
@@ -36,8 +36,9 @@ npm install
 # Copy env file and fill in your values
 cp .env.local.example .env.local
 
-# Push schema to database
-npm run db:push
+# Run SQL migrations in Supabase Dashboard → SQL Editor:
+#   1. supabase/migrations/001_schema.sql
+#   2. supabase/migrations/002_rls.sql
 
 # Start dev server
 npm run dev
@@ -47,26 +48,45 @@ npm run dev
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `NEXTAUTH_URL` | App URL (http://localhost:3000) |
-| `NEXTAUTH_SECRET` | Random secret for session encryption |
-| `GITHUB_ID` / `GITHUB_SECRET` | GitHub OAuth app credentials |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only) |
 | `OPENAI_API_KEY` | OpenAI API key |
+| `NEXT_PUBLIC_SITE_URL` | App URL (http://localhost:3000) |
+
+### Supabase Setup
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **SQL Editor** and run `supabase/migrations/001_schema.sql`
+3. Then run `supabase/migrations/002_rls.sql`
+4. Enable **Google** provider in Authentication → Providers
+5. Copy your project URL and anon key to `.env.local`
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── (auth)/sign-in/        # Auth pages
-│   ├── (dashboard)/projects/  # Dashboard & project pages
-│   ├── api/ai/                # AI API routes (prd, prioritize, competitive-analysis)
-│   └── api/auth/              # NextAuth route
-├── components/ui/             # Reusable UI components
-├── lib/                       # Shared utilities (prisma, auth, openai)
-├── types/                     # TypeScript type declarations
-└── middleware.ts              # Auth middleware
+│   ├── (auth)/sign-in/          # Sign-in page
+│   ├── (auth)/sign-up/          # Sign-up page
+│   ├── (dashboard)/             # Protected dashboard layout
+│   │   ├── dashboard/           # Dashboard homepage
+│   │   ├── projects/            # Projects CRUD + AI tools
+│   │   ├── ai-chat/             # Global AI assistant
+│   │   └── settings/            # User settings
+│   ├── api/ai/                  # AI API routes (chat, prd, prioritize, analysis)
+│   ├── auth/callback/           # Supabase OAuth callback
+│   └── page.tsx                 # Marketing landing page
+├── components/ui/               # Reusable UI components
+├── lib/
+│   ├── supabase/                # Supabase clients (server, browser, middleware, types)
+│   ├── openai.ts                # OpenAI client
+│   └── utils.ts                 # Utility functions
+├── services/                    # Data access layer
+├── middleware.ts                 # Auth session refresh + route protection
+└── types/                       # TypeScript types
+supabase/
+└── migrations/                  # SQL schema + RLS policies
 ```
 
 ## Scripts
@@ -75,7 +95,5 @@ src/
 |---|---|
 | `npm run dev` | Start development server |
 | `npm run build` | Production build |
-| `npm run db:push` | Push Prisma schema to DB |
-| `npm run db:migrate` | Run Prisma migrations |
-| `npm run db:studio` | Open Prisma Studio |
-
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format with Prettier |

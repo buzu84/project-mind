@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,38 +17,57 @@ import {
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
-  if (!user?.id) redirect("/sign-in");
+  if (!user) redirect("/sign-in");
 
-  const [projectCount, decisionCount, recentProjects, recentDecisions] =
-    await Promise.all([
-      prisma.project.count({ where: { userId: user.id } }),
-      prisma.decision.count({
-        where: { project: { userId: user.id } },
-      }),
-      prisma.project.findMany({
-        where: { userId: user.id },
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-        include: { _count: { select: { decisions: true } } },
-      }),
-      prisma.decision.findMany({
-        where: { project: { userId: user.id } },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: { project: { select: { name: true } } },
-      }),
-    ]);
+  const supabase = createClient();
+
+  const [projectsRes, decisionsRes] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, name, description, updated_at, decisions(count)")
+      .order("updated_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("decisions")
+      .select("id, type, created_at, projects(name)")
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  const recentProjects = (projectsRes.data ?? []) as Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    updated_at: string;
+    decisions: { count: number }[];
+  }>;
+  const recentDecisions = (decisionsRes.data ?? []) as unknown as Array<{
+    id: string;
+    type: string;
+    created_at: string;
+    projects: { name: string } | null;
+  }>;
+
+  // Count totals
+  const { count: projectCount } = await supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true });
+  const { count: decisionCount } = await supabase
+    .from("decisions")
+    .select("*", { count: "exact", head: true });
+
+  const displayName = user.name ?? user.email?.split("@")[0] ?? "";
 
   const stats = [
     {
       label: "Total Projects",
-      value: projectCount,
+      value: projectCount ?? 0,
       icon: IconProjects,
       color: "text-brand-600 bg-brand-50",
     },
     {
       label: "AI Decisions",
-      value: decisionCount,
+      value: decisionCount ?? 0,
       icon: IconSparkles,
       color: "text-violet-600 bg-violet-50",
     },
@@ -60,7 +79,9 @@ export default async function DashboardPage() {
     },
     {
       label: "Analyses Run",
-      value: recentDecisions.filter((d) => d.type === "COMPETITIVE_ANALYSIS").length,
+      value: recentDecisions.filter(
+        (d) => d.type === "COMPETITIVE_ANALYSIS"
+      ).length,
       icon: IconTrendingUp,
       color: "text-amber-600 bg-amber-50",
     },
@@ -83,7 +104,7 @@ export default async function DashboardPage() {
       {/* Welcome */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">
-          Welcome back{user.name ? `, ${user.name.split(" ")[0]}` : ""}
+          Welcome back{displayName ? `, ${displayName.split(" ")[0]}` : ""}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
           Here&apos;s what&apos;s happening with your products today.
@@ -94,7 +115,9 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label} className="flex items-center gap-4 py-5">
-            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.color}`}>
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.color}`}
+            >
               <stat.icon className="h-5 w-5" />
             </div>
             <div>
@@ -109,7 +132,9 @@ export default async function DashboardPage() {
         {/* Recent projects */}
         <Card className="lg:col-span-3">
           <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">Recent Projects</h3>
+            <h3 className="text-base font-semibold text-gray-900">
+              Recent Projects
+            </h3>
             <Link
               href="/projects"
               className="text-xs font-medium text-brand-600 hover:text-brand-700"
@@ -149,8 +174,10 @@ export default async function DashboardPage() {
                         {project.name}
                       </p>
                       <p className="text-xs text-gray-400">
-                        {project._count.decisions} decisions · Updated{" "}
-                        {project.updatedAt.toLocaleDateString()}
+                        {(project.decisions as { count: number }[])?.[0]?.count ??
+                          0}{" "}
+                        decisions · Updated{" "}
+                        {new Date(project.updated_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -187,10 +214,12 @@ export default async function DashboardPage() {
                         {decisionTypeLabels[decision.type]}
                       </Badge>
                       <span className="ml-2 text-gray-500">in</span>{" "}
-                      <span className="font-medium">{decision.project.name}</span>
+                      <span className="font-medium">
+                        {decision.projects?.name ?? "Unknown"}
+                      </span>
                     </p>
                     <p className="mt-0.5 text-xs text-gray-400">
-                      {decision.createdAt.toLocaleDateString()}
+                      {new Date(decision.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -202,7 +231,9 @@ export default async function DashboardPage() {
 
       {/* Quick actions */}
       <div>
-        <h3 className="mb-4 text-base font-semibold text-gray-900">Quick Actions</h3>
+        <h3 className="mb-4 text-base font-semibold text-gray-900">
+          Quick Actions
+        </h3>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             {
@@ -239,7 +270,9 @@ export default async function DashboardPage() {
                     <p className="text-sm font-semibold text-gray-900">
                       {action.label}
                     </p>
-                    <p className="text-xs text-gray-500">{action.description}</p>
+                    <p className="text-xs text-gray-500">
+                      {action.description}
+                    </p>
                   </div>
                 </div>
               </Card>
