@@ -21,6 +21,7 @@ import {
   IconBarChart,
   IconChat,
   IconRoadmap,
+  IconUsers,
 } from "@/components/icons";
 
 const tools = [
@@ -79,6 +80,13 @@ const tools = [
     description: "Generate a Now/Next/Later roadmap with 30/60/90 day plan",
     icon: IconRoadmap,
     color: "text-teal-600 bg-teal-50 group-hover:bg-teal-100",
+  },
+  {
+    href: "multi-agent-review",
+    label: "Multi-Agent Review",
+    description: "Get feedback from PM, CTO, UX, and Growth perspectives",
+    icon: IconUsers,
+    color: "text-orange-600 bg-orange-50 group-hover:bg-orange-100",
   },
 ];
 

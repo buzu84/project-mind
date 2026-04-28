@@ -70,8 +70,9 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
   const emptyUserResult = { data: { user: null }, error: null };
 
   function makeChainable(pendingResult: () => { data: any; error: any }) {
-    // Accumulated filters applied lazily when the chain resolves
+    // Accumulated filters and ordering applied lazily when the chain resolves
     let filters: Array<{ field: string; value: any }> = [];
+    let orderBys: Array<{ field: string; ascending: boolean }> = [];
 
     function applyFilters(data: any) {
       if (!Array.isArray(data) || filters.length === 0) return data;
@@ -80,26 +81,51 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
       );
     }
 
+    function applyOrdering(data: any) {
+      if (!Array.isArray(data) || orderBys.length === 0) return data;
+      const sorted = [...data];
+      sorted.sort((a: any, b: any) => {
+        for (const { field, ascending } of orderBys) {
+          const av = a[field];
+          const bv = b[field];
+          if (av < bv) return ascending ? -1 : 1;
+          if (av > bv) return ascending ? 1 : -1;
+        }
+        return 0;
+      });
+      return sorted;
+    }
+
+    function resolve(data: any) {
+      return applyOrdering(applyFilters(data));
+    }
+
     const chain: any = new Proxy(
       {},
       {
         get(_t, p) {
           if (p === "then") {
             const r = pendingResult();
-            const filtered = applyFilters(r.data);
-            return (resolve: any) => resolve({ ...ok, data: filtered, error: r.error });
+            const result = resolve(r.data);
+            return (res: any) => res({ ...ok, data: result, error: r.error });
           }
           if (p === "single" || p === "maybeSingle") {
             return () => {
               const r = pendingResult();
-              const filtered = applyFilters(r.data);
-              const row = Array.isArray(filtered) ? (filtered[0] ?? null) : filtered;
+              const result = resolve(r.data);
+              const row = Array.isArray(result) ? (result[0] ?? null) : result;
               return Promise.resolve({ ...ok, data: row, error: r.error });
             };
           }
           if (p === "eq") {
             return (field: string, value: any) => {
               filters.push({ field, value });
+              return chain;
+            };
+          }
+          if (p === "order") {
+            return (field: string, opts?: { ascending?: boolean }) => {
+              orderBys.push({ field, ascending: opts?.ascending ?? true });
               return chain;
             };
           }
