@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { ActionResult } from "./actions";
+import type { ActionResult } from "@/lib/validations/project";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
