@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createProject } from "./actions";
 import { ProjectForm } from "./project-form";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { IconPlus } from "@/components/icons";
 
 export function CreateProjectForm() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   if (!isOpen) {
     return (
@@ -30,7 +32,14 @@ export function CreateProjectForm() {
           Cancel
         </button>
       </div>
-      <ProjectForm action={createProject} submitLabel="Create Project" />
+      <ProjectForm
+        action={createProject}
+        submitLabel="Create Project"
+        onSuccess={() => {
+          setIsOpen(false);
+          router.refresh();
+        }}
+      />
     </Card>
   );
 }

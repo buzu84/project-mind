@@ -9,7 +9,7 @@ export interface AppUser {
 }
 
 export const DEV_USER: AppUser = {
-  id: "dev-user-123",
+  id: "00000000-0000-0000-0000-000000000001",
   email: "dev@productmind.app",
   name: "Dev User",
   avatar_url: null,
@@ -21,7 +21,15 @@ export const DEV_USER: AppUser = {
  */
 export function isDevMode(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
-  // Default to true in development unless explicitly disabled
   return process.env.USE_MOCK_AUTH !== "false";
+}
+
+/**
+ * Returns true when in-memory mock DB should be used instead of real Supabase.
+ * Only enabled when USE_MOCK_DB is explicitly "true" AND not in production.
+ */
+export function isMockDb(): boolean {
+  if (process.env.NODE_ENV !== "development") return false;
+  return process.env.USE_MOCK_DB === "true";
 }
 
