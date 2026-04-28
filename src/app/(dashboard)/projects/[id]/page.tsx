@@ -65,6 +65,13 @@ const tools = [
     icon: IconTrendingUp,
     color: "text-amber-600 bg-amber-50 group-hover:bg-amber-100",
   },
+  {
+    href: "insights",
+    label: "AI Insights",
+    description: "Generate strategic risks, opportunities, and recommendations",
+    icon: IconBarChart,
+    color: "text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100",
+  },
 ];
 
 const decisionTypeLabels: Record<string, string> = {
