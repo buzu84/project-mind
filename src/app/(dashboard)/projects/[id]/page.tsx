@@ -52,9 +52,9 @@ const tools = [
     color: "text-brand-600 bg-brand-50 group-hover:bg-brand-100",
   },
   {
-    href: "prioritize",
+    href: "features",
     label: "Feature Prioritizer",
-    description: "Score and rank features using the RICE framework",
+    description: "Add features and let AI score them using RICE & ICE",
     icon: IconTarget,
     color: "text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100",
   },
