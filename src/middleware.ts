@@ -7,6 +7,10 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: ["/projects/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/projects/:path*",
+    "/ai-chat/:path*",
+    "/settings/:path*",
+  ],
 };
-
