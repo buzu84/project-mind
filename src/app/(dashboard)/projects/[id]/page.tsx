@@ -24,10 +24,24 @@ import {
 
 const tools = [
   {
+    href: "context",
+    label: "Context Builder",
+    description: "Enrich your project with structured context for better AI",
+    icon: IconDocument,
+    color: "text-sky-600 bg-sky-50 group-hover:bg-sky-100",
+  },
+  {
+    href: "feedback",
+    label: "Feedback & Research",
+    description: "Add customer feedback, interviews, and research notes",
+    icon: IconChat,
+    color: "text-rose-600 bg-rose-50 group-hover:bg-rose-100",
+  },
+  {
     href: "chat",
     label: "AI Chat",
     description: "Chat with your AI product strategist about this project",
-    icon: IconChat,
+    icon: IconSparkles,
     color: "text-violet-600 bg-violet-50 group-hover:bg-violet-100",
   },
   {
