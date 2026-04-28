@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { JsonLd } from "@/components/json-ld";
+import { createBreadcrumbJsonLd } from "@/lib/structured-data";
 import { deleteProject } from "../actions";
 import { DeleteProjectButton } from "./delete-button";
 import {
@@ -73,8 +75,16 @@ export default async function ProjectDetailPage({
 
   const deleteWithId = deleteProject.bind(null, project.id);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://productmind.app";
+  const breadcrumb = createBreadcrumbJsonLd([
+    { name: "Home", url: siteUrl },
+    { name: "Projects", url: `${siteUrl}/projects` },
+    { name: project.name, url: `${siteUrl}/projects/${project.id}` },
+  ]);
+
   return (
     <div className="mx-auto max-w-5xl">
+      <JsonLd data={breadcrumb} />
       {/* Back link */}
       <Link
         href="/projects"
