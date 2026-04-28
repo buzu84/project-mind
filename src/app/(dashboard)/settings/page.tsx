@@ -1,14 +1,18 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useCurrentUser } from "@/lib/auth/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { IconUser, IconSparkles } from "@/components/icons";
+import { IconSparkles } from "@/components/icons";
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { user } = useCurrentUser();
+
+  const displayName = user?.name ?? "User";
+  const avatarUrl = user?.avatar_url;
+  const email = user?.email ?? "";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -22,25 +26,23 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex items-center gap-5 pb-6 border-b border-gray-100">
-          {session?.user?.image ? (
+          {avatarUrl ? (
             <img
-              src={session.user.image}
+              src={avatarUrl}
               alt=""
               className="h-16 w-16 rounded-full ring-4 ring-gray-100"
             />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-xl font-bold text-brand-700">
-              {session?.user?.name?.[0]?.toUpperCase() ?? "U"}
+              {displayName[0]?.toUpperCase() ?? "U"}
             </div>
           )}
           <div>
-            <p className="text-lg font-semibold text-gray-900">
-              {session?.user?.name ?? "User"}
-            </p>
-            <p className="text-sm text-gray-500">
-              {session?.user?.email ?? ""}
-            </p>
-            <Badge variant="success" className="mt-2">Active</Badge>
+            <p className="text-lg font-semibold text-gray-900">{displayName}</p>
+            <p className="text-sm text-gray-500">{email}</p>
+            <Badge variant="success" className="mt-2">
+              Active
+            </Badge>
           </div>
         </div>
 
@@ -48,19 +50,19 @@ export default function SettingsPage() {
           <Input
             id="name"
             label="Display Name"
-            defaultValue={session?.user?.name ?? ""}
+            defaultValue={displayName}
             disabled
           />
           <Input
             id="email"
             label="Email"
-            defaultValue={session?.user?.email ?? ""}
+            defaultValue={email}
             disabled
           />
         </div>
 
         <p className="mt-3 text-xs text-gray-400">
-          Profile information is managed through your OAuth provider.
+          Profile information is managed through your auth provider.
         </p>
       </Card>
 
@@ -90,15 +92,13 @@ export default function SettingsPage() {
           </Button>
         </div>
 
-        <div className="mt-5 space-y-3">
-          <div>
-            <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="text-gray-600">AI Decisions Used</span>
-              <span className="font-medium text-gray-900">0 / 10</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-gray-100">
-              <div className="h-2 w-0 rounded-full bg-brand-500 transition-all" />
-            </div>
+        <div className="mt-5">
+          <div className="mb-1 flex items-center justify-between text-sm">
+            <span className="text-gray-600">AI Decisions Used</span>
+            <span className="font-medium text-gray-900">0 / 10</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-gray-100">
+            <div className="h-2 w-0 rounded-full bg-brand-500 transition-all" />
           </div>
         </div>
       </Card>
@@ -166,4 +166,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

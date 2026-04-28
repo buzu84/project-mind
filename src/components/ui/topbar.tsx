@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useCurrentUser } from "@/lib/auth/client";
 import { IconSearch, IconBell } from "@/components/icons";
 
 function getBreadcrumb(pathname: string): string {
@@ -14,6 +14,8 @@ function getBreadcrumb(pathname: string): string {
     prd: "PRD Generator",
     prioritize: "Feature Prioritizer",
     analysis: "Competitive Analysis",
+    chat: "AI Chat",
+    edit: "Edit Project",
   };
   const last = segments[segments.length - 1];
   return map[last ?? ""] ?? "Dashboard";
@@ -21,8 +23,11 @@ function getBreadcrumb(pathname: string): string {
 
 export function TopBar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { user } = useCurrentUser();
   const pageTitle = getBreadcrumb(pathname);
+
+  const displayName = user?.name ?? "U";
+  const avatarUrl = user?.avatar_url;
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-gray-100 bg-white px-6">
@@ -47,19 +52,18 @@ export function TopBar() {
         </button>
 
         {/* Avatar */}
-        {session?.user?.image ? (
+        {avatarUrl ? (
           <img
-            src={session.user.image}
+            src={avatarUrl}
             alt=""
             className="ml-1 h-8 w-8 rounded-full ring-2 ring-gray-100"
           />
         ) : (
           <div className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
-            {session?.user?.name?.[0]?.toUpperCase() ?? "U"}
+            {displayName[0]?.toUpperCase() ?? "U"}
           </div>
         )}
       </div>
     </header>
   );
 }
-

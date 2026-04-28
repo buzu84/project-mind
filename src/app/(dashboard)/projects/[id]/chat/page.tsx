@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { ChatClient } from "./chat-client";
@@ -11,26 +11,28 @@ export default async function ProjectChatPage({
   params: { id: string };
 }) {
   const user = await getCurrentUser();
-  if (!user?.id) redirect("/sign-in");
+  if (!user) redirect("/sign-in");
 
-  const project = await prisma.project.findFirst({
-    where: { id: params.id, userId: user.id },
-    select: { id: true, name: true },
-  });
+  const supabase = createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, name")
+    .eq("id", params.id)
+    .single();
 
   if (!project) notFound();
 
-  const messages = await prisma.message.findMany({
-    where: { projectId: project.id },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, role: true, content: true, createdAt: true },
-  });
+  const { data: rawMessages } = await supabase
+    .from("messages")
+    .select("id, role, content, created_at")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: true });
 
-  const serializedMessages = messages.map((m) => ({
+  const serializedMessages = ((rawMessages ?? []) as Array<{ id: string; role: string; content: string; created_at: string }>).map((m) => ({
     id: m.id,
     role: m.role as "user" | "assistant" | "system",
     content: m.content,
-    createdAt: m.createdAt.toISOString(),
+    createdAt: m.created_at,
   }));
 
   return (
@@ -44,7 +46,7 @@ export default async function ProjectChatPage({
           {project.name}
         </Link>
         <span className="text-xs text-gray-400">
-          {messages.filter((m) => m.role !== "system").length} messages
+          {serializedMessages.filter((m) => m.role !== "system").length} messages
         </span>
       </div>
 
