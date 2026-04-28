@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 
 // ─── Validation Schemas ─────────────────────────────────────────────
@@ -18,7 +18,7 @@ export const projectSchema = z.object({
     .max(500, "Description must be under 500 characters")
     .optional()
     .transform((v) => v || undefined),
-  targetUsers: z
+  target_users: z
     .string()
     .max(300, "Target users must be under 300 characters")
     .optional()
@@ -28,7 +28,7 @@ export const projectSchema = z.object({
     .max(200, "Market must be under 200 characters")
     .optional()
     .transform((v) => v || undefined),
-  businessModel: z
+  business_model: z
     .string()
     .max(200, "Business model must be under 200 characters")
     .optional()
@@ -55,14 +55,14 @@ export async function createProject(
   formData: FormData,
 ): Promise<ActionResult> {
   const user = await getCurrentUser();
-  if (!user?.id) return { success: false, error: "You must be signed in." };
+  if (!user) return { success: false, error: "You must be signed in." };
 
   const parsed = projectSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description"),
-    targetUsers: formData.get("targetUsers"),
+    target_users: formData.get("targetUsers"),
     market: formData.get("market"),
-    businessModel: formData.get("businessModel"),
+    business_model: formData.get("businessModel"),
     goals: formData.get("goals"),
   });
 
@@ -73,12 +73,17 @@ export async function createProject(
     };
   }
 
-  const project = await prisma.project.create({
-    data: { ...parsed.data, userId: user.id },
-  });
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({ ...parsed.data, user_id: user.id })
+    .select("id")
+    .single();
+
+  if (error) return { success: false, error: error.message };
 
   revalidatePath("/projects");
-  redirect(`/projects/${project.id}`);
+  redirect(`/projects/${data.id}`);
 }
 
 // ─── Update ─────────────────────────────────────────────────────────
@@ -89,14 +94,14 @@ export async function updateProject(
   formData: FormData,
 ): Promise<ActionResult> {
   const user = await getCurrentUser();
-  if (!user?.id) return { success: false, error: "You must be signed in." };
+  if (!user) return { success: false, error: "You must be signed in." };
 
   const parsed = projectSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description"),
-    targetUsers: formData.get("targetUsers"),
+    target_users: formData.get("targetUsers"),
     market: formData.get("market"),
-    businessModel: formData.get("businessModel"),
+    business_model: formData.get("businessModel"),
     goals: formData.get("goals"),
   });
 
@@ -107,14 +112,13 @@ export async function updateProject(
     };
   }
 
-  const result = await prisma.project.updateMany({
-    where: { id: projectId, userId: user.id },
-    data: parsed.data,
-  });
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update(parsed.data)
+    .eq("id", projectId);
 
-  if (result.count === 0) {
-    return { success: false, error: "Project not found." };
-  }
+  if (error) return { success: false, error: error.message };
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath("/projects");
@@ -125,15 +129,15 @@ export async function updateProject(
 
 export async function deleteProject(projectId: string): Promise<ActionResult> {
   const user = await getCurrentUser();
-  if (!user?.id) return { success: false, error: "You must be signed in." };
+  if (!user) return { success: false, error: "You must be signed in." };
 
-  const result = await prisma.project.deleteMany({
-    where: { id: projectId, userId: user.id },
-  });
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId);
 
-  if (result.count === 0) {
-    return { success: false, error: "Project not found." };
-  }
+  if (error) return { success: false, error: error.message };
 
   revalidatePath("/projects");
   redirect("/projects");

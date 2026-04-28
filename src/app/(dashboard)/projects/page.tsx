@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreateProjectForm } from "./create-project-form";
@@ -10,21 +10,26 @@ import {
   IconClock,
   IconDocument,
   IconProjects,
-  IconPlus,
 } from "@/components/icons";
 
 export default async function ProjectsPage() {
   const user = await getCurrentUser();
-  if (!user?.id) redirect("/sign-in");
+  if (!user) redirect("/sign-in");
 
-  const projects = await prisma.project.findMany({
-    where: { userId: user.id },
-    include: {
-      _count: { select: { decisions: true, features: true } },
-      decisions: { orderBy: { createdAt: "desc" }, take: 1 },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const supabase = createClient();
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("*, decisions(count), feature_ideas(count)")
+    .order("updated_at", { ascending: false });
+
+  const list = (projects ?? []) as Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    updated_at: string;
+    decisions: { count: number }[];
+    feature_ideas: { count: number }[];
+  }>;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -36,8 +41,8 @@ export default async function ProjectsPage() {
           </p>
         </div>
         <Badge variant="info">
-          {projects.length} project
-          {projects.length !== 1 ? "s" : ""}
+          {list.length} project
+          {list.length !== 1 ? "s" : ""}
         </Badge>
       </div>
 
@@ -45,7 +50,7 @@ export default async function ProjectsPage() {
         <CreateProjectForm />
       </div>
 
-      {projects.length === 0 ? (
+      {list.length === 0 ? (
         <div className="mt-12 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
             <IconProjects className="h-7 w-7 text-gray-400" />
@@ -60,7 +65,7 @@ export default async function ProjectsPage() {
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {projects.map((project) => (
+          {list.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`}>
               <Card className="group flex items-center justify-between py-4 transition hover:border-brand-200 hover:shadow-md cursor-pointer">
                 <div className="flex items-center gap-4">
@@ -79,12 +84,12 @@ export default async function ProjectsPage() {
                     <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-400">
                       <span className="flex items-center gap-1">
                         <IconDocument className="h-3 w-3" />
-                        {project._count.decisions} decisions
+                        {project.decisions?.[0]?.count ?? 0} decisions
                       </span>
                       <span>·</span>
                       <span className="flex items-center gap-1">
                         <IconClock className="h-3 w-3" />
-                        {project.updatedAt.toLocaleDateString()}
+                        {new Date(project.updated_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
