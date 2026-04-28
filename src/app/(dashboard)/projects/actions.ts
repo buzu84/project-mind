@@ -59,15 +59,12 @@ export async function createProject(
     }
 
     if (!data?.id) {
-      if (isDevMode()) {
-        revalidatePath("/projects");
-        redirect("/projects");
-      }
       return { success: false, error: "Could not create project. No data returned." };
     }
 
     revalidatePath("/projects");
-    redirect(`/projects/${data.id}`);
+    console.debug("[createProject] SUCCESS, projectId:", data.id);
+    return { success: true, projectId: data.id };
   } catch (err) {
     if (isRedirectError(err)) throw err;
     console.error("[projects] Unexpected error in createProject:", err);
@@ -134,6 +131,8 @@ export async function deleteProject(projectId: string): Promise<ActionResult> {
 
     revalidatePath("/projects");
     redirect("/projects");
+    // redirect throws, but satisfy TS return type
+    return { success: true };
   } catch (err) {
     if (isRedirectError(err)) throw err;
     console.error("[projects] Unexpected error:", err);
