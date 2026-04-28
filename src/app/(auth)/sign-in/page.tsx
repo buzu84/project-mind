@@ -1,67 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IconSparkles } from "@/components/icons";
 
-export default function SignInPage() {
+const errorMessages: Record<string, string> = {
+  OAuthSignin: "Could not start the sign-in process. Please try again.",
+  OAuthCallback: "Could not complete the sign-in process. Please try again.",
+  OAuthAccountNotLinked: "This email is already associated with another account.",
+  CredentialsSignin: "Invalid credentials. Please check your email.",
+  Default: "An unexpected error occurred. Please try again.",
+};
+
+function SignInForm() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const errorType = searchParams.get("error");
+  const errorMessage = errorType ? (errorMessages[errorType] ?? errorMessages.Default) : null;
+
   const [email, setEmail] = useState("dev@productmind.app");
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  async function handleCredentialsSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setIsLoading("credentials");
+    await signIn("credentials", { email, callbackUrl });
+  }
+
+  async function handleOAuthSignIn(provider: string) {
+    setIsLoading(provider);
+    await signIn(provider, { callbackUrl });
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-center text-gray-900">
-          Sign in to ProductMind
-        </h1>
-        <p className="mt-2 text-center text-sm text-gray-500">
-          AI-powered product decisions
-        </p>
-        <div className="mt-8 flex flex-col gap-3">
-          {/* Dev Login */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              signIn("credentials", { email, callbackUrl: "/dashboard" });
-            }}
-            className="space-y-3"
-          >
-            <Input
-              id="dev-email"
-              label="Dev Login (local only)"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="dev@productmind.app"
-            />
-            <Button type="submit" className="w-full">
-              Sign in with Email
-            </Button>
-          </form>
+    <>
+      {/* Error */}
+      {errorMessage && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      )}
 
-          <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-gray-400">or continue with</span>
-            </div>
-          </div>
-
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        {/* Dev Login */}
+        <form onSubmit={handleCredentialsSignIn} className="space-y-3">
+          <Input
+            id="dev-email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="dev@productmind.app"
+            required
+          />
           <Button
-            variant="secondary"
-            onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+            type="submit"
             className="w-full"
+            isLoading={isLoading === "credentials"}
+            disabled={isLoading !== null}
           >
-            <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            GitHub
+            Sign in with Email
           </Button>
+        </form>
+
+        <div className="relative my-5">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-white px-2 text-gray-400">or continue with</span>
+          </div>
+        </div>
+
+        {/* OAuth providers */}
+        <div className="space-y-2">
           <Button
             variant="secondary"
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => handleOAuthSignIn("google")}
             className="w-full"
+            isLoading={isLoading === "google"}
+            disabled={isLoading !== null}
           >
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -72,6 +93,34 @@ export default function SignInPage() {
             Google
           </Button>
         </div>
+      </div>
+    </>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 shadow-lg shadow-brand-200">
+            <IconSparkles className="h-6 w-6 text-white" />
+          </div>
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">
+            Welcome to ProductMind
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Sign in to access your AI product assistant
+          </p>
+        </div>
+
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-gray-100" />}>
+          <SignInForm />
+        </Suspense>
+
+        <p className="mt-6 text-center text-xs text-gray-400">
+          By signing in, you agree to our Terms of Service and Privacy Policy.
+        </p>
       </div>
     </div>
   );
