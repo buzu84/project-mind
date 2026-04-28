@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
+import { retrieveRelevantContext } from "@/lib/rag";
 
 const schema = z.object({
   projectId: z.string().min(1),
@@ -11,7 +12,9 @@ const schema = z.object({
 
 const SYSTEM_PROMPT = `You are ProductMind, an expert AI product strategist. You help founders and product teams make better product decisions using structured analysis, prioritization frameworks and clear reasoning.
 
-Always be concise, actionable, and structured. Use bullet points and headers when appropriate. Ground your advice in real-world product management best practices.`;
+Always be concise, actionable, and structured. Use bullet points and headers when appropriate. Ground your advice in real-world product management best practices.
+
+When relevant feedback or research data is provided, reference it in your analysis. Cite specific insights when they support your recommendations.`;
 
 function buildProjectContext(
   project: {
@@ -22,8 +25,8 @@ function buildProjectContext(
     business_model: string | null;
     goals: string | null;
   },
-  context?: Record<string, string | null> | null,
-  feedbackDocs?: Array<{ title: string; content: string; source: string | null }> | null,
+  structuredContext?: Record<string, string | null> | null,
+  ragContext?: string,
 ): string {
   const parts = [`Project: ${project.name}`];
   if (project.description) parts.push(`Description: ${project.description}`);
@@ -33,7 +36,7 @@ function buildProjectContext(
   if (project.goals) parts.push(`Goals: ${project.goals}`);
 
   // Rich structured context
-  if (context) {
+  if (structuredContext) {
     const labels: Record<string, string> = {
       product_overview: "Product Overview",
       target_personas: "Target Personas",
@@ -44,37 +47,18 @@ function buildProjectContext(
       constraints: "Constraints",
       open_questions: "Open Questions",
     };
-    const filled = Object.entries(labels).filter(([key]) => context[key]);
+    const filled = Object.entries(labels).filter(([key]) => structuredContext[key]);
     if (filled.length > 0) {
       parts.push("\n--- Detailed Project Context ---");
       for (const [key, label] of filled) {
-        parts.push(`\n${label}:\n${context[key]}`);
+        parts.push(`\n${label}:\n${structuredContext[key]}`);
       }
     }
   }
 
-  // Feedback documents (with total size guard)
-  if (feedbackDocs && feedbackDocs.length > 0) {
-    const MAX_CONTEXT_CHARS = 30000;
-    const currentLen = parts.join("\n").length;
-    let budget = MAX_CONTEXT_CHARS - currentLen;
-
-    if (budget > 500) {
-      parts.push("\n--- Customer Feedback & Research ---");
-      budget -= 50; // header overhead
-
-      for (const doc of feedbackDocs) {
-        if (budget <= 0) break;
-        const source = doc.source ? ` [${doc.source.replace(/_/g, " ")}]` : "";
-        const content = doc.content.length > 2000
-          ? doc.content.slice(0, 2000) + "... (truncated)"
-          : doc.content;
-        const entry = `\n${doc.title}${source}:\n${content}`;
-        if (entry.length > budget) break;
-        parts.push(entry);
-        budget -= entry.length;
-      }
-    }
+  // RAG-retrieved relevant feedback chunks
+  if (ragContext) {
+    parts.push(ragContext);
   }
 
   return parts.join("\n");
@@ -99,19 +83,14 @@ export async function POST(req: Request) {
 
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-  // Fetch rich context + feedback documents in parallel
-  const [contextRes, feedbackRes] = await Promise.all([
+  // Fetch structured context + RAG-retrieve relevant feedback in parallel
+  const [contextRes, ragResult] = await Promise.all([
     supabase
       .from("project_context")
       .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
       .eq("project_id", projectId)
       .maybeSingle(),
-    supabase
-      .from("feedback_documents")
-      .select("title, content, source")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(20),
+    retrieveRelevantContext(message, projectId),
   ]);
 
   // Save user message
@@ -125,8 +104,10 @@ export async function POST(req: Request) {
     .order("created_at", { ascending: true })
     .limit(50);
 
-  const projectContext = buildProjectContext(project, contextRes.data, feedbackRes.data);
+  const projectContext = buildProjectContext(project, contextRes.data, ragResult.context);
   const systemMessage = `${SYSTEM_PROMPT}\n\nYou are assisting with the following project:\n${projectContext}`;
+
+  console.debug(`[ai/chat] Prompt size: system=${systemMessage.length} chars, history=${(history ?? []).length} msgs, rag=${ragResult.results.length} chunks`);
 
   const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
     { role: "system", content: systemMessage },
