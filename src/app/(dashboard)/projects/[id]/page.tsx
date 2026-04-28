@@ -20,6 +20,7 @@ import {
   IconUser,
   IconBarChart,
   IconChat,
+  IconRoadmap,
 } from "@/components/icons";
 
 const tools = [
@@ -71,6 +72,13 @@ const tools = [
     description: "Generate strategic risks, opportunities, and recommendations",
     icon: IconBarChart,
     color: "text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100",
+  },
+  {
+    href: "roadmap",
+    label: "AI Roadmap",
+    description: "Generate a Now/Next/Later roadmap with 30/60/90 day plan",
+    icon: IconRoadmap,
+    color: "text-teal-600 bg-teal-50 group-hover:bg-teal-100",
   },
 ];
 
