@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isDevMode, isMockDb } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreateProjectForm } from "./create-project-form";
@@ -16,11 +16,22 @@ export default async function ProjectsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
+  const mockAuth = isDevMode();
+  const mockDb = isMockDb();
+  const dataSource = mockDb ? "mock DB (in-memory)" : "real Supabase";
+
+  console.debug(
+    `[ProjectsPage] USE_MOCK_AUTH=${mockAuth}, USE_MOCK_DB=${mockDb}, ` +
+    `userId=${user.id}, dataSource=${dataSource}`,
+  );
+
   const supabase = createClient();
   const { data: projects } = await supabase
     .from("projects")
     .select("*, decisions(count), feature_ideas(count)")
     .order("updated_at", { ascending: false });
+
+  console.debug("[ProjectsPage] fetched projects:", (projects ?? []).length);
 
   const list = (projects ?? []) as Array<{
     id: string;
@@ -98,6 +109,16 @@ export default async function ProjectsPage() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-xs text-gray-400 font-mono">
+          <span className="font-semibold text-gray-500">Dev:</span>{" "}
+          auth={mockAuth ? "mock" : "real"} |{" "}
+          db={mockDb ? "mock (in-memory)" : "real Supabase"} |{" "}
+          user={user.id} |{" "}
+          projects={list.length}
         </div>
       )}
     </div>
