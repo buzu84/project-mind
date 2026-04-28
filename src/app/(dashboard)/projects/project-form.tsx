@@ -1,11 +1,13 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/validations/project";
+
+const initialState: ActionResult = { success: false, error: undefined, fieldErrors: {} };
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -28,40 +30,50 @@ interface ProjectFormProps {
   };
   submitLabel?: string;
   onSuccess?: () => void;
+  /** Whether to reset form fields after success. Defaults to true (useful for create). */
+  resetOnSuccess?: boolean;
 }
-
-const initialState: ActionResult = { success: false };
 
 export function ProjectForm({
   action,
   defaultValues,
   submitLabel = "Create Project",
   onSuccess,
+  resetOnSuccess = true,
 }: ProjectFormProps) {
   const [state, formAction] = useFormState(action, initialState);
+  const safeState = state ?? initialState;
   const formRef = useRef<HTMLFormElement>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (state.success) {
-      formRef.current?.reset();
+    if (safeState.success) {
+      if (resetOnSuccess) {
+        formRef.current?.reset();
+      }
+      setShowSuccess(true);
       onSuccess?.();
+
+      // Auto-dismiss after 4 seconds
+      const timer = setTimeout(() => setShowSuccess(false), 4000);
+      return () => clearTimeout(timer);
     }
-  }, [state.success, onSuccess]);
+  }, [safeState.success, onSuccess, resetOnSuccess]);
 
   const fieldError = (field: string) =>
-    state.fieldErrors?.[field]?.[0] ?? undefined;
+    safeState.fieldErrors?.[field]?.[0] ?? undefined;
 
   return (
     <form ref={formRef} action={formAction} className="space-y-5">
-      {state.error && (
+      {safeState.error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {state.error}
+          {safeState.error}
         </div>
       )}
 
-      {state.success && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Project saved successfully.
+      {showSuccess && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 animate-in fade-in duration-300">
+          ✓ Project saved successfully.
         </div>
       )}
 
