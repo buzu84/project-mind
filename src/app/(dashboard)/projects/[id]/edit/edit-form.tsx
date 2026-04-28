@@ -8,9 +8,9 @@ interface EditProjectFormProps {
     id: string;
     name: string;
     description: string | null;
-    targetUsers: string | null;
+    target_users: string | null;
     market: string | null;
-    businessModel: string | null;
+    business_model: string | null;
     goals: string | null;
   };
 }
@@ -21,7 +21,14 @@ export function EditProjectForm({ project }: EditProjectFormProps) {
   return (
     <ProjectForm
       action={boundAction}
-      defaultValues={project}
+      defaultValues={{
+        name: project.name,
+        description: project.description,
+        targetUsers: project.target_users,
+        market: project.market,
+        businessModel: project.business_model,
+        goals: project.goals,
+      }}
       submitLabel="Save Changes"
     />
   );

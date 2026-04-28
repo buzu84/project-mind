@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { useCurrentUser } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { user, loading } = useCurrentUser();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <nav className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
@@ -14,7 +24,7 @@ export function Navbar() {
       </Link>
 
       <div className="flex items-center gap-4">
-        {status === "authenticated" ? (
+        {!loading && user ? (
           <>
             <Link
               href="/projects"
@@ -23,20 +33,20 @@ export function Navbar() {
               Dashboard
             </Link>
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={handleSignOut}
               className="text-sm font-medium text-gray-500 hover:text-gray-700"
             >
               Sign out
             </button>
-            {session.user?.image && (
+            {user.avatar_url && (
               <img
-                src={session.user.image}
+                src={user.avatar_url}
                 alt=""
                 className="h-8 w-8 rounded-full"
               />
             )}
           </>
-        ) : (
+        ) : !loading ? (
           <>
             <Link
               href="/sign-in"
@@ -44,13 +54,12 @@ export function Navbar() {
             >
               Sign in
             </Link>
-            <Link href="/sign-in">
+            <Link href="/sign-up">
               <Button>Get Started</Button>
             </Link>
           </>
-        )}
+        ) : null}
       </div>
     </nav>
   );
 }
-

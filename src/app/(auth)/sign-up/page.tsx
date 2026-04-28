@@ -6,93 +6,86 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconSparkles } from "@/components/icons";
-import { DEV_USER, isDevMode } from "@/lib/auth/constants";
 
-const errorMessages: Record<string, string> = {
-  auth_callback_error: "Could not complete sign-in. Please try again.",
-  default: "An unexpected error occurred. Please try again.",
-};
-
-function SignInForm() {
-  const searchParams = useSearchParams();
+function SignUpForm() {
   const router = useRouter();
-  const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
-  const errorType = searchParams.get("error");
-  const errorMessage = errorType
-    ? (errorMessages[errorType] ?? errorMessages.default)
-    : null;
-
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const supabase = createClient();
 
-  async function handleEmailSignIn(e: React.FormEvent) {
+  async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
-    setIsLoading("email");
+    setIsLoading(true);
     setFormError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (error) {
       setFormError(error.message);
-      setIsLoading(null);
+      setIsLoading(false);
       return;
     }
 
-    router.push(redirectTo);
-    router.refresh();
+    setSuccess(true);
+    setIsLoading(false);
   }
 
-  async function handleGoogleSignIn() {
-    setIsLoading("google");
+  async function handleGoogleSignUp() {
+    setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     });
     if (error) {
       setFormError(error.message);
-      setIsLoading(null);
+      setIsLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+        <h3 className="text-base font-semibold text-emerald-800">Check your email</h3>
+        <p className="mt-2 text-sm text-emerald-700">
+          We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+        </p>
+      </div>
+    );
   }
 
   return (
     <>
-      {(errorMessage || formError) && (
+      {formError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {formError ?? errorMessage}
-        </div>
-      )}
-
-      {isDevMode() && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-          <p className="mb-2 text-xs font-semibold text-amber-800">🛠 Dev Quick Login</p>
-          <p className="mb-3 text-xs text-amber-600">
-            Skip auth and log in as <span className="font-medium">{DEV_USER.name}</span> ({DEV_USER.email})
-          </p>
-          <Button
-            className="w-full"
-            isLoading={isLoading === "dev"}
-            disabled={isLoading !== null}
-            onClick={() => {
-              setIsLoading("dev");
-              router.push(redirectTo);
-            }}
-          >
-            Dev Login
-          </Button>
+          {formError}
         </div>
       )}
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <form onSubmit={handleEmailSignIn} className="space-y-3">
+        <form onSubmit={handleSignUp} className="space-y-3">
+          <Input
+            id="name"
+            label="Full Name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Jane Doe"
+            required
+          />
           <Input
             id="email"
             label="Email"
@@ -108,16 +101,11 @@ function SignInForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="Min 6 characters"
             required
           />
-          <Button
-            type="submit"
-            className="w-full"
-            isLoading={isLoading === "email"}
-            disabled={isLoading !== null}
-          >
-            Sign In
+          <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading}>
+            Create Account
           </Button>
         </form>
 
@@ -132,10 +120,9 @@ function SignInForm() {
 
         <Button
           variant="secondary"
-          onClick={handleGoogleSignIn}
+          onClick={handleGoogleSignUp}
           className="w-full"
-          isLoading={isLoading === "google"}
-          disabled={isLoading !== null}
+          disabled={isLoading}
         >
           <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -147,9 +134,9 @@ function SignInForm() {
         </Button>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
-          <a href="/sign-up" className="font-medium text-brand-600 hover:text-brand-700">
-            Sign up
+          Already have an account?{" "}
+          <a href="/sign-in" className="font-medium text-brand-600 hover:text-brand-700">
+            Sign in
           </a>
         </p>
       </div>
@@ -157,7 +144,7 @@ function SignInForm() {
   );
 }
 
-export default function SignInPage() {
+export default function SignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
@@ -166,21 +153,18 @@ export default function SignInPage() {
             <IconSparkles className="h-6 w-6 text-white" />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-gray-900">
-            Welcome back
+            Create your account
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Sign in to your ProductMind account
+            Start making smarter product decisions
           </p>
         </div>
 
         <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-gray-100" />}>
-          <SignInForm />
+          <SignUpForm />
         </Suspense>
-
-        <p className="mt-6 text-center text-xs text-gray-400">
-          By signing in, you agree to our Terms of Service and Privacy Policy.
-        </p>
       </div>
     </div>
   );
 }
+

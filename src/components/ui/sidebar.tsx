@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { useCurrentUser } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import {
   IconDashboard,
@@ -25,7 +26,19 @@ const bottomNav = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { user } = useCurrentUser();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
+  const displayName = user?.name ?? "User";
+  const avatarUrl = user?.avatar_url;
+  const email = user?.email ?? "";
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
@@ -109,27 +122,25 @@ export function Sidebar() {
       {/* User section */}
       <div className="border-t border-gray-100 p-4">
         <div className="flex items-center gap-3">
-          {session?.user?.image ? (
+          {avatarUrl ? (
             <img
-              src={session.user.image}
+              src={avatarUrl}
               alt=""
               className="h-9 w-9 rounded-full ring-2 ring-gray-100"
             />
           ) : (
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
-              {session?.user?.name?.[0]?.toUpperCase() ?? "U"}
+              {displayName[0]?.toUpperCase() ?? "U"}
             </div>
           )}
           <div className="flex-1 truncate">
             <p className="truncate text-sm font-medium text-gray-900">
-              {session?.user?.name ?? "User"}
+              {displayName}
             </p>
-            <p className="truncate text-xs text-gray-400">
-              {session?.user?.email ?? ""}
-            </p>
+            <p className="truncate text-xs text-gray-400">{email}</p>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={handleSignOut}
             className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
             title="Sign out"
           >
