@@ -1,38 +1,36 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import { createProject } from "./actions";
+import { ProjectForm } from "./project-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { IconPlus } from "@/components/icons";
 
 export function CreateProjectForm() {
-  const formRef = useRef<HTMLFormElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!isOpen) {
+    return (
+      <Button onClick={() => setIsOpen(true)} className="gap-2">
+        <IconPlus className="h-4 w-4" />
+        New Project
+      </Button>
+    );
+  }
 
   return (
-    <form
-      ref={formRef}
-      action={createProject}
-      className="flex items-end gap-3 rounded-xl border border-gray-200 bg-white p-4"
-    >
-      <div className="flex-1">
-        <Input
-          id="name"
-          name="name"
-          label="Project name"
-          placeholder="e.g. Mobile App v2"
-          required
-        />
+    <Card>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-base font-semibold text-gray-900">New Project</h3>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="text-sm text-gray-400 hover:text-gray-600 transition"
+        >
+          Cancel
+        </button>
       </div>
-      <div className="flex-1">
-        <Input
-          id="description"
-          name="description"
-          label="Description (optional)"
-          placeholder="Brief description"
-        />
-      </div>
-      <Button type="submit">Create</Button>
-    </form>
+      <ProjectForm action={createProject} submitLabel="Create Project" />
+    </Card>
   );
 }
-
