@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isDevMode } from "@/lib/auth";
 import type { ActionResult } from "@/lib/validations/project";
+import { ingestDocument, removeDocumentChunks } from "@/lib/rag";
 
 const VALID_SOURCES = [
   "customer_interview",
@@ -42,14 +43,26 @@ export async function createFeedbackDocument(
     }
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("feedback_documents")
-      .insert({ project_id: projectId, ...parsed.data });
+      .insert({ project_id: projectId, ...parsed.data })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("[feedback] Insert failed:", error.message);
       const detail = isDevMode() ? ` (${error.message})` : "";
       return { success: false, error: `Could not save feedback.${detail}` };
+    }
+
+    // Trigger async RAG ingestion (chunk + embed)
+    if (data?.id) {
+      try {
+        await ingestDocument(data.id, projectId, parsed.data.content);
+      } catch (ragErr) {
+        // Don't fail the whole action if embedding fails — document is still saved
+        console.error("[feedback] RAG ingestion failed (document saved):", ragErr);
+      }
     }
 
     revalidatePath(`/projects/${projectId}/feedback`);
@@ -67,6 +80,13 @@ export async function deleteFeedbackDocument(
   try {
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
+
+    // Remove chunks first (also handled by CASCADE but explicit is safer)
+    try {
+      await removeDocumentChunks(documentId);
+    } catch {
+      // Non-critical — CASCADE will handle it
+    }
 
     const supabase = createClient();
     const { error } = await supabase
