@@ -20,13 +20,43 @@ function buildProjectContext(project: {
   market: string | null;
   business_model: string | null;
   goals: string | null;
-}): string {
+}, context?: {
+  product_overview: string | null;
+  target_personas: string | null;
+  current_metrics: string | null;
+  pain_points: string | null;
+  competitors: string | null;
+  strategic_goals: string | null;
+  constraints: string | null;
+  open_questions: string | null;
+} | null): string {
   const parts = [`Project: ${project.name}`];
   if (project.description) parts.push(`Description: ${project.description}`);
   if (project.target_users) parts.push(`Target Users: ${project.target_users}`);
   if (project.market) parts.push(`Market: ${project.market}`);
   if (project.business_model) parts.push(`Business Model: ${project.business_model}`);
   if (project.goals) parts.push(`Goals: ${project.goals}`);
+
+  if (context) {
+    const sections: [string, string | null][] = [
+      ["Product Overview", context.product_overview],
+      ["Target Personas", context.target_personas],
+      ["Current Metrics", context.current_metrics],
+      ["Customer Pain Points", context.pain_points],
+      ["Competitors", context.competitors],
+      ["Strategic Goals", context.strategic_goals],
+      ["Constraints", context.constraints],
+      ["Open Questions", context.open_questions],
+    ];
+    const filled = sections.filter(([, v]) => v);
+    if (filled.length > 0) {
+      parts.push("\n--- Detailed Project Context ---");
+      for (const [label, value] of filled) {
+        parts.push(`\n${label}:\n${value}`);
+      }
+    }
+  }
+
   return parts.join("\n");
 }
 
@@ -49,6 +79,20 @@ export async function POST(req: Request) {
 
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
+  console.debug(`[ai/chat] Loaded project context for "${project.name}" (${projectId})`);
+
+  // Fetch rich context
+  const { data: context } = await supabase
+    .from("project_context")
+    .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  const contextSections = context
+    ? Object.values(context).filter(Boolean).length
+    : 0;
+  console.debug(`[ai/chat] Rich context: ${contextSections} sections filled`);
+
   // Save user message
   await supabase.from("messages").insert({ project_id: projectId, role: "user", content: message });
 
@@ -60,8 +104,10 @@ export async function POST(req: Request) {
     .order("created_at", { ascending: true })
     .limit(50);
 
-  const projectContext = buildProjectContext(project);
+  const projectContext = buildProjectContext(project, context);
   const systemMessage = `${SYSTEM_PROMPT}\n\nYou are assisting with the following project:\n${projectContext}`;
+
+  console.debug(`[ai/chat] Building AI prompt with context (${systemMessage.length} chars), ${(history ?? []).length} history messages`);
 
   const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
     { role: "system", content: systemMessage },

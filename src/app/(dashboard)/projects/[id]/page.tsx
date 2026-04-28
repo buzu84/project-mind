@@ -24,6 +24,13 @@ import {
 
 const tools = [
   {
+    href: "context",
+    label: "Context Builder",
+    description: "Enrich your project with structured context for better AI answers",
+    icon: IconDocument,
+    color: "text-sky-600 bg-sky-50 group-hover:bg-sky-100",
+  },
+  {
     href: "chat",
     label: "AI Chat",
     description: "Chat with your AI product strategist about this project",

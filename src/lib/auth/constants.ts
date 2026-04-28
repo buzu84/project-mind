@@ -9,7 +9,7 @@ export interface AppUser {
 }
 
 export const DEV_USER: AppUser = {
-  id: "dev-user-123",
+  id: "00000000-0000-0000-0000-000000000001",
   email: "dev@productmind.app",
   name: "Dev User",
   avatar_url: null,
