@@ -1,0 +1,62 @@
+import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { IconArrowLeft } from "@/components/icons";
+import { InsightsClient } from "./insights-client";
+
+interface Insight {
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+  metadata: {
+    priority: string;
+    confidence: string;
+    suggested_action: string;
+  } | null;
+  created_at: string;
+}
+
+export default async function InsightsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/sign-in");
+
+  const supabase = createClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, name")
+    .eq("id", params.id)
+    .single();
+
+  if (!project) notFound();
+
+  const { data: insights } = await supabase
+    .from("insights")
+    .select("id, type, title, content, metadata, created_at")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false });
+
+  return (
+    <div className="mx-auto max-w-5xl">
+      <Link
+        href={`/projects/${project.id}`}
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+      >
+        <IconArrowLeft className="h-4 w-4" />
+        Back to {project.name}
+      </Link>
+
+      <InsightsClient
+        projectId={project.id}
+        projectName={project.name}
+        initialInsights={(insights ?? []) as Insight[]}
+      />
+    </div>
+  );
+}
