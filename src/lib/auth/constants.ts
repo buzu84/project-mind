@@ -18,10 +18,15 @@ export const DEV_USER: AppUser = {
 /**
  * Returns true when mock auth should be used.
  * Safety: NEVER enabled in production, even if USE_MOCK_AUTH is set.
+ * Requires explicit USE_MOCK_AUTH=true to activate.
+ * Uses NEXT_PUBLIC_ prefix so the value is consistent on server and client.
  */
 export function isDevMode(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
-  return process.env.USE_MOCK_AUTH !== "false";
+  // Check both prefixed (client-safe) and non-prefixed (server-only) env vars
+  const mockAuth =
+    process.env.NEXT_PUBLIC_USE_MOCK_AUTH ?? process.env.USE_MOCK_AUTH;
+  return mockAuth === "true";
 }
 
 /**

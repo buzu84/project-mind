@@ -197,6 +197,47 @@ export interface Database {
           updated_at?: string;
         };
       };
+      project_context: {
+        Row: {
+          id: string;
+          project_id: string;
+          product_overview: string | null;
+          target_personas: string | null;
+          current_metrics: string | null;
+          pain_points: string | null;
+          competitors: string | null;
+          strategic_goals: string | null;
+          constraints: string | null;
+          open_questions: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          product_overview?: string | null;
+          target_personas?: string | null;
+          current_metrics?: string | null;
+          pain_points?: string | null;
+          competitors?: string | null;
+          strategic_goals?: string | null;
+          constraints?: string | null;
+          open_questions?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          product_overview?: string | null;
+          target_personas?: string | null;
+          current_metrics?: string | null;
+          pain_points?: string | null;
+          competitors?: string | null;
+          strategic_goals?: string | null;
+          constraints?: string | null;
+          open_questions?: string | null;
+          updated_at?: string;
+        };
+      };
       decisions: {
         Row: {
           id: string;
@@ -224,22 +265,48 @@ export interface Database {
           id: string;
           user_id: string;
           project_id: string | null;
-          action: string;
-          tokens_used: number;
+          provider: string;
           model: string;
+          feature: string;
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+          input_cost: number;
+          output_cost: number;
+          estimated_cost: number;
+          currency: string;
+          is_mock: boolean;
+          status: "success" | "error" | "skipped";
+          error_message: string | null;
+          latency_ms: number | null;
+          metadata: Json | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           project_id?: string | null;
-          action: string;
-          tokens_used?: number;
-          model?: string;
+          provider?: string;
+          model: string;
+          feature: string;
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+          input_cost?: number;
+          output_cost?: number;
+          estimated_cost?: number;
+          currency?: string;
+          is_mock?: boolean;
+          status?: "success" | "error" | "skipped";
+          error_message?: string | null;
+          latency_ms?: number | null;
+          metadata?: Json | null;
           created_at?: string;
         };
         Update: {
-          tokens_used?: number;
+          status?: "success" | "error" | "skipped";
+          error_message?: string | null;
+          metadata?: Json | null;
         };
       };
     };

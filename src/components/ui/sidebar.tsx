@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { useCurrentUser } from "@/lib/auth/client";
+import { usePathname } from "next/navigation";
+import { type AppUser } from "@/lib/auth/constants";
 import { cn } from "@/lib/utils";
 import {
   IconDashboard,
@@ -12,28 +11,34 @@ import {
   IconSettings,
   IconLogOut,
   IconSparkles,
+  IconTrendingUp,
 } from "@/components/icons";
 
 const mainNav = [
   { href: "/dashboard", label: "Dashboard", icon: IconDashboard },
   { href: "/projects", label: "Projects", icon: IconProjects },
   { href: "/ai-chat", label: "AI Assistant", icon: IconChat },
+  { href: "/usage", label: "AI Usage", icon: IconTrendingUp },
 ];
 
 const bottomNav = [
   { href: "/settings", label: "Settings", icon: IconSettings },
 ];
 
-export function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { user } = useCurrentUser();
+interface SidebarProps {
+  user?: AppUser | null;
+}
 
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+export function Sidebar({ user }: SidebarProps) {
+  const pathname = usePathname();
+
+  function handleSignOut() {
+    // Always POST to server route to clear cookies/session properly
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/auth/sign-out";
+    document.body.appendChild(form);
+    form.submit();
   }
 
   const displayName = user?.name ?? "User";
@@ -53,7 +58,7 @@ export function Sidebar() {
       </div>
 
       {/* Main navigation */}
-      <nav className="flex-1 space-y-1 px-3 pt-4">
+      <nav className="flex-1 space-y-1 px-3 pt-4" aria-label="Main navigation">
         <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
           Menu
         </p>
@@ -143,6 +148,7 @@ export function Sidebar() {
             onClick={handleSignOut}
             className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
             title="Sign out"
+            aria-label="Sign out"
           >
             <IconLogOut className="h-4 w-4" />
           </button>

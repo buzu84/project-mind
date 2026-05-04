@@ -2,18 +2,22 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   IconProjects,
   IconDocument,
-  IconTarget,
   IconSparkles,
   IconChevronRight,
   IconClock,
   IconTrendingUp,
   IconPlus,
 } from "@/components/icons";
+import { getMonthlyUsageSummary } from "@/lib/ai/usage-tracking";
+import { FEATURE_LABELS } from "@/lib/ai/usage-types";
+import type { AIUsageFeature } from "@/lib/ai/usage-types";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -24,12 +28,14 @@ export default async function DashboardPage() {
   const [projectsRes, decisionsRes] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, name, description, updated_at, decisions(count)")
+      .select("id, name, description, updated_at")
+      .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(5),
     supabase
       .from("decisions")
-      .select("id, type, created_at, projects(name)")
+      .select("id, type, created_at, project_id")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
@@ -39,22 +45,25 @@ export default async function DashboardPage() {
     name: string;
     description: string | null;
     updated_at: string;
-    decisions: { count: number }[];
   }>;
   const recentDecisions = (decisionsRes.data ?? []) as unknown as Array<{
     id: string;
     type: string;
     created_at: string;
-    projects: { name: string } | null;
+    project_id: string | null;
   }>;
 
   // Count totals
   const { count: projectCount } = await supabase
     .from("projects")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
   const { count: decisionCount } = await supabase
     .from("decisions")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  const usageSummary = await getMonthlyUsageSummary(user.id, supabase);
 
   const displayName = user.name ?? user.email?.split("@")[0] ?? "";
 
@@ -174,10 +183,10 @@ export default async function DashboardPage() {
                         {project.name}
                       </p>
                       <p className="text-xs text-gray-400">
-                        {(project.decisions as { count: number }[])?.[0]?.count ??
-                          0}{" "}
-                        decisions · Updated{" "}
-                        {new Date(project.updated_at).toLocaleDateString()}
+                        Updated{" "}
+                        <time suppressHydrationWarning dateTime={project.updated_at}>
+                          {new Date(project.updated_at).toLocaleDateString()}
+                        </time>
                       </p>
                     </div>
                   </div>
@@ -215,11 +224,13 @@ export default async function DashboardPage() {
                       </Badge>
                       <span className="ml-2 text-gray-500">in</span>{" "}
                       <span className="font-medium">
-                        {decision.projects?.name ?? "Unknown"}
+                        Project
                       </span>
                     </p>
                     <p className="mt-0.5 text-xs text-gray-400">
-                      {new Date(decision.created_at).toLocaleDateString()}
+                      <time suppressHydrationWarning dateTime={decision.created_at}>
+                        {new Date(decision.created_at).toLocaleDateString()}
+                      </time>
                     </p>
                   </div>
                 </div>
@@ -231,6 +242,63 @@ export default async function DashboardPage() {
 
       {/* Quick actions */}
       <div>
+        {/* AI Usage This Month */}
+        <Card className="mb-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900">
+              AI Usage This Month
+            </h3>
+            {usageSummary.allMock && usageSummary.totalRequests > 0 && (
+              <Badge variant="warning">Mock Mode</Badge>
+            )}
+            {!usageSummary.allMock && usageSummary.totalRequests > 0 && (
+              <Badge variant="success">Live</Badge>
+            )}
+          </div>
+
+          {usageSummary.totalRequests === 0 ? (
+            <div className="text-sm text-gray-500">
+              <p>No AI usage recorded this month.</p>
+              <Link
+                href="/usage"
+                className="mt-1 inline-block text-xs font-medium text-brand-600 hover:text-brand-700"
+              >
+                View all usage history →
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-4">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${usageSummary.estimatedCost.toFixed(4)}
+                </p>
+                <p className="text-xs text-gray-500">Estimated Cost</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {usageSummary.totalRequests}
+                </p>
+                <p className="text-xs text-gray-500">AI Requests</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {usageSummary.totalTokens.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500">Total Tokens</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {usageSummary.topFeature
+                    ? FEATURE_LABELS[usageSummary.topFeature as AIUsageFeature] ??
+                      usageSummary.topFeature
+                    : "—"}
+                </p>
+                <p className="text-xs text-gray-500">Top Feature</p>
+              </div>
+            </div>
+          )}
+        </Card>
+
         <h3 className="mb-4 text-base font-semibold text-gray-900">
           Quick Actions
         </h3>

@@ -18,6 +18,7 @@ export default async function ProjectChatPage({
     .from("projects")
     .select("id, name")
     .eq("id", params.id)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) notFound();

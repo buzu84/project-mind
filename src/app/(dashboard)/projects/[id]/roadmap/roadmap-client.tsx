@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IconSparkles, IconClock } from "@/components/icons";
+import { useToast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Roadmap, RoadmapItem } from "./page";
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -85,6 +87,7 @@ export function RoadmapClient({
   initialRoadmap,
 }: RoadmapClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [roadmap, setRoadmap] = useState<Roadmap | null>(initialRoadmap);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -108,6 +111,7 @@ export function RoadmapClient({
 
       const data = await res.json();
       setRoadmap(data.roadmap);
+      toast("Roadmap generated successfully!");
       router.refresh();
     } catch (err) {
       setError(
@@ -119,7 +123,6 @@ export function RoadmapClient({
   }
 
   async function deleteRoadmap() {
-    if (!confirm("Delete this roadmap? You can regenerate it later.")) return;
     setIsDeleting(true);
     setError(null);
 
@@ -160,14 +163,20 @@ export function RoadmapClient({
           </div>
           <div className="flex items-center gap-2">
             {roadmap && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={deleteRoadmap}
-                disabled={isDeleting || isGenerating}
-              >
-                {isDeleting ? "Deleting\u2026" : "Delete Roadmap"}
-              </Button>
+              <ConfirmDialog
+                message="Delete this roadmap? You can regenerate it later."
+                confirmLabel="Delete Roadmap"
+                onConfirm={deleteRoadmap}
+                trigger={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={isDeleting || isGenerating}
+                  >
+                    {isDeleting ? "Deleting\u2026" : "Delete Roadmap"}
+                  </Button>
+                }
+              />
             )}
             <Button
               onClick={generateRoadmap}
@@ -191,9 +200,9 @@ export function RoadmapClient({
 
       {/* Generating state */}
       {isGenerating && (
-        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center">
+        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center" role="status">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" />
+            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" aria-hidden="true" />
           </div>
           <p className="text-sm font-medium text-brand-900">
             Generating your roadmap&hellip;

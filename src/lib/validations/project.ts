@@ -3,11 +3,11 @@ import { z } from "zod";
 export const projectSchema = z.object({
   name: z
     .string()
-    .min(1, "Project name is required")
-    .max(100, "Name must be under 100 characters"),
+    .min(2, "Project name must be at least 2 characters.")
+    .max(100, "Name must be under 100 characters."),
   description: z
     .string()
-    .max(500, "Description must be under 500 characters")
+    .max(500, "Description must be under 500 characters.")
     .optional()
     .transform((v) => v || undefined),
   target_users: z

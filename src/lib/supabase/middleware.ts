@@ -1,24 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** True when mock auth is active (dev mode with mock not explicitly disabled) */
+/** True when mock auth is explicitly enabled in development */
 const useMockAuth =
   process.env.NODE_ENV === "development" &&
-  process.env.USE_MOCK_AUTH !== "false";
+  (process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true" ||
+    process.env.USE_MOCK_AUTH === "true");
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const publishableKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  "";
 
 export async function updateSession(request: NextRequest) {
   // In mock-auth mode, skip all Supabase session checks
   if (useMockAuth) {
-    console.debug("[middleware] Mock auth — skipping session refresh");
     return NextResponse.next({ request });
   }
 
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const supabase = createServerClient(supabaseUrl, publishableKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -41,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes: redirect to sign-in if not authenticated
-  const protectedPaths = ["/dashboard", "/projects", "/ai-chat", "/settings"];
+  const protectedPaths = ["/dashboard", "/projects", "/ai-chat", "/settings", "/usage"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path),
   );
@@ -54,7 +57,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  const authPaths = ["/sign-in", "/sign-up"];
+  const authPaths = ["/sign-in", "/sign-up", "/forgot-password"];
   const isAuthPage = authPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path),
   );

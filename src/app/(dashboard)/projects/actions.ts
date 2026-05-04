@@ -53,8 +53,15 @@ export async function createProject(
       .single();
 
     if (error) {
-      console.error("[projects] Create failed:", error.message);
-      const detail = isDevMode() ? ` (${error.message})` : "";
+      console.error("[projects] Create failed:", {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        details: error.details,
+        authMode: isDevMode() ? "mock" : "real",
+        userId: user.id,
+      });
+      const detail = isDevMode() ? ` (${error.code}: ${error.message})` : "";
       return { success: false, error: `Could not create project.${detail}` };
     }
 
@@ -63,7 +70,6 @@ export async function createProject(
     }
 
     revalidatePath("/projects");
-    console.debug("[createProject] SUCCESS, projectId:", data.id);
     return { success: true, projectId: data.id };
   } catch (err) {
     if (isRedirectError(err)) throw err;

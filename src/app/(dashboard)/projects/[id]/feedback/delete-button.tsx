@@ -18,7 +18,8 @@ export function DeleteFeedbackButton({ projectId, documentId }: DeleteFeedbackBu
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="ml-4 flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+        className="ml-4 flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+        aria-label="Delete feedback document"
       >
         Delete
       </button>

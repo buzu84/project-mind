@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
+import { validateEnv } from "@/lib/env";
 import "./globals.css";
+
+// Validate env vars at startup (runs once on server)
+validateEnv();
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,4 +28,3 @@ export default function RootLayout({
     </html>
   );
 }
-
