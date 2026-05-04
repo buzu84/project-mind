@@ -72,6 +72,12 @@ export async function POST() {
   if (projectIds.length > 0) {
     // Delete project children in dependency order
     const projectChildTables = [
+      "decision_evidence_links",
+      "decision_agent_reviews",
+      "decision_recommendations",
+      "decision_options",
+      "assumptions",
+      "evidence",
       "document_chunks",
       "messages",
       "insights",
@@ -79,6 +85,8 @@ export async function POST() {
       "feature_ideas",
       "roadmaps",
       "multi_agent_reviews",
+      "prds",
+      "competitive_analyses",
       "project_context",
       "decisions",
     ];
