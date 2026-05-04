@@ -12,28 +12,67 @@ function SignUpForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmTouched, setConfirmTouched] = useState(false);
+
+  const passwordError =
+    passwordTouched && password.length > 0 && password.length < 6
+      ? "Password must be at least 6 characters."
+      : null;
+  const confirmError =
+    confirmTouched && confirmPassword.length > 0 && confirmPassword !== password
+      ? "Passwords do not match."
+      : null;
 
   const supabase = createClient();
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    setPasswordTouched(true);
+    setConfirmTouched(true);
+
+    if (password.length < 6 || password !== confirmPassword || !name.trim()) return;
+
     setIsLoading(true);
     setFormError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const origin = window.location.origin;
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${origin}/auth/callback`,
       },
     });
 
     if (error) {
-      setFormError(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists") || msg.includes("unique")) {
+        setFormError("An account with this email may already exist. Try signing in or resetting your password.");
+      } else if (msg.includes("password") || msg.includes("weak")) {
+        setFormError("Password must be at least 6 characters.");
+      } else if (msg.includes("valid") && msg.includes("email")) {
+        setFormError("Enter a valid email address.");
+      } else if (msg.includes("rate") || msg.includes("limit")) {
+        setFormError("Too many attempts. Please wait a moment and try again.");
+      } else {
+        setFormError(`Could not create account. Please try again. (${error.message})`);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    const identities = data.user?.identities ?? [];
+
+    if (data.user && identities.length === 0) {
+      // Duplicate email — Supabase silently returns user with no identities
+      setFormError("An account with this email may already exist. Try signing in or resetting your password.");
       setIsLoading(false);
       return;
     }
@@ -51,7 +90,7 @@ function SignUpForm() {
       },
     });
     if (error) {
-      setFormError(error.message);
+      setFormError("Could not connect to Google. Please try again.");
       setIsLoading(false);
     }
   }
@@ -101,7 +140,20 @@ function SignUpForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onBlur={() => setPasswordTouched(true)}
             placeholder="Min 6 characters"
+            error={passwordError ?? undefined}
+            required
+          />
+          <Input
+            id="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            onBlur={() => setConfirmTouched(true)}
+            placeholder="Re-enter your password"
+            error={confirmError ?? undefined}
             required
           />
           <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading}>
@@ -133,7 +185,13 @@ function SignUpForm() {
           Google
         </Button>
 
-        <p className="mt-4 text-center text-sm text-gray-500">
+        <p className="mt-3 text-center text-xs text-gray-400">
+          By creating an account you agree to our{" "}
+          <a href="/terms" className="underline hover:text-gray-600">Terms of Service</a>{" "}and{" "}
+          <a href="/privacy" className="underline hover:text-gray-600">Privacy Policy</a>.
+        </p>
+
+        <p className="mt-3 text-center text-sm text-gray-500">
           Already have an account?{" "}
           <a href="/sign-in" className="font-medium text-brand-600 hover:text-brand-700">
             Sign in

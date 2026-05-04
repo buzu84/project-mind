@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { IconSparkles, IconClock } from "@/components/icons";
+import { useToast } from "@/components/ui/toast";
 import type {
   MultiAgentReview,
   AgentRole,
@@ -200,6 +201,7 @@ export function MultiAgentClient({
   initialReviews,
 }: MultiAgentClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [reviews, setReviews] = useState<MultiAgentReview[]>(initialReviews);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -243,6 +245,7 @@ export function MultiAgentClient({
       setReviews((prev) => [newReview, ...prev]);
       setExpandedId(newReview.id);
       setQuestion("");
+      toast("Multi-agent review complete!");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate review");
@@ -292,7 +295,7 @@ export function MultiAgentClient({
         <Textarea
           id="question"
           name="question"
-          label=""
+          label={inputType === "feature_idea" ? "Describe your feature idea" : "Your product question"}
           placeholder={
             inputType === "feature_idea"
               ? "Describe your feature idea\u2026 e.g. Add a team analytics dashboard with usage heatmaps"
@@ -326,9 +329,9 @@ export function MultiAgentClient({
 
       {/* Generating state */}
       {isGenerating && (
-        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center">
+        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center" role="status">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" />
+            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" aria-hidden="true" />
           </div>
           <p className="text-sm font-medium text-brand-900">Running multi-agent review&hellip;</p>
           <p className="mt-1 text-xs text-brand-600">

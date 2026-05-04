@@ -114,15 +114,16 @@ export default async function ProjectDetailPage({
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "*, decisions(id, type, created_at), feature_ideas(count), messages(count), insights(count)"
+      "*, decisions(id, type, input, created_at), feature_ideas(count), messages(count), insights(count)"
     )
     .eq("id", params.id)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) notFound();
 
   const decisions =
-    (project.decisions as { id: string; type: string; created_at: string }[]) ??
+    (project.decisions as { id: string; type: string; input: Record<string, string> | null; created_at: string }[]) ??
     [];
   const featureCount =
     (project.feature_ideas as { count: number }[])?.[0]?.count ?? 0;
@@ -241,22 +242,52 @@ export default async function ProjectDetailPage({
           </Card>
         ) : (
           <div className="space-y-2">
-            {decisions.map((d) => (
-              <Card key={d.id} className="flex items-center justify-between py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
-                    <IconSparkles className="h-4 w-4 text-gray-400" />
+            {decisions.map((d) => {
+              const href =
+                d.type === "PRD"
+                  ? `/projects/${project.id}/prd/${d.id}`
+                  : d.type === "COMPETITIVE_ANALYSIS"
+                    ? `/projects/${project.id}/analysis/${d.id}`
+                    : undefined;
+
+              const title =
+                d.type === "PRD"
+                  ? d.input?.productName ?? "Untitled PRD"
+                  : d.type === "COMPETITIVE_ANALYSIS"
+                    ? d.input?.productName ?? "Untitled Analysis"
+                    : decisionTypeLabels[d.type] ?? d.type;
+
+              const inner = (
+                <Card className={`flex items-center justify-between py-4${href ? " cursor-pointer hover:border-gray-300 hover:shadow-md transition" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
+                      <IconSparkles className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={decisionBadgeVariants[d.type]}>
+                        {decisionTypeLabels[d.type]}
+                      </Badge>
+                      <span className="text-sm font-medium text-gray-700">{title}</span>
+                    </div>
                   </div>
-                  <Badge variant={decisionBadgeVariants[d.type]}>
-                    {decisionTypeLabels[d.type]}
-                  </Badge>
-                </div>
-                <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <IconClock className="h-3 w-3" />
-                  {new Date(d.created_at).toLocaleDateString()}
-                </span>
-              </Card>
-            ))}
+                  <div className="flex items-center gap-2">
+                     <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <IconClock className="h-3 w-3" />
+                      <time suppressHydrationWarning dateTime={d.created_at}>
+                        {new Date(d.created_at).toLocaleDateString()}
+                      </time>
+                    </span>
+                    {href && <IconChevronRight className="h-4 w-4 text-gray-300" />}
+                  </div>
+                </Card>
+              );
+
+              return href ? (
+                <Link key={d.id} href={href}>{inner}</Link>
+              ) : (
+                <div key={d.id}>{inner}</div>
+              );
+            })}
           </div>
         )}
       </div>

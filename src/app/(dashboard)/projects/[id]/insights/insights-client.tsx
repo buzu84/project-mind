@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IconSparkles, IconClock } from "@/components/icons";
+import { getFriendlyErrorMessage } from "@/lib/errors";
+import { useToast } from "@/components/ui/toast";
 
 interface Insight {
   id: string;
@@ -51,14 +53,25 @@ const CONFIDENCE_LABELS: Record<string, string> = {
 
 export function InsightsClient({ projectId, projectName, initialInsights }: InsightsClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [insights, setInsights] = useState<Insight[]>(initialInsights);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
+  // Keep insights in sync when server re-fetches (e.g. after navigation)
+  // but only when not in a local-state-driven flow (i.e. after generation)
+  const [hasLocalUpdate, setHasLocalUpdate] = useState(false);
+
+  // If server provides new data and we haven't just generated locally, sync
+  if (!hasLocalUpdate && initialInsights.length !== insights.length && initialInsights.length > 0) {
+    setInsights(initialInsights);
+  }
+
   async function generateInsights() {
     setIsGenerating(true);
     setError(null);
+    setHasLocalUpdate(false);
 
     try {
       const res = await fetch("/api/ai/insights", {
@@ -73,10 +86,20 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
       }
 
       const data = await res.json();
-      setInsights(data.insights ?? []);
-      router.refresh();
+      const newInsights: Insight[] = data.insights ?? [];
+
+      // Set local state immediately — this is the SOURCE OF TRUTH for this render cycle
+      setInsights(newInsights);
+      setHasLocalUpdate(true);
+      if (newInsights.length > 0) {
+        toast(`Generated ${newInsights.length} insights`);
+      }
+
+      // Refresh server data in background (for next page load)
+      // Use setTimeout to avoid potential race with state update
+      setTimeout(() => router.refresh(), 100);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate insights");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setIsGenerating(false);
     }
@@ -124,9 +147,9 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
 
       {/* Generating state */}
       {isGenerating && (
-        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center">
+        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center" role="status">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" />
+            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" aria-hidden="true" />
           </div>
           <p className="text-sm font-medium text-brand-900">Analyzing your project...</p>
           <p className="mt-1 text-xs text-brand-600">
@@ -143,7 +166,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
           </div>
           <h3 className="mt-4 text-base font-semibold text-gray-900">No insights yet</h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
-            Click \u201CGenerate AI Insights\u201D to analyze your project and get strategic recommendations.
+            Click &ldquo;Generate AI Insights&rdquo; to analyze your project and get strategic recommendations.
           </p>
           <Button onClick={generateInsights} className="mt-6 gap-2" disabled={isGenerating}>
             <IconSparkles className="h-4 w-4" />

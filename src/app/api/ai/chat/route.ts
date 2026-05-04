@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import { retrieveRelevantContext } from "@/lib/rag";
+import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
+import { isRealAI } from "@/lib/ai/is-real-ai";
+import { checkStandardAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 const schema = z.object({
   projectId: z.string().min(1),
@@ -68,6 +71,9 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const rl = checkStandardAILimit(user);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
@@ -79,6 +85,7 @@ export async function POST(req: Request) {
     .from("projects")
     .select("name, description, target_users, market, business_model, goals")
     .eq("id", projectId)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
@@ -90,24 +97,25 @@ export async function POST(req: Request) {
       .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
       .eq("project_id", projectId)
       .maybeSingle(),
-    retrieveRelevantContext(message, projectId),
+    retrieveRelevantContext(message, projectId, user.id),
   ]);
 
   // Save user message
   await supabase.from("messages").insert({ project_id: projectId, role: "user", content: message });
 
   // Load history
-  const { data: history } = await supabase
-    .from("messages")
-    .select("role, content")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: true })
-    .limit(50);
+    const { data: historyRaw } = await supabase
+      .from("messages")
+      .select("role, content")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    const history = (historyRaw ?? []).reverse();
 
   const projectContext = buildProjectContext(project, contextRes.data, ragResult.context);
   const systemMessage = `${SYSTEM_PROMPT}\n\nYou are assisting with the following project:\n${projectContext}`;
 
-  console.debug(`[ai/chat] Prompt size: system=${systemMessage.length} chars, history=${(history ?? []).length} msgs, rag=${ragResult.results.length} chunks`);
 
   const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
     { role: "system", content: systemMessage },
@@ -115,6 +123,63 @@ export async function POST(req: Request) {
       .filter((m: any) => m.role !== "system")
       .map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content })),
   ];
+
+  const startTime = Date.now();
+  const isReal = isRealAI();
+
+  // ── Mock mode ──────────────────────────────────────────────
+  if (!isReal) {
+    const mockResponse = `Based on my analysis of **${(project as any).name}**, here's my perspective:\n\n${message.length > 50 ? "This is a thoughtful question. " : ""}Let me break this down:\n\n1. **Strategic consideration**: Given your target market${(project as any).target_users ? ` of ${(project as any).target_users}` : ""}, this is an important area to explore.\n\n2. **Key factors**: Consider the competitive landscape, user needs, and technical feasibility when making this decision.\n\n3. **Recommended approach**: Start with user research to validate assumptions, then prioritize based on impact vs. effort.\n\n4. **Next steps**:\n   - Define success metrics\n   - Create a lightweight prototype\n   - Test with a small user cohort\n   - Iterate based on feedback\n\n*This is a mock response for development. Set USE_REAL_AI=true with a valid API key for real AI responses.*`;
+
+    await supabase
+      .from("messages")
+      .insert({ project_id: projectId, role: "assistant", content: mockResponse });
+
+    void trackAIUsage({
+      userId: user.id,
+      projectId,
+      model: "mock",
+      feature: "chat",
+      promptTokens: 0,
+      completionTokens: 0,
+      isMock: true,
+      latencyMs: Date.now() - startTime,
+      metadata: { project_scoped: true },
+    });
+
+    // Return as SSE stream for compatibility with the streaming UI
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      start(controller) {
+        // Send in chunks to simulate streaming
+        const words = mockResponse.split(" ");
+        let i = 0;
+        const interval = setInterval(() => {
+          if (i >= words.length) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, id: `mock-${Date.now()}`, createdAt: new Date().toISOString() })}\n\n`));
+            controller.close();
+            clearInterval(interval);
+            return;
+          }
+          const chunk = (i === 0 ? "" : " ") + words[i];
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+          i++;
+        }, 20);
+      },
+    });
+
+    return new Response(readable, {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+    });
+  }
+
+  // ── Real mode: check API key ────────────────────────────────
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode." },
+      { status: 503 },
+    );
+  }
 
   try {
     const stream = await openai.chat.completions.create({
@@ -145,12 +210,40 @@ export async function POST(req: Request) {
             .select("id, created_at")
             .single();
 
+          // Estimate tokens from content (streaming doesn't return usage)
+          const historyTokens = (history ?? []).reduce((s: number, m: any) => s + m.content.length, 0) / 4;
+          const estimatedPromptTokens = Math.ceil(systemMessage.length / 4 + historyTokens);
+          const estimatedCompletionTokens = Math.ceil(fullContent.length / 4);
+          void trackAIUsage({
+            userId: user.id,
+            projectId,
+            model: "gpt-4o",
+            feature: "chat",
+            promptTokens: estimatedPromptTokens,
+            completionTokens: estimatedCompletionTokens,
+            isMock: false,
+            latencyMs: Date.now() - startTime,
+            metadata: { project_scoped: true, estimated: true, streaming: true },
+          });
+
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ done: true, id: saved?.id, createdAt: saved?.created_at })}\n\n`),
           );
           controller.close();
         } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : "Stream failed";
+          const rawMsg = err instanceof Error ? err.message : "Stream failed";
+          const errorMsg = rawMsg.includes("401") || rawMsg.includes("API key")
+            ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
+            : "Could not generate response. Please try again.";
+          void trackAIUsageError({
+            userId: user.id,
+            projectId,
+            feature: "chat",
+            model: "gpt-4o",
+            error: err,
+            latencyMs: Date.now() - startTime,
+            metadata: { project_scoped: true, streaming: true },
+          });
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`));
           controller.close();
         }
@@ -162,6 +255,18 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "OpenAI request failed";
-    return NextResponse.json({ error: `AI error: ${errorMessage}` }, { status: 502 });
+    const friendlyMessage =
+      errorMessage.includes("401") || errorMessage.includes("API key")
+        ? "AI is not configured. Set OPENAI_API_KEY or use mock mode."
+        : "Could not generate response. Please try again.";
+    void trackAIUsageError({
+      userId: user.id,
+      projectId,
+      feature: "chat",
+      model: "gpt-4o",
+      error: err,
+      latencyMs: Date.now() - startTime,
+    });
+    return NextResponse.json({ error: friendlyMessage }, { status: 502 });
   }
 }

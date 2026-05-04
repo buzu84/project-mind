@@ -18,6 +18,7 @@ export interface FeatureIdea {
   ai_commentary: string | null;
   status: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export default async function FeaturesPage({
@@ -34,13 +35,14 @@ export default async function FeaturesPage({
     .from("projects")
     .select("id, name")
     .eq("id", params.id)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) notFound();
 
   const { data: features } = await supabase
     .from("feature_ideas")
-    .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at")
+    .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at")
     .eq("project_id", project.id)
     .order("rice_score", { ascending: false });
 

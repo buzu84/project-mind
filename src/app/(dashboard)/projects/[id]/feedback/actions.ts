@@ -58,7 +58,7 @@ export async function createFeedbackDocument(
     // Trigger async RAG ingestion (chunk + embed)
     if (data?.id) {
       try {
-        await ingestDocument(data.id, projectId, parsed.data.content);
+        await ingestDocument(data.id, projectId, parsed.data.content, user.id);
       } catch (ragErr) {
         // Don't fail the whole action if embedding fails — document is still saved
         console.error("[feedback] RAG ingestion failed (document saved):", ragErr);
@@ -107,3 +107,69 @@ export async function deleteFeedbackDocument(
     return { success: false, error: "Could not delete document." };
   }
 }
+
+export async function updateFeedbackDocument(
+  projectId: string,
+  documentId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: "You must be signed in." };
+
+    const parsed = feedbackSchema.safeParse({
+      title: formData.get("title"),
+      content: formData.get("content"),
+      source: formData.get("source") || undefined,
+    });
+
+    if (!parsed.success) {
+      return {
+        success: false,
+        fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      };
+    }
+
+    const supabase = createClient();
+
+    // Fetch old content to detect changes
+    const { data: oldDoc } = await supabase
+      .from("feedback_documents")
+      .select("content")
+      .eq("id", documentId)
+      .eq("project_id", projectId)
+      .single();
+
+    const { error } = await supabase
+      .from("feedback_documents")
+      .update(parsed.data)
+      .eq("id", documentId)
+      .eq("project_id", projectId);
+
+    if (error) {
+      console.error("[feedback] Update failed:", error.message);
+      const detail = isDevMode() ? ` (${error.message})` : "";
+      return { success: false, error: `Could not update feedback.${detail}` };
+    }
+
+    // If content changed, re-ingest embeddings
+    const contentChanged = oldDoc?.content !== parsed.data.content;
+    if (contentChanged) {
+      try {
+        // Remove old chunks then re-ingest
+        await removeDocumentChunks(documentId);
+        await ingestDocument(documentId, projectId, parsed.data.content, user.id);
+      } catch (ragErr) {
+        // Document is updated even if re-embedding fails
+        console.error("[feedback] Re-embedding failed (document updated):", ragErr);
+      }
+    }
+
+    revalidatePath(`/projects/${projectId}/feedback`);
+    return { success: true };
+  } catch (err) {
+    console.error("[feedback] Update error:", err);
+    return { success: false, error: "Could not update feedback. Please try again." };
+  }
+}
+

@@ -43,9 +43,13 @@ function deduplicateResults(results: SearchResult[]): SearchResult[] {
 export async function retrieveRelevantContext(
   query: string,
   projectId: string,
+  userId?: string,
 ): Promise<{ context: string; results: SearchResult[] }> {
   try {
-    const queryEmbedding = await generateEmbedding(query);
+    const queryEmbedding = await generateEmbedding(
+      query,
+      userId ? { userId, projectId, feature: "query_embedding" } : undefined,
+    );
     const rawResults = await searchSimilarChunks(queryEmbedding, projectId);
 
     if (rawResults.length === 0) {
@@ -55,9 +59,6 @@ export async function retrieveRelevantContext(
     // Deduplicate overlapping chunks
     const results = deduplicateResults(rawResults);
 
-    console.debug(
-      `[rag] Found ${rawResults.length} chunks, ${results.length} after dedup (similarity: ${results.map((r) => r.similarity.toFixed(3)).join(", ")})`,
-    );
 
     // Build context string with size guard
     let budget = MAX_RAG_CHARS;

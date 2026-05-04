@@ -5,27 +5,26 @@ import { createClient } from "@/lib/supabase/client";
 import { isDevMode, DEV_USER, type AppUser } from "./constants";
 
 /**
- * React hook to get the current authenticated user (client-side).
+ * Client-side hook for current user.
  *
- * - In development: returns a mock user immediately.
- * - In production: fetches from Supabase Auth.
+ * Accepts an optional `initialUser` from the server to prevent
+ * hydration mismatches. If provided, the hook uses it as the initial
+ * state and skips the redundant client-side fetch.
  */
-export function useCurrentUser(): {
+export function useCurrentUser(initialUser?: AppUser | null): {
   user: AppUser | null;
   loading: boolean;
 } {
-  const [user, setUser] = useState<AppUser | null>(
-    isDevMode() ? DEV_USER : null,
-  );
-  const [loading, setLoading] = useState(!isDevMode());
+  const resolvedInitial = initialUser ?? (isDevMode() ? DEV_USER : null);
+  const [user, setUser] = useState<AppUser | null>(resolvedInitial);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isDevMode()) {
-      console.debug("[auth] Using mock auth — returning dev user");
-      return;
-    }
+    // If we already have a user (from server or dev mode), skip fetch
+    if (resolvedInitial || isDevMode()) return;
 
-    console.debug("[auth] Using Supabase auth — fetching session...");
+    // No initial user and not dev mode — fetch client-side as fallback
+    setLoading(true);
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }: { data: { user: any } }) => {
       if (data.user) {
@@ -41,8 +40,7 @@ export function useCurrentUser(): {
       }
       setLoading(false);
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { user, loading };
 }
-

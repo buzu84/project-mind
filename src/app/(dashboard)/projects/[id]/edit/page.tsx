@@ -21,6 +21,7 @@ export default async function EditProjectPage({
       "id, name, description, target_users, market, business_model, goals"
     )
     .eq("id", params.id)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) notFound();
