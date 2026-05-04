@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isDevMode, isMockDb } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreateProjectForm } from "./create-project-form";
@@ -18,20 +20,14 @@ export default async function ProjectsPage() {
 
   const mockAuth = isDevMode();
   const mockDb = isMockDb();
-  const dataSource = mockDb ? "mock DB (in-memory)" : "real Supabase";
-
-  console.debug(
-    `[ProjectsPage] USE_MOCK_AUTH=${mockAuth}, USE_MOCK_DB=${mockDb}, ` +
-    `userId=${user.id}, dataSource=${dataSource}`,
-  );
 
   const supabase = createClient();
   const { data: projects } = await supabase
     .from("projects")
     .select("*, decisions(count), feature_ideas(count)")
+    .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
-  console.debug("[ProjectsPage] fetched projects:", (projects ?? []).length);
 
   const list = (projects ?? []) as Array<{
     id: string;
@@ -100,7 +96,9 @@ export default async function ProjectsPage() {
                       <span>·</span>
                       <span className="flex items-center gap-1">
                         <IconClock className="h-3 w-3" />
-                        {new Date(project.updated_at).toLocaleDateString()}
+                        <time suppressHydrationWarning dateTime={project.updated_at}>
+                          {new Date(project.updated_at).toLocaleDateString()}
+                        </time>
                       </span>
                     </div>
                   </div>

@@ -74,6 +74,7 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
                 type="button"
                 onClick={() => toggleSection(section.key)}
                 className="flex w-full items-center justify-between px-5 py-4 text-left"
+                aria-expanded={isExpanded}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{section.icon}</span>
@@ -85,7 +86,7 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
                     {!isExpanded && <p className="mt-0.5 text-xs text-gray-400">{section.description}</p>}
                   </div>
                 </div>
-                <svg className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -108,7 +109,7 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
       </div>
 
       {result && (
-        <div className={`mt-4 rounded-lg border px-4 py-3 text-sm ${result.success ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div className={`mt-4 rounded-lg border px-4 py-3 text-sm ${result.success ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`} role="status">
           {result.success ? "Context saved successfully!" : result.error}
         </div>
       )}

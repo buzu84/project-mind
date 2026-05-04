@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { InsightsClient } from "./insights-client";
 
+export const dynamic = "force-dynamic";
+
 interface Insight {
   id: string;
   type: string;
@@ -32,6 +34,7 @@ export default async function InsightsPage({
     .from("projects")
     .select("id, name")
     .eq("id", params.id)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) notFound();

@@ -3,46 +3,36 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
+import { trackAIUsage, extractTokenUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
+import { generateMockInsights } from "@/lib/ai/mock-insights";
+import { isRealAI } from "@/lib/ai/is-real-ai";
+import { normalizeInsightsFromAI, type NormalizedInsight } from "@/lib/ai/normalize-insights";
+import { checkStandardAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 const schema = z.object({
   projectId: z.string().min(1),
 });
 
-const INSIGHT_TYPES = [
-  "risk",
-  "opportunity",
-  "next_action",
-  "roadmap",
-  "assumption",
-  "pain_point",
-  "strategic_gap",
-] as const;
-
-interface GeneratedInsight {
-  title: string;
-  type: (typeof INSIGHT_TYPES)[number];
-  explanation: string;
-  priority: "critical" | "high" | "medium" | "low";
-  confidence: "high" | "medium" | "low";
-  suggested_action: string;
-}
-
 const SYSTEM_PROMPT = `You are ProductMind, an expert AI product strategist. Analyze the project context provided and generate strategic insights.
 
-Return a JSON array of insights. Each insight must have exactly these fields:
+Return a JSON object with an "insights" key containing an array. Each insight must have exactly these fields:
 {
-  "title": "short headline (max 80 chars)",
-  "type": "risk" | "opportunity" | "next_action" | "roadmap" | "assumption" | "pain_point" | "strategic_gap",
-  "explanation": "2-3 sentence explanation with specific reasoning",
-  "priority": "critical" | "high" | "medium" | "low",
-  "confidence": "high" | "medium" | "low",
-  "suggested_action": "concrete, actionable next step"
+  "insights": [
+    {
+      "title": "short headline (max 80 chars)",
+      "type": "risk" | "opportunity" | "next_action" | "roadmap" | "assumption" | "pain_point" | "strategic_gap",
+      "explanation": "2-3 sentence explanation with specific reasoning",
+      "priority": "critical" | "high" | "medium" | "low",
+      "confidence": "high" | "medium" | "low",
+      "suggested_action": "concrete, actionable next step"
+    }
+  ]
 }
 
 Generate 7-12 diverse insights covering ALL types. Be specific to this project — avoid generic advice.
 Prioritize insights that are actionable and grounded in the project data.
 
-Return ONLY the JSON array, no markdown, no explanation.`;
+Return ONLY the JSON object, no markdown, no explanation outside the JSON.`;
 
 function buildContextForInsights(
   project: Record<string, string | null>,
@@ -81,9 +71,66 @@ function buildContextForInsights(
   return parts.join("\n");
 }
 
+/**
+ * Shared function: persist normalized insights to DB and return response payload.
+ */
+async function saveAndRespond(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  normalized: NormalizedInsight[],
+  idPrefix: string,
+) {
+  const rows = normalized.map((n) => ({
+    project_id: projectId,
+    type: n.type,
+    title: n.title,
+    content: n.content,
+    metadata: n.metadata,
+  }));
+
+  // Delete old insights, insert new
+  await supabase.from("insights").delete().eq("project_id", projectId);
+  const { error: insertError } = await supabase.from("insights").insert(rows);
+
+  if (insertError) {
+    console.error("[INSIGHTS_INSERT_ERROR]", { message: insertError.message });
+  }
+
+  // Verify persistence
+  const { data: verifyRows } = await supabase
+    .from("insights")
+    .select("id, title")
+    .eq("project_id", projectId);
+
+  // Build response — use DB IDs if available, otherwise synthetic
+  const responseInsights = verifyRows && verifyRows.length > 0
+    ? verifyRows.map((v: any, i: number) => {
+        const n = normalized[i] ?? normalized[0];
+        return {
+          id: v.id,
+          project_id: projectId,
+          type: n.type,
+          title: v.title,
+          content: n.content,
+          metadata: n.metadata,
+          created_at: v.created_at ?? new Date().toISOString(),
+        };
+      })
+    : rows.map((r, i) => ({
+        id: `${idPrefix}-${i}`,
+        ...r,
+        created_at: new Date().toISOString(),
+      }));
+
+  return responseInsights;
+}
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = checkStandardAILimit(user);
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
@@ -98,6 +145,7 @@ export async function POST(req: Request) {
       .from("projects")
       .select("name, description, target_users, market, business_model, goals")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single(),
     supabase
       .from("project_context")
@@ -132,7 +180,46 @@ export async function POST(req: Request) {
     feedbackSummary,
   );
 
-  console.debug(`[insights] Generating insights for project ${projectId}, context: ${projectContext.length} chars`);
+  const isReal = isRealAI();
+  const isMock = !isReal;
+  const startTime = Date.now();
+
+  // ── Mock mode ──────────────────────────────────────────────────────
+  if (isMock) {
+    const projectData = projectRes.data as Record<string, string | null>;
+    const mockInsights = generateMockInsights({
+      projectName: projectData.name ?? "Product",
+      targetUsers: projectData.target_users,
+      market: projectData.market,
+    });
+
+    // Convert mock output to raw JSON string, then normalize through same pipeline
+    const mockRaw = JSON.stringify({ insights: mockInsights });
+    const { insights: normalized } = normalizeInsightsFromAI(mockRaw);
+
+    const responseInsights = await saveAndRespond(supabase, projectId, normalized, "mock");
+
+    void trackAIUsage({
+      userId: user.id,
+      projectId,
+      model: "mock",
+      feature: "insights",
+      promptTokens: 0,
+      completionTokens: 0,
+      isMock: true,
+      latencyMs: Date.now() - startTime,
+    });
+
+    return NextResponse.json({ insights: responseInsights });
+  }
+
+  // ── Real mode: check API key ──────────────────────────────────────
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode." },
+      { status: 503 },
+    );
+  }
 
   try {
     const response = await openai.chat.completions.create({
@@ -146,59 +233,45 @@ export async function POST(req: Request) {
       response_format: { type: "json_object" },
     });
 
-    const raw = response.choices[0]?.message?.content ?? "[]";
-    let insights: GeneratedInsight[];
+    const raw = response.choices[0]?.message?.content ?? "{}";
 
-    console.debug(`[insights] AI response received: ${raw.length} chars`);
-
-    try {
-      const parsed = JSON.parse(raw);
-      // Handle both { insights: [...] } and direct array
-      insights = Array.isArray(parsed) ? parsed : (parsed.insights ?? []);
-    } catch {
-      console.error("[insights] Failed to parse AI response:", raw.slice(0, 200));
-      return NextResponse.json({ error: "Failed to parse AI response" }, { status: 502 });
-    }
-
-    const validTypes = new Set<string>(INSIGHT_TYPES);
-
-    // Validate and store insights
-    const rows = insights
-      .filter((i) => i.title && i.type && i.explanation && validTypes.has(i.type))
-      .map((i) => ({
-        project_id: projectId,
-        type: i.type,
-        title: i.title.slice(0, 200),
-        content: i.explanation,
-        metadata: {
-          priority: i.priority ?? "medium",
-          confidence: i.confidence ?? "medium",
-          suggested_action: i.suggested_action ?? "",
-        },
-      }));
-
-    if (rows.length > 0) {
-      // Delete old insights for this project before inserting new ones
-      await supabase.from("insights").delete().eq("project_id", projectId);
-
-      const { error: insertError } = await supabase.from("insights").insert(rows);
-      if (insertError) {
-        console.error("[insights] Insert failed:", insertError.message);
-      }
-    }
-
-    console.debug(`[insights] Generated ${rows.length} insights for project ${projectId}`);
-
-    return NextResponse.json({
-      insights: rows.map((r, i) => ({
-        id: `temp-${i}`,
-        ...r,
-        created_at: new Date().toISOString(),
-      })),
+    // Track usage
+    const tokens = extractTokenUsage(response as any);
+    void trackAIUsage({
+      userId: user.id,
+      projectId,
+      model: "gpt-4o",
+      feature: "insights",
+      promptTokens: tokens.promptTokens,
+      completionTokens: tokens.completionTokens,
+      isMock: false,
+      latencyMs: Date.now() - startTime,
     });
+
+    // Normalize through shared pipeline
+    const { insights: normalized, rawParsedCount, error: parseError } = normalizeInsightsFromAI(raw);
+
+    if (normalized.length === 0) {
+      return NextResponse.json(
+        { error: parseError ?? "AI returned no usable insights. Please try again." },
+        { status: 502 },
+      );
+    }
+
+    const responseInsights = await saveAndRespond(supabase, projectId, normalized, "real");
+
+    return NextResponse.json({ insights: responseInsights });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "OpenAI request failed";
     console.error("[insights] AI error:", msg);
+    void trackAIUsageError({
+      userId: user.id,
+      projectId,
+      feature: "insights",
+      model: "gpt-4o",
+      error: err,
+      latencyMs: Date.now() - startTime,
+    });
     return NextResponse.json({ error: `AI error: ${msg}` }, { status: 502 });
   }
 }

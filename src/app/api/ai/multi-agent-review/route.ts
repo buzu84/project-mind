@@ -5,15 +5,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import { retrieveRelevantContext } from "@/lib/rag";
 import { generateMockMultiAgentReview } from "@/lib/ai/mock-multi-agent";
+import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
+import { isRealAI } from "@/lib/ai/is-real-ai";
+import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 import type { AgentResponse, ConsensusResponse, AgentRole } from "@/lib/ai/multi-agent-types";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-function useRealAI(): boolean {
-  if (process.env.USE_REAL_AI === "false") return false;
-  if (process.env.USE_REAL_AI === "true") return true;
-  return !!process.env.OPENAI_API_KEY;
-}
 
 function hasOpenAIKey(): boolean {
   return !!process.env.OPENAI_API_KEY;
@@ -168,6 +166,9 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const rl = checkHeavyAILimit(user);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -176,7 +177,7 @@ export async function POST(req: Request) {
 
   const { projectId, question, inputType, includeContext, includeRag, includeInsights } = parsed.data;
   const supabase = createClient();
-  const isReal = useRealAI();
+  const isReal = isRealAI();
   const isMock = !isReal;
 
   // Fetch project
@@ -184,6 +185,7 @@ export async function POST(req: Request) {
     .from("projects")
     .select("name, description, target_users, market, business_model, goals")
     .eq("id", projectId)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
@@ -204,7 +206,7 @@ export async function POST(req: Request) {
           .limit(10)
       : Promise.resolve({ data: [] }),
     includeRag
-      ? retrieveRelevantContext(question, projectId).catch(() => ({ context: "", results: [] }))
+      ? retrieveRelevantContext(question, projectId, user.id).catch(() => ({ context: "", results: [] }))
       : Promise.resolve({ context: "", results: [] }),
   ]);
 
@@ -220,10 +222,8 @@ export async function POST(req: Request) {
     insightsSummary,
   );
 
-  console.debug(
-    `[multi-agent] Review for project ${projectId} | mode: ${isMock ? "MOCK" : "REAL"} | ` +
-    `context: ${projectContext.length} chars | question: ${question.length} chars`,
-  );
+
+  const startTime = Date.now();
 
   try {
     let pm: AgentResponse, cto: AgentResponse, ux: AgentResponse, growth: AgentResponse;
@@ -242,6 +242,17 @@ export async function POST(req: Request) {
       ux = mock.ux;
       growth = mock.growth;
       consensus = mock.consensus;
+
+      void trackAIUsage({
+        userId: user.id,
+        projectId,
+        model: "mock",
+        feature: "multi_agent_review",
+        promptTokens: 0,
+        completionTokens: 0,
+        isMock: true,
+        latencyMs: Date.now() - startTime,
+      });
     } else {
       if (!hasOpenAIKey()) {
         return NextResponse.json(
@@ -260,6 +271,19 @@ export async function POST(req: Request) {
 
       // Generate consensus from agent responses
       consensus = await generateConsensus(question, { pm, cto, ux, growth });
+
+      // Track usage (5 calls: 4 agents + 1 consensus, estimate ~1024 tokens each)
+      void trackAIUsage({
+        userId: user.id,
+        projectId,
+        model: "gpt-4o",
+        feature: "multi_agent_review",
+        promptTokens: Math.ceil(projectContext.length / 4) * 5,
+        completionTokens: 1024 * 5,
+        isMock: false,
+        latencyMs: Date.now() - startTime,
+        metadata: { agentCalls: 5, estimated: true },
+      });
     }
 
     // Store review
@@ -287,11 +311,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to save review" }, { status: 500 });
     }
 
-    console.debug(`[multi-agent] Review saved for project ${projectId}`);
     return NextResponse.json({ review: inserted });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "AI request failed";
     console.error("[multi-agent] Error:", msg);
+    void trackAIUsageError({
+      userId: user.id,
+      projectId,
+      feature: "multi_agent_review",
+      model: isMock ? "mock" : "gpt-4o",
+      error: err,
+      isMock,
+      latencyMs: Date.now() - startTime,
+    });
     return NextResponse.json({ error: `AI error: ${msg}` }, { status: 502 });
   }
 }

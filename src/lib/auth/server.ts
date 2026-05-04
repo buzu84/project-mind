@@ -11,11 +11,9 @@ import { isDevMode, DEV_USER, type AppUser } from "./constants";
  */
 export async function getCurrentUser(): Promise<AppUser | null> {
   if (isDevMode()) {
-    console.debug("[auth] Using mock auth — returning dev user");
     return DEV_USER;
   }
 
-  console.debug("[auth] Using Supabase auth — fetching session...");
   const supabase = createClient();
   const {
     data: { user },
@@ -23,11 +21,9 @@ export async function getCurrentUser(): Promise<AppUser | null> {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    console.debug("[auth] No authenticated user found");
     return null;
   }
 
-  console.debug("[auth] Authenticated user:", user.email);
   return {
     id: user.id,
     email: user.email ?? "",
@@ -47,4 +43,3 @@ export async function requireCurrentUser(): Promise<AppUser> {
   }
   return user;
 }
-

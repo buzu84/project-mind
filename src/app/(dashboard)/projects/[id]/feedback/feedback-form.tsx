@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IconPlus } from "@/components/icons";
 import { createFeedbackDocument } from "./actions";
+import { useToast } from "@/components/ui/toast";
+
 
 const SOURCES = [
   { value: "", label: "Select source (optional)" },
@@ -26,6 +28,7 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success: boolean; error?: string; fieldErrors?: Record<string, string[]> } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { toast } = useToast();
 
   if (!isOpen) {
     return (
@@ -44,6 +47,7 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
         formRef.current?.reset();
         setIsOpen(false);
         setResult(null);
+        toast("Feedback document saved!");
       }
     });
   }

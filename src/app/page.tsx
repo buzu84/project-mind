@@ -7,6 +7,8 @@ import {
   homeBreadcrumbJsonLd,
   faqItems,
 } from "@/lib/structured-data";
+import { getCurrentUser } from "@/lib/auth";
+import { UserDropdown } from "@/components/ui/user-dropdown";
 
 const features = [
   {
@@ -29,7 +31,10 @@ const features = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const user = await getCurrentUser();
+  const ctaHref = user ? "/dashboard" : "/sign-up";
+
   return (
     <div className="min-h-screen">
       {/* Structured Data */}
@@ -42,18 +47,32 @@ export default function LandingPage() {
       <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
         <span className="text-xl font-bold text-brand-700">ProductMind</span>
         <div className="flex items-center gap-4">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/sign-in"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Dashboard
+              </Link>
+              <UserDropdown user={user} />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/sign-up"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition"
+              >
+                Start free
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -70,10 +89,10 @@ export default function LandingPage() {
         </p>
         <div className="mt-10 flex justify-center gap-4">
           <Link
-            href="/sign-in"
+            href={ctaHref}
             className="rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-700 transition"
           >
-            Start Free
+            {user ? "Go to Dashboard" : "Start free"}
           </Link>
           <a
             href="#features"
@@ -130,8 +149,15 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} ProductMind. All rights reserved.
+      <footer className="border-t border-gray-200 py-8 text-sm text-gray-500">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 sm:flex-row sm:justify-between">
+          <span>© {new Date().getFullYear()} ProductMind. All rights reserved.</span>
+          <nav className="flex gap-4" aria-label="Legal">
+            <Link href="/privacy" className="hover:text-gray-700">Privacy Policy</Link>
+            <Link href="/cookies" className="hover:text-gray-700">Cookie Policy</Link>
+            <Link href="/terms" className="hover:text-gray-700">Terms of Service</Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );

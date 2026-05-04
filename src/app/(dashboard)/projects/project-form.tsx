@@ -45,6 +45,8 @@ export function ProjectForm({
   const safeState = state ?? initialState;
   const formRef = useRef<HTMLFormElement>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [descriptionWarning, setDescriptionWarning] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   useEffect(() => {
     if (safeState.success) {
@@ -63,30 +65,53 @@ export function ProjectForm({
   const fieldError = (field: string) =>
     safeState.fieldErrors?.[field]?.[0] ?? undefined;
 
+  function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const val = e.target.value.trim();
+    if (val.length === 0) {
+      setNameError("Project name is required.");
+    } else if (val.length < 2) {
+      setNameError("Project name must be at least 2 characters.");
+    } else {
+      setNameError(null);
+    }
+  }
+
+  function handleDescriptionBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
+    const val = e.target.value.trim();
+    if (val.length > 0 && val.length < 20) {
+      setDescriptionWarning("Short descriptions may produce weaker AI results.");
+    } else {
+      setDescriptionWarning(null);
+    }
+  }
+
   return (
     <form ref={formRef} action={formAction} className="space-y-5">
       {safeState.error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {safeState.error}
         </div>
       )}
 
       {showSuccess && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 animate-in fade-in duration-300">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 animate-in fade-in duration-300" role="status">
           ✓ Project saved successfully.
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          id="name"
-          name="name"
-          label="Project Name *"
-          placeholder="e.g. TaskFlow"
-          defaultValue={defaultValues?.name ?? ""}
-          error={fieldError("name")}
-          required
-        />
+        <div>
+          <Input
+            id="name"
+            name="name"
+            label="Project Name *"
+            placeholder="e.g. TaskFlow"
+            defaultValue={defaultValues?.name ?? ""}
+            error={nameError ?? fieldError("name")}
+            onBlur={handleNameBlur}
+            required
+          />
+        </div>
         <Input
           id="market"
           name="market"
@@ -97,14 +122,21 @@ export function ProjectForm({
         />
       </div>
 
-      <Textarea
-        id="description"
-        name="description"
-        label="Description"
-        placeholder="What does the product do? What problem does it solve?"
-        defaultValue={defaultValues?.description ?? ""}
-        error={fieldError("description")}
-      />
+      <div>
+        <Textarea
+          id="description"
+          name="description"
+          label="Description"
+          placeholder="What does the product do? What problem does it solve?"
+          defaultValue={defaultValues?.description ?? ""}
+          error={fieldError("description")}
+          onBlur={handleDescriptionBlur}
+        />
+        <p className="mt-1 text-xs text-gray-400">Add at least 1–2 sentences to get better AI insights.</p>
+        {descriptionWarning && (
+          <p className="mt-1 text-xs text-amber-600">{descriptionWarning}</p>
+        )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
@@ -140,4 +172,3 @@ export function ProjectForm({
     </form>
   );
 }
-

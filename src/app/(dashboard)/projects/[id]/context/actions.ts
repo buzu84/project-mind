@@ -41,12 +41,31 @@ export async function saveProjectContext(
     }
 
     const supabase = createClient();
+
+    // Verify ownership: current user must own the project
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id, user_id")
+      .eq("id", projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: "Project not found." };
+    }
+
+    if (project.user_id !== user.id) {
+      return { success: false, error: "You do not have access to this project." };
+    }
+
     const { error } = await supabase
       .from("project_context")
-      .upsert({ project_id: projectId, ...parsed.data }, { onConflict: "project_id" });
+      .upsert(
+        { project_id: projectId, ...parsed.data, updated_at: new Date().toISOString() },
+        { onConflict: "project_id" },
+      );
 
     if (error) {
-      console.error("[context] Save failed:", error.message);
+      console.error("[project-context] Save failed:", error.message);
       return { success: false, error: "Could not save context. Please try again." };
     }
 
@@ -54,7 +73,7 @@ export async function saveProjectContext(
     revalidatePath("/projects/" + projectId + "/context");
     return { success: true };
   } catch (err) {
-    console.error("[context] Unexpected error:", err);
+    console.error("[project-context] Unexpected error:", err);
     return { success: false, error: "Could not save context. Please try again." };
   }
 }

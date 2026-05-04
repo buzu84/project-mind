@@ -5,15 +5,12 @@ import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import { retrieveRelevantContext } from "@/lib/rag";
 import { generateMockRoadmap } from "@/lib/ai/mock-roadmap";
+import { trackAIUsage, extractTokenUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
+import { isRealAI } from "@/lib/ai/is-real-ai";
+import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 // ── AI mode helpers ─────────────────────────────────────────────────
 
-function useRealAI(): boolean {
-  if (process.env.USE_REAL_AI === "false") return false;
-  if (process.env.USE_REAL_AI === "true") return true;
-  // Default: use real AI only if key exists
-  return !!process.env.OPENAI_API_KEY;
-}
 
 function hasOpenAIKey(): boolean {
   return !!process.env.OPENAI_API_KEY;
@@ -137,6 +134,9 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const rl = checkHeavyAILimit(user);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
@@ -150,6 +150,7 @@ export async function POST(req: Request) {
       .from("projects")
       .select("name, description, target_users, market, business_model, goals")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single(),
     supabase
       .from("project_context")
@@ -168,7 +169,7 @@ export async function POST(req: Request) {
       .eq("project_id", projectId)
       .order("created_at", { ascending: false })
       .limit(15),
-    retrieveRelevantContext("product roadmap priorities risks milestones", projectId).catch(() => ({
+    retrieveRelevantContext("product roadmap priorities risks milestones", projectId, user.id).catch(() => ({
       context: "",
       results: [],
     })),
@@ -204,17 +205,11 @@ export async function POST(req: Request) {
     insightsSummary,
   );
 
-  const isRealAI = useRealAI();
-  const isMock = !isRealAI;
+  const isReal = isRealAI();
+  const isMock = !isReal;
 
-  console.debug(
-    `[roadmap] Generating roadmap for project ${projectId} | ` +
-      `mode: ${isMock ? "MOCK" : "REAL AI"} | ` +
-      `context: ${promptContext.length} chars | ` +
-      `RAG chunks: ${ragResult.results.length} | ` +
-      `feedback docs: ${feedbackDocs.length} | ` +
-      `insights: ${insightsList.length}`,
-  );
+
+  const startTime = Date.now();
 
   try {
     let roadmap: GeneratedRoadmap;
@@ -230,7 +225,18 @@ export async function POST(req: Request) {
         businessModel: projectData.business_model,
         goals: projectData.goals,
       });
-      console.debug("[roadmap] Mock roadmap generated");
+
+      // Track mock usage
+      void trackAIUsage({
+        userId: user.id,
+        projectId,
+        model: "mock",
+        feature: "roadmap",
+        promptTokens: 0,
+        completionTokens: 0,
+        isMock: true,
+        latencyMs: Date.now() - startTime,
+      });
     } else {
       // ── Real AI mode ────────────────────────────────────────────
       if (!hasOpenAIKey()) {
@@ -252,7 +258,19 @@ export async function POST(req: Request) {
       });
 
       const raw = response.choices[0]?.message?.content ?? "{}";
-      console.debug(`[roadmap] AI response received: ${raw.length} chars`);
+
+      // Track real AI usage
+      const tokens = extractTokenUsage(response as any);
+      void trackAIUsage({
+        userId: user.id,
+        projectId,
+        model: "gpt-4o",
+        feature: "roadmap",
+        promptTokens: tokens.promptTokens,
+        completionTokens: tokens.completionTokens,
+        isMock: false,
+        latencyMs: Date.now() - startTime,
+      });
 
       try {
         roadmap = JSON.parse(raw);
@@ -302,12 +320,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to save roadmap" }, { status: 500 });
     }
 
-    console.debug(`[roadmap] Roadmap saved for project ${projectId}`);
 
     return NextResponse.json({ roadmap: inserted });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "OpenAI request failed";
     console.error("[roadmap] AI error:", msg);
+    void trackAIUsageError({
+      userId: user.id,
+      projectId,
+      feature: "roadmap",
+      model: isMock ? "mock" : "gpt-4o",
+      error: err,
+      isMock,
+      latencyMs: Date.now() - startTime,
+    });
     return NextResponse.json({ error: `AI error: ${msg}` }, { status: 502 });
   }
 }
@@ -323,6 +349,17 @@ export async function DELETE(req: Request) {
   if (!projectId) return NextResponse.json({ error: "Missing projectId" }, { status: 400 });
 
   const supabase = createClient();
+
+  // Verify project ownership before deleting
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
   const { error } = await supabase.from("roadmaps").delete().eq("project_id", projectId);
 
   if (error) {

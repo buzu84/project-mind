@@ -8,23 +8,26 @@ import { generateEmbeddings } from "./embeddings";
  * @param documentId - The feedback_documents row ID
  * @param projectId - The project this document belongs to
  * @param content - The full document text
+ * @param userId - The user performing the action (for usage tracking)
  */
 export async function ingestDocument(
   documentId: string,
   projectId: string,
   content: string,
+  userId?: string,
 ): Promise<{ chunksCreated: number }> {
   const chunks = chunkDocument(content);
 
   if (chunks.length === 0) {
-    console.debug("[rag] No chunks generated for document", documentId);
     return { chunksCreated: 0 };
   }
 
-  console.debug(`[rag] Chunking document ${documentId}: ${chunks.length} chunks`);
 
   // Generate embeddings for all chunks
-  const embeddings = await generateEmbeddings(chunks.map((c) => c.content));
+  const embeddings = await generateEmbeddings(
+    chunks.map((c) => c.content),
+    userId ? { userId, projectId, feature: "document_embedding" } : undefined,
+  );
 
   // Prepare rows for batch insert
   const rows = chunks.map((chunk, i) => ({
@@ -44,7 +47,6 @@ export async function ingestDocument(
     throw new Error(`Failed to store document chunks: ${error.message}`);
   }
 
-  console.debug(`[rag] Stored ${rows.length} chunks for document ${documentId}`);
   return { chunksCreated: rows.length };
 }
 

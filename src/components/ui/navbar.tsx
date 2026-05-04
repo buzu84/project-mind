@@ -1,21 +1,21 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
+import { UserDropdown } from "@/components/ui/user-dropdown";
+import type { AppUser } from "@/lib/auth/constants";
 
-export function Navbar() {
-  const router = useRouter();
-  const { user, loading } = useCurrentUser();
+interface NavbarProps {
+  user?: AppUser | null;
+}
 
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
-  }
+export function Navbar({ user: initialUser }: NavbarProps) {
+  const { user, loading } = useCurrentUser(initialUser);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   return (
     <nav className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
@@ -24,27 +24,15 @@ export function Navbar() {
       </Link>
 
       <div className="flex items-center gap-4">
-        {!loading && user ? (
+        {!mounted ? null : !loading && user ? (
           <>
             <Link
-              href="/projects"
+              href="/dashboard"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
               Dashboard
             </Link>
-            <button
-              onClick={handleSignOut}
-              className="text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Sign out
-            </button>
-            {user.avatar_url && (
-              <img
-                src={user.avatar_url}
-                alt=""
-                className="h-8 w-8 rounded-full"
-              />
-            )}
+            <UserDropdown user={user} />
           </>
         ) : !loading ? (
           <>
@@ -52,10 +40,10 @@ export function Navbar() {
               href="/sign-in"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
-              Sign in
+              Log in
             </Link>
             <Link href="/sign-up">
-              <Button>Get Started</Button>
+              <Button>Start free</Button>
             </Link>
           </>
         ) : null}
