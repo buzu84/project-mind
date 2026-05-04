@@ -22,6 +22,7 @@ import {
   IconChat,
   IconRoadmap,
   IconUsers,
+  IconScale,
 } from "@/components/icons";
 
 const tools = [
@@ -88,6 +89,13 @@ const tools = [
     icon: IconUsers,
     color: "text-orange-600 bg-orange-50 group-hover:bg-orange-100",
   },
+  {
+    href: "decisions",
+    label: "Decisions",
+    description: "Track product, technical, and strategic decisions",
+    icon: IconScale,
+    color: "text-cyan-600 bg-cyan-50 group-hover:bg-cyan-100",
+  },
 ];
 
 const decisionTypeLabels: Record<string, string> = {
@@ -100,6 +108,32 @@ const decisionBadgeVariants: Record<string, "info" | "success" | "warning"> = {
   PRD: "info",
   PRIORITIZATION: "success",
   COMPETITIVE_ANALYSIS: "warning",
+};
+
+const pdStatusBadge: Record<string, "default" | "success" | "warning" | "danger" | "info"> = {
+  draft: "default",
+  under_review: "info",
+  accepted: "success",
+  rejected: "danger",
+  revisit: "warning",
+};
+
+const pdStatusLabels: Record<string, string> = {
+  draft: "Draft",
+  under_review: "Under Review",
+  accepted: "Accepted",
+  rejected: "Rejected",
+  revisit: "Revisit",
+};
+
+const pdCategoryLabels: Record<string, string> = {
+  product: "Product",
+  technical: "Technical",
+  growth: "Growth",
+  ux: "UX",
+  business: "Business",
+  strategy: "Strategy",
+  other: "Other",
 };
 
 export default async function ProjectDetailPage({
@@ -131,6 +165,15 @@ export default async function ProjectDetailPage({
     (project.messages as { count: number }[])?.[0]?.count ?? 0;
   const insightCount =
     (project.insights as { count: number }[])?.[0]?.count ?? 0;
+
+  // Fetch recent product decisions (new Decision Engine)
+  const { data: productDecisions } = await supabase
+    .from("product_decisions")
+    .select("id, title, category, status, updated_at")
+    .eq("project_id", project.id)
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(5);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://productmind.app";
   const breadcrumb = createBreadcrumbJsonLd([
@@ -227,17 +270,71 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      {/* Decision history */}
+      {/* Recent Product Decisions */}
       <div className="mt-10">
-        <h3 className="mb-4 text-base font-semibold text-gray-900">Decision History</h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-gray-900">Recent Decisions</h3>
+          <Link href={`/projects/${project.id}/decisions`}>
+            <Button variant="ghost" size="sm" className="gap-1 text-brand-600">
+              View all
+              <IconChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+        {!productDecisions || productDecisions.length === 0 ? (
+          <Card className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <IconScale className="h-6 w-6 text-gray-400" />
+            </div>
+            <p className="mt-3 text-sm font-medium text-gray-900">No product decisions yet</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Use the Decisions tool to track strategic choices
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {productDecisions.map((pd: { id: string; title: string; category: string; status: string; updated_at: string }) => (
+              <Link key={pd.id} href={`/projects/${project.id}/decisions`}>
+                <Card className="flex items-center justify-between py-4 cursor-pointer hover:border-gray-300 hover:shadow-md transition">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-50">
+                      <IconScale className="h-4 w-4 text-cyan-600" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={pdStatusBadge[pd.status] ?? "default"}>
+                        {pdStatusLabels[pd.status] ?? pd.status}
+                      </Badge>
+                      <Badge>{pdCategoryLabels[pd.category] ?? pd.category}</Badge>
+                      <span className="text-sm font-medium text-gray-700">{pd.title}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <IconClock className="h-3 w-3" />
+                      <time suppressHydrationWarning dateTime={pd.updated_at}>
+                        {new Date(pd.updated_at).toLocaleDateString()}
+                      </time>
+                    </span>
+                    <IconChevronRight className="h-4 w-4 text-gray-300" />
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* AI Generation History (legacy decisions table) */}
+      <div className="mt-10">
+        <h3 className="mb-4 text-base font-semibold text-gray-900">AI Generation History</h3>
         {decisions.length === 0 ? (
           <Card className="flex flex-col items-center justify-center py-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
               <IconSparkles className="h-6 w-6 text-gray-400" />
             </div>
-            <p className="mt-3 text-sm font-medium text-gray-900">No decisions yet</p>
+            <p className="mt-3 text-sm font-medium text-gray-900">No AI generations yet</p>
             <p className="mt-1 text-xs text-gray-500">
-              Use the AI tools above to generate your first decision
+              Use the AI tools above to generate PRDs, analyses, and more
             </p>
           </Card>
         ) : (
