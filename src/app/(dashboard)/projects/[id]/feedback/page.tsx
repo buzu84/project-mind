@@ -4,25 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { IconArrowLeft, IconClock, IconDocument } from "@/components/icons";
+import { IconArrowLeft, IconDocument } from "@/components/icons";
 import { FeedbackForm } from "./feedback-form";
-import { DeleteFeedbackButton } from "./delete-button";
-
-const SOURCE_LABELS: Record<string, string> = {
-  customer_interview: "Customer Interview",
-  support_ticket: "Support Ticket",
-  app_review: "App Review",
-  sales_call: "Sales Call",
-  internal_note: "Internal Note",
-};
-
-const SOURCE_BADGES: Record<string, "info" | "success" | "warning" | "default"> = {
-  customer_interview: "info",
-  support_ticket: "warning",
-  app_review: "success",
-  sales_call: "info",
-  internal_note: "default",
-};
+import { FeedbackDocCard } from "./feedback-doc-card";
 
 export default async function FeedbackPage({
   params,
@@ -38,6 +22,7 @@ export default async function FeedbackPage({
     .from("projects")
     .select("id, name")
     .eq("id", params.id)
+    .eq("user_id", user.id)
     .single();
 
   if (!project) notFound();
@@ -95,31 +80,7 @@ export default async function FeedbackPage({
       ) : (
         <div className="mt-6 space-y-3">
           {docs.map((doc) => (
-            <Card key={doc.id} className="group">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-gray-900 truncate">{doc.title}</h4>
-                    {doc.source && (
-                      <Badge variant={SOURCE_BADGES[doc.source] ?? "default"}>
-                        {SOURCE_LABELS[doc.source] ?? doc.source}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">
-                    {doc.content}
-                  </p>
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
-                    <IconClock className="h-3 w-3" />
-                    {new Date(doc.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <DeleteFeedbackButton
-                  projectId={project.id}
-                  documentId={doc.id}
-                />
-              </div>
-            </Card>
+            <FeedbackDocCard key={doc.id} doc={doc} projectId={project.id} />
           ))}
         </div>
       )}

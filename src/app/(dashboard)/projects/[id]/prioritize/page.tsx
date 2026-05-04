@@ -64,7 +64,7 @@ export default function PrioritizePage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-900">🎯 Feature Prioritizer</h1>
+      <h2 className="text-2xl font-bold text-gray-900">🎯 Feature Prioritizer</h2>
       <p className="mt-1 text-sm text-gray-500">
         Score and rank features using the RICE framework.
       </p>
@@ -75,21 +75,27 @@ export default function PrioritizePage() {
             <div key={i} className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
+                  id={`feature-name-${i}`}
+                  label={i === 0 ? "Feature name" : undefined}
                   placeholder="Feature name"
                   value={feature.name}
                   onChange={(e) => updateFeature(i, "name", e.target.value)}
                   required
+                  aria-label={`Feature ${i + 1} name`}
                 />
               </div>
               <div className="flex-1">
                 <Input
+                  id={`feature-desc-${i}`}
+                  label={i === 0 ? "Description (optional)" : undefined}
                   placeholder="Brief description (optional)"
                   value={feature.description}
                   onChange={(e) => updateFeature(i, "description", e.target.value)}
+                  aria-label={`Feature ${i + 1} description`}
                 />
               </div>
               {features.length > 1 && (
-                <Button type="button" variant="ghost" onClick={() => removeFeature(i)}>
+                <Button type="button" variant="ghost" onClick={() => removeFeature(i)} aria-label={`Remove feature ${i + 1}`}>
                   ✕
                 </Button>
               )}
@@ -123,4 +129,3 @@ export default function PrioritizePage() {
     </div>
   );
 }
-

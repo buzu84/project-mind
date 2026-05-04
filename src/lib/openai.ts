@@ -8,8 +8,22 @@ export async function generateCompletion(
   systemPrompt: string,
   userPrompt: string,
 ): Promise<string> {
+  const result = await generateCompletionWithUsage(systemPrompt, userPrompt);
+  return result.content;
+}
+
+export async function generateCompletionWithUsage(
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<{
+  content: string;
+  promptTokens: number;
+  completionTokens: number;
+  model: string;
+}> {
+  const model = "gpt-4o";
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
@@ -18,6 +32,11 @@ export async function generateCompletion(
     max_tokens: 4096,
   });
 
-  return response.choices[0]?.message?.content ?? "";
+  return {
+    content: response.choices[0]?.message?.content ?? "",
+    promptTokens: response.usage?.prompt_tokens ?? 0,
+    completionTokens: response.usage?.completion_tokens ?? 0,
+    model,
+  };
 }
 

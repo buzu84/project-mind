@@ -3,6 +3,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
+import { trackAIUsage, extractTokenUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
+import { generateMockFeatureScores } from "@/lib/ai/mock-feature-scoring";
+import { isRealAI } from "@/lib/ai/is-real-ai";
+import { checkStandardAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 const schema = z.object({
   projectId: z.string().min(1),
@@ -44,6 +48,9 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const rl = checkStandardAILimit(user);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
@@ -57,6 +64,7 @@ export async function POST(req: Request) {
       .from("projects")
       .select("name, description, target_users, market, business_model, goals")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single(),
     supabase
       .from("feature_ideas")
@@ -96,7 +104,65 @@ export async function POST(req: Request) {
 
   const userPrompt = `Project Context:\n${contextParts.join("\n")}\n\nFeature Ideas to Score:\n${featureList}`;
 
-  console.debug(`[score-features] Scoring ${featuresList.length} features for project ${projectId}`);
+
+  const isReal = isRealAI();
+  const isMock = !isReal;
+  const startTime = Date.now();
+
+  // ── Mock mode ──────────────────────────────────────────────
+  if (isMock) {
+    const mockScores = generateMockFeatureScores(
+      featuresList.map((f) => ({ name: f.name, description: f.description })),
+      (project as any).name,
+    );
+
+    for (const feature of featuresList) {
+      const match = mockScores.find(
+        (s) => s.name.toLowerCase().trim() === feature.name.toLowerCase().trim(),
+      );
+      if (!match) continue;
+
+      await supabase
+        .from("feature_ideas")
+        .update({
+          reach: match.reach,
+          impact: match.impact,
+          confidence: match.confidence,
+          effort: match.effort,
+          rice_score: match.rice_score,
+          ice_score: match.ice_score,
+          ai_commentary: match.ai_commentary,
+        })
+        .eq("id", feature.id);
+    }
+
+    void trackAIUsage({
+      userId: user.id,
+      projectId,
+      model: "mock",
+      feature: "feature_prioritization",
+      promptTokens: 0,
+      completionTokens: 0,
+      isMock: true,
+      latencyMs: Date.now() - startTime,
+    });
+
+    const { data: updated } = await supabase
+      .from("feature_ideas")
+      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at")
+      .eq("project_id", projectId)
+      .order("rice_score", { ascending: false });
+
+    return NextResponse.json({ features: updated ?? [] });
+  }
+
+  // ── Real mode: check API key ────────────────────────────────
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode." },
+      { status: 503 },
+    );
+  }
 
   try {
     const response = await openai.chat.completions.create({
@@ -111,7 +177,19 @@ export async function POST(req: Request) {
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-    console.debug(`[score-features] AI response received: ${raw.length} chars`);
+
+    // Track usage
+    const tokens = extractTokenUsage(response as any);
+    void trackAIUsage({
+      userId: user.id,
+      projectId,
+      model: "gpt-4o",
+      feature: "feature_prioritization",
+      promptTokens: tokens.promptTokens,
+      completionTokens: tokens.completionTokens,
+      isMock: false,
+      latencyMs: Date.now() - startTime,
+    });
 
     let scored: ScoredFeature[];
     try {
@@ -157,12 +235,19 @@ export async function POST(req: Request) {
       .eq("project_id", projectId)
       .order("rice_score", { ascending: false });
 
-    console.debug(`[score-features] Scored ${scored.length} features for project ${projectId}`);
 
     return NextResponse.json({ features: updated ?? [] });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "OpenAI request failed";
     console.error("[score-features] AI error:", msg);
+    void trackAIUsageError({
+      userId: user.id,
+      projectId,
+      feature: "feature_prioritization",
+      model: "gpt-4o",
+      error: err,
+      latencyMs: Date.now() - startTime,
+    });
     return NextResponse.json({ error: `AI error: ${msg}` }, { status: 502 });
   }
 }

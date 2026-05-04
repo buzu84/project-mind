@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,12 @@ import { IconSparkles } from "@/components/icons";
 import { DEV_USER, isDevMode } from "@/lib/auth/constants";
 
 const errorMessages: Record<string, string> = {
-  auth_callback_error: "Could not complete sign-in. Please try again.",
+  auth_callback_error: "We could not verify your email link. Please request a new confirmation email or try signing in.",
   default: "An unexpected error occurred. Please try again.",
+};
+
+const successMessages: Record<string, string> = {
+  confirmed: "Email confirmed! You can now log in.",
 };
 
 function SignInForm() {
@@ -18,14 +23,18 @@ function SignInForm() {
   const router = useRouter();
   const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
   const errorType = searchParams.get("error");
+  const successType = searchParams.get("confirmed") === "true" ? "confirmed" : null;
   const errorMessage = errorType
     ? (errorMessages[errorType] ?? errorMessages.default)
     : null;
+  const successMessage = successType ? successMessages[successType] : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
 
   const supabase = createClient();
 
@@ -33,20 +42,49 @@ function SignInForm() {
     e.preventDefault();
     setIsLoading("email");
     setFormError(null);
+    setShowResend(false);
+    setResendStatus("idle");
 
-    const { error } = await supabase.auth.signInWithPassword({
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      setFormError(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+        setFormError("Email or password is incorrect.");
+      } else if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
+        setFormError("Please confirm your email before signing in. Check your inbox.");
+        setShowResend(true);
+      } else {
+        setFormError("Log in failed. Please try again.");
+      }
       setIsLoading(null);
       return;
     }
 
+
     router.push(redirectTo);
     router.refresh();
+  }
+
+  async function handleResendConfirmation() {
+    if (!email) return;
+    setResendStatus("loading");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      setResendStatus("error");
+    } else {
+      setResendStatus("sent");
+    }
   }
 
   async function handleGoogleSignIn() {
@@ -58,16 +96,40 @@ function SignInForm() {
       },
     });
     if (error) {
-      setFormError(error.message);
+      setFormError("Could not connect to Google. Please try again.");
       setIsLoading(null);
     }
   }
 
   return (
     <>
+      {successMessage && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {successMessage}
+        </div>
+      )}
+
       {(errorMessage || formError) && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {formError ?? errorMessage}
+          {showResend && (
+            <div className="mt-2">
+              {resendStatus === "sent" ? (
+                <p className="text-emerald-600 font-medium">Confirmation email sent. Check your inbox.</p>
+              ) : resendStatus === "error" ? (
+                <p>Could not resend confirmation email. Please try again.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resendStatus === "loading"}
+                  className="font-medium text-brand-600 hover:text-brand-700 underline"
+                >
+                  {resendStatus === "loading" ? "Sending…" : "Resend confirmation email"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -111,13 +173,21 @@ function SignInForm() {
             placeholder="••••••••"
             required
           />
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-brand-600 hover:text-brand-700"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <Button
             type="submit"
             className="w-full"
             isLoading={isLoading === "email"}
             disabled={isLoading !== null}
           >
-            Sign In
+            Log in
           </Button>
         </form>
 
@@ -169,7 +239,7 @@ export default function SignInPage() {
             Welcome back
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Sign in to your ProductMind account
+            Log in to your ProductMind account
           </p>
         </div>
 

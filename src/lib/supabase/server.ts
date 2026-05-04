@@ -1,51 +1,98 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { isMockDb } from "@/lib/auth/constants";
+import { isMockDb, isDevMode } from "@/lib/auth/constants";
+
+// ─── Key normalization ──────────────────────────────────────
+// Supabase dashboard may label keys as "publishable" / "secret"
+// but env vars may use the older "anon" / "service_role" names.
+// Support both naming conventions.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const publishableKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  "";
+const secretKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  process.env.SUPABASE_SECRET_KEY ??
+  "";
 
 const hasRealCredentials =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project") &&
-  !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-  !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes("your-anon-key");
+  !!supabaseUrl &&
+  !supabaseUrl.includes("your-project") &&
+  !!publishableKey &&
+  !publishableKey.includes("your-anon-key");
+
+const hasSecretKey = !!secretKey && !secretKey.includes("your-service-role");
+
+// ─── Safety: never allow mock auth in production ────────────
+// Checked at runtime when createClient() is first called, not at import time
+// (next build runs with NODE_ENV=production).
+
+let _loggedOnce = false;
+let _productionGuardChecked = false;
 
 export function createClient() {
+  // Runtime production guard (not at module level — build would fail)
+  if (!_productionGuardChecked) {
+    _productionGuardChecked = true;
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.USE_MOCK_AUTH === "true"
+    ) {
+      throw new Error(
+        "[FATAL] USE_MOCK_AUTH=true is not allowed in production. " +
+        "Remove it from your environment variables.",
+      );
+    }
+  }
+
   const mockDb = isMockDb();
 
   // Use real Supabase when credentials exist and mock DB is not forced
   if (hasRealCredentials && !mockDb) {
-    console.debug("[supabase] Using real Supabase DB");
+    // When using mock auth (dev mode) with a real database,
+    // we MUST use the service/secret key to bypass RLS since there
+    // is no real auth session (auth.uid() would be NULL).
+    // This is safe because:
+    // - isDevMode() returns false in production (hardcoded check)
+    // - secretKey is never exposed to client (no NEXT_PUBLIC_ prefix)
+    // - All user_id filtering is done explicitly in queries
+    if (isDevMode() && hasSecretKey) {
+      if (!_loggedOnce) {
+        console.log("[supabase] DEV MODE: Using admin client (service role) — RLS bypassed server-side only");
+        _loggedOnce = true;
+      }
+      return createSupabaseClient(supabaseUrl, secretKey) as any;
+    }
+
+    // Production / real auth: use the publishable key with user cookies
     const cookieStore = cookies();
 
-    return createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options),
-              );
-            } catch {
-              // Called from a Server Component — ignore.
-            }
-          },
+    return createServerClient(supabaseUrl, publishableKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Called from a Server Component — ignore.
+          }
         },
       },
-    );
+    });
   }
 
   // Fallback: in-memory mock DB
-  if (!mockDb) {
+  if (!mockDb && process.env.NODE_ENV === "production") {
     console.warn(
-      "[supabase] No real credentials found and USE_MOCK_DB is not enabled. " +
-      "Set real Supabase credentials or USE_MOCK_DB=true in .env.local",
+      "[supabase] No real credentials found. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
     );
   }
-  console.debug("[supabase] Using in-memory mock DB");
   return createMockSupabaseClient();
 }
 
@@ -60,7 +107,6 @@ function getMockStore(): Record<string, any[]> {
   const g = globalThis as any;
   if (!g[globalKey]) {
     g[globalKey] = {};
-    console.debug("[mock-supabase] Initialized fresh in-memory store");
   }
   return g[globalKey];
 }
@@ -155,7 +201,6 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
             ...item,
           }));
           rows.push(...created);
-          console.debug(`[mock-supabase] Inserted ${created.length} row(s) into "${table}"`);
 
           // Return a chainable that resolves to the inserted rows
           return makeChainable(() => ({ data: created, error: null }));
@@ -196,8 +241,11 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
               get(_t, p) {
                 if (p === "eq") {
                   return (field: string, value: any) => {
-                    const idx = rows.findIndex((r) => r[field] === value);
-                    if (idx !== -1) rows.splice(idx, 1);
+
+                    // Remove ALL matching rows, not just the first
+                    for (let i = rows.length - 1; i >= 0; i--) {
+                      if (rows[i][field] === value) rows.splice(i, 1);
+                    }
                     return chain;
                   };
                 }
@@ -209,7 +257,31 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
           return chain;
         },
 
-        upsert: (payload: any) => tableApi.insert(payload),
+        upsert: (payload: any, opts?: { onConflict?: string }) => {
+          const items = Array.isArray(payload) ? payload : [payload];
+          const conflictKey = opts?.onConflict;
+          const created: any[] = [];
+          for (const item of items) {
+            let existingIdx = -1;
+            if (conflictKey) {
+              existingIdx = rows.findIndex((r) => r[conflictKey] === item[conflictKey]);
+            }
+            if (existingIdx >= 0) {
+              Object.assign(rows[existingIdx], item, { updated_at: new Date().toISOString() });
+              created.push(rows[existingIdx]);
+            } else {
+              const newRow = {
+                id: crypto.randomUUID(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                ...item,
+              };
+              rows.push(newRow);
+              created.push(newRow);
+            }
+          }
+          return makeChainable(() => ({ data: created, error: null }));
+        },
       };
 
       return tableApi;
