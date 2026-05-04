@@ -4,6 +4,7 @@
  * Every function requires userId + projectId and verifies ownership
  * at the service level (defense-in-depth, not relying solely on RLS).
  *
+ * Uses `product_*` table names to avoid collision with the legacy `decisions` table.
  * Database column names use snake_case to match Supabase/Postgres.
  */
 
@@ -51,7 +52,7 @@ async function verifyDecisionOwnership(
 ): Promise<{ id: string }> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("decisions")
+    .from("product_decisions")
     .select("id")
     .eq("id", decisionId)
     .eq("user_id", scope.userId)
@@ -86,7 +87,7 @@ export async function createDecision(
     await verifyProjectOwnership(scope);
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decisions")
+      .from("product_decisions")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -109,7 +110,7 @@ export async function getDecisionById(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decisions")
+      .from("product_decisions")
       .select("*")
       .eq("id", decisionId)
       .eq("user_id", scope.userId)
@@ -129,11 +130,11 @@ export async function listDecisionsByProject(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decisions")
+      .from("product_decisions")
       .select("*")
       .eq("user_id", scope.userId)
       .eq("project_id", scope.projectId)
-      .order("created_at", { ascending: false });
+      .order("updated_at", { ascending: false });
 
     if (error) return fail("Could not list decisions.");
     return ok(data ?? []);
@@ -154,7 +155,7 @@ export async function updateDecision(
     if (input.selected_option_id) {
       const supabase = createClient();
       const { data: opt } = await supabase
-        .from("decision_options")
+        .from("product_decision_options")
         .select("id")
         .eq("id", input.selected_option_id)
         .eq("decision_id", decisionId)
@@ -165,7 +166,7 @@ export async function updateDecision(
 
     const supabase = createClient();
     const { error } = await supabase
-      .from("decisions")
+      .from("product_decisions")
       .update({ ...input, updated_at: new Date().toISOString() })
       .eq("id", decisionId)
       .eq("user_id", scope.userId);
@@ -185,7 +186,7 @@ export async function deleteDecision(
     await verifyDecisionOwnership(scope, decisionId);
     const supabase = createClient();
     const { error } = await supabase
-      .from("decisions")
+      .from("product_decisions")
       .delete()
       .eq("id", decisionId)
       .eq("user_id", scope.userId);
@@ -209,7 +210,7 @@ export async function createDecisionOption(
     await verifyDecisionOwnership(scope, input.decision_id);
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_options")
+      .from("product_decision_options")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -232,7 +233,7 @@ export async function listOptionsByDecision(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_options")
+      .from("product_decision_options")
       .select("*")
       .eq("decision_id", decisionId)
       .eq("user_id", scope.userId)
@@ -254,7 +255,7 @@ export async function updateDecisionOption(
   try {
     const supabase = createClient();
     const { data: existing } = await supabase
-      .from("decision_options")
+      .from("product_decision_options")
       .select("id")
       .eq("id", optionId)
       .eq("user_id", scope.userId)
@@ -263,7 +264,7 @@ export async function updateDecisionOption(
     if (!existing) return fail("Option not found or access denied.");
 
     const { error } = await supabase
-      .from("decision_options")
+      .from("product_decision_options")
       .update({ ...input, updated_at: new Date().toISOString() })
       .eq("id", optionId)
       .eq("user_id", scope.userId);
@@ -282,7 +283,7 @@ export async function deleteDecisionOption(
   try {
     const supabase = createClient();
     const { error } = await supabase
-      .from("decision_options")
+      .from("product_decision_options")
       .delete()
       .eq("id", optionId)
       .eq("user_id", scope.userId)
@@ -311,7 +312,7 @@ export async function createAssumption(
     }
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("assumptions")
+      .from("product_assumptions")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -334,7 +335,7 @@ export async function listAssumptionsByProject(
   try {
     const supabase = createClient();
     let query = supabase
-      .from("assumptions")
+      .from("product_assumptions")
       .select("*")
       .eq("user_id", scope.userId)
       .eq("project_id", scope.projectId);
@@ -359,7 +360,7 @@ export async function updateAssumption(
   try {
     const supabase = createClient();
     const { data: existing } = await supabase
-      .from("assumptions")
+      .from("product_assumptions")
       .select("id")
       .eq("id", assumptionId)
       .eq("user_id", scope.userId)
@@ -368,7 +369,7 @@ export async function updateAssumption(
     if (!existing) return fail("Assumption not found or access denied.");
 
     const { error } = await supabase
-      .from("assumptions")
+      .from("product_assumptions")
       .update({ ...input, updated_at: new Date().toISOString() })
       .eq("id", assumptionId)
       .eq("user_id", scope.userId);
@@ -387,7 +388,7 @@ export async function deleteAssumption(
   try {
     const supabase = createClient();
     const { error } = await supabase
-      .from("assumptions")
+      .from("product_assumptions")
       .delete()
       .eq("id", assumptionId)
       .eq("user_id", scope.userId)
@@ -412,7 +413,7 @@ export async function createEvidence(
     await verifyProjectOwnership(scope);
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -434,7 +435,7 @@ export async function listEvidenceByProject(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .select("*")
       .eq("user_id", scope.userId)
       .eq("project_id", scope.projectId)
@@ -454,7 +455,7 @@ export async function getEvidenceById(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .select("*")
       .eq("id", evidenceId)
       .eq("user_id", scope.userId)
@@ -476,7 +477,7 @@ export async function updateEvidence(
   try {
     const supabase = createClient();
     const { data: existing } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .select("id")
       .eq("id", evidenceId)
       .eq("user_id", scope.userId)
@@ -485,7 +486,7 @@ export async function updateEvidence(
     if (!existing) return fail("Evidence not found or access denied.");
 
     const { error } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .update({ ...input, updated_at: new Date().toISOString() })
       .eq("id", evidenceId)
       .eq("user_id", scope.userId);
@@ -504,7 +505,7 @@ export async function deleteEvidence(
   try {
     const supabase = createClient();
     const { error } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .delete()
       .eq("id", evidenceId)
       .eq("user_id", scope.userId)
@@ -531,7 +532,7 @@ export async function createDecisionEvidenceLink(
 
     const supabase = createClient();
     const { data: ev } = await supabase
-      .from("evidence")
+      .from("product_evidence")
       .select("id")
       .eq("id", input.evidence_id)
       .eq("user_id", scope.userId)
@@ -540,7 +541,7 @@ export async function createDecisionEvidenceLink(
     if (!ev) return fail("Evidence not found or belongs to a different project.");
 
     const { data, error } = await supabase
-      .from("decision_evidence_links")
+      .from("product_decision_evidence_links")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -563,7 +564,7 @@ export async function listLinksByDecision(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_evidence_links")
+      .from("product_decision_evidence_links")
       .select("*")
       .eq("decision_id", decisionId)
       .eq("user_id", scope.userId)
@@ -584,7 +585,7 @@ export async function deleteDecisionEvidenceLink(
   try {
     const supabase = createClient();
     const { error } = await supabase
-      .from("decision_evidence_links")
+      .from("product_decision_evidence_links")
       .delete()
       .eq("id", linkId)
       .eq("user_id", scope.userId)
@@ -609,7 +610,7 @@ export async function createDecisionAgentReview(
     await verifyDecisionOwnership(scope, input.decision_id);
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_agent_reviews")
+      .from("product_decision_agent_reviews")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -632,7 +633,7 @@ export async function listAgentReviewsByDecision(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_agent_reviews")
+      .from("product_decision_agent_reviews")
       .select("*")
       .eq("decision_id", decisionId)
       .eq("user_id", scope.userId)
@@ -658,7 +659,7 @@ export async function createDecisionRecommendation(
     await verifyDecisionOwnership(scope, input.decision_id);
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_recommendations")
+      .from("product_decision_recommendations")
       .insert({
         user_id: scope.userId,
         project_id: scope.projectId,
@@ -681,7 +682,7 @@ export async function listRecommendationsByDecision(
   try {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("decision_recommendations")
+      .from("product_decision_recommendations")
       .select("*")
       .eq("decision_id", decisionId)
       .eq("user_id", scope.userId)

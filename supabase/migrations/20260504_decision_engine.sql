@@ -1,266 +1,262 @@
--- Decision Engine tables for ProductMind
--- Migration: 20260504_decision_engine.sql
+-- Decision Engine – ProductMind
+--
+-- The legacy `decisions` table is used for existing AI output history,
+-- so the new Decision Engine uses `product_*` table names to avoid collision.
+--
 
--- 1. decisions
-create table if not exists decisions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  title text not null,
-  category text not null default 'other',
-  status text not null default 'draft',
-  problem_statement text not null,
-  context_summary text,
-  confidence_score numeric,
+-- ═══════════════════════════════════════════════════════════════════
+-- 1. TABLES
+-- ═══════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS product_decisions (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  title         text NOT NULL,
+  category      text NOT NULL,
+  status        text NOT NULL DEFAULT 'draft',
+  problem_statement text,
+  context_summary   text,
+  confidence_score  smallint CHECK (confidence_score >= 0 AND confidence_score <= 100),
+  effort_estimate   text,
+  reversibility     text,
+  deadline      timestamptz,
   selected_option_id uuid,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
-create index if not exists idx_decisions_user_project on decisions(user_id, project_id);
-create index if not exists idx_decisions_project on decisions(project_id);
-
-alter table decisions enable row level security;
-create policy "decisions_owner" on decisions
-  using (user_id = auth.uid())
-  with check (
-    user_id = auth.uid()
-    and exists (select 1 from projects where projects.id = project_id and projects.user_id = auth.uid())
-  );
-
--- 2. decision_options
-create table if not exists decision_options (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  decision_id uuid not null references decisions(id) on delete cascade,
-  title text not null,
-  description text,
-  pros jsonb not null default '[]',
-  cons jsonb not null default '[]',
-  risks jsonb not null default '[]',
-  expected_impact text,
-  effort_estimate text not null default 'unknown',
-  reversibility text not null default 'unknown',
-  confidence_score numeric,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS product_decision_options (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  decision_id   uuid NOT NULL REFERENCES product_decisions(id) ON DELETE CASCADE,
+  title         text NOT NULL,
+  description   text,
+  pros          jsonb DEFAULT '[]'::jsonb,
+  cons          jsonb DEFAULT '[]'::jsonb,
+  effort_estimate text,
+  risk_level    text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
-create index if not exists idx_decision_options_decision on decision_options(user_id, project_id, decision_id);
-
-alter table decision_options enable row level security;
-create policy "decision_options_owner" on decision_options
-  using (user_id = auth.uid())
-  with check (
-    user_id = auth.uid()
-    and exists (select 1 from projects where projects.id = project_id and projects.user_id = auth.uid())
-  );
-
--- 3. assumptions
-create table if not exists assumptions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  decision_id uuid references decisions(id) on delete set null,
-  statement text not null,
-  type text not null default 'other',
-  risk_level text not null default 'medium',
-  evidence_status text not null default 'unsupported',
+CREATE TABLE IF NOT EXISTS product_assumptions (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  decision_id   uuid REFERENCES product_decisions(id) ON DELETE SET NULL,
+  assumption_type text NOT NULL,
+  statement     text NOT NULL,
+  status        text NOT NULL DEFAULT 'untested',
+  risk_level    text NOT NULL DEFAULT 'medium',
   validation_method text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  result        text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
-create index if not exists idx_assumptions_user_project on assumptions(user_id, project_id);
-create index if not exists idx_assumptions_decision on assumptions(user_id, project_id, decision_id);
-
-alter table assumptions enable row level security;
-create policy "assumptions_owner" on assumptions
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid());
-
--- 4. evidence
-create table if not exists evidence (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  source_type text not null default 'manual',
-  source_id uuid,
-  title text,
-  claim text not null,
-  content text,
-  relevance_score numeric,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS product_evidence (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  title         text NOT NULL,
+  source_type   text NOT NULL,
+  source_url    text,
+  content       text,
+  status        text NOT NULL DEFAULT 'raw',
+  tags          jsonb DEFAULT '[]'::jsonb,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
-create index if not exists idx_evidence_user_project on evidence(user_id, project_id);
-
-alter table evidence enable row level security;
-create policy "evidence_owner" on evidence
-  using (user_id = auth.uid())
-  with check (
-    user_id = auth.uid()
-    and exists (select 1 from projects where projects.id = project_id and projects.user_id = auth.uid())
-  );
-
--- 5. decision_evidence_links
-create table if not exists decision_evidence_links (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  decision_id uuid not null references decisions(id) on delete cascade,
-  evidence_id uuid not null references evidence(id) on delete cascade,
-  link_type text not null default 'informs',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS product_decision_evidence_links (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  decision_id   uuid NOT NULL REFERENCES product_decisions(id) ON DELETE CASCADE,
+  evidence_id   uuid NOT NULL REFERENCES product_evidence(id) ON DELETE CASCADE,
+  link_type     text NOT NULL DEFAULT 'supports',
+  notes         text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(decision_id, evidence_id)
 );
 
-create index if not exists idx_decision_evidence_links_decision on decision_evidence_links(user_id, project_id, decision_id);
-create index if not exists idx_decision_evidence_links_evidence on decision_evidence_links(evidence_id);
-
-alter table decision_evidence_links enable row level security;
-create policy "decision_evidence_links_owner" on decision_evidence_links
-  using (user_id = auth.uid())
-  with check (
-    user_id = auth.uid()
-    and exists (select 1 from projects where projects.id = project_id and projects.user_id = auth.uid())
-  );
-
--- unique constraint: one link per decision+evidence+type
-create unique index if not exists idx_del_unique on decision_evidence_links(decision_id, evidence_id, link_type);
-
--- 6. decision_agent_reviews
-create table if not exists decision_agent_reviews (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  decision_id uuid not null references decisions(id) on delete cascade,
-  agent_role text not null,
-  position text not null,
-  key_concerns jsonb not null default '[]',
-  supporting_evidence jsonb not null default '[]',
-  assumptions jsonb not null default '[]',
-  risks jsonb not null default '[]',
-  recommendation text not null,
-  confidence_score numeric,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS product_decision_agent_reviews (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  decision_id   uuid NOT NULL REFERENCES product_decisions(id) ON DELETE CASCADE,
+  agent_role    text NOT NULL,
+  verdict       text NOT NULL,
+  reasoning     text NOT NULL,
+  concerns      jsonb DEFAULT '[]'::jsonb,
+  suggestions   jsonb DEFAULT '[]'::jsonb,
+  confidence    real CHECK (confidence >= 0 AND confidence <= 1),
+  created_at    timestamptz NOT NULL DEFAULT now()
 );
 
-create index if not exists idx_decision_agent_reviews_decision on decision_agent_reviews(user_id, project_id, decision_id);
-
-alter table decision_agent_reviews enable row level security;
-create policy "decision_agent_reviews_owner" on decision_agent_reviews
-  using (user_id = auth.uid())
-  with check (
-    user_id = auth.uid()
-    and exists (select 1 from projects where projects.id = project_id and projects.user_id = auth.uid())
-  );
-
--- 7. decision_recommendations
-create table if not exists decision_recommendations (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  project_id uuid not null references projects(id) on delete cascade,
-  decision_id uuid not null references decisions(id) on delete cascade,
-  recommendation text not null,
-  reasoning jsonb not null default '[]',
-  supporting_evidence jsonb not null default '[]',
-  assumptions jsonb not null default '[]',
-  risks jsonb not null default '[]',
-  alternatives jsonb not null default '[]',
-  next_validation_steps jsonb not null default '[]',
-  confidence_score numeric,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS product_decision_recommendations (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id    uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  decision_id   uuid NOT NULL REFERENCES product_decisions(id) ON DELETE CASCADE,
+  recommended_option_id uuid REFERENCES product_decision_options(id) ON DELETE SET NULL,
+  summary       text NOT NULL,
+  reasoning     text NOT NULL,
+  risk_assessment text,
+  next_steps    jsonb DEFAULT '[]'::jsonb,
+  created_at    timestamptz NOT NULL DEFAULT now()
 );
 
-create index if not exists idx_decision_recommendations_decision on decision_recommendations(user_id, project_id, decision_id);
-
-alter table decision_recommendations enable row level security;
-create policy "decision_recommendations_owner" on decision_recommendations
-  using (user_id = auth.uid())
-  with check (
-    user_id = auth.uid()
-    and exists (select 1 from projects where projects.id = project_id and projects.user_id = auth.uid())
-  );
-
--- Add selected_option_id FK (deferred because decision_options table must exist first)
-alter table decisions
-  add constraint fk_decisions_selected_option
-  foreign key (selected_option_id)
-  references decision_options(id)
-  on delete set null;
+-- selected_option_id FK (deferred because product_decision_options must exist first)
+ALTER TABLE product_decisions
+  ADD CONSTRAINT fk_selected_option
+  FOREIGN KEY (selected_option_id)
+  REFERENCES product_decision_options(id)
+  ON DELETE SET NULL;
 
 -- ═══════════════════════════════════════════════════════════════════
--- TRIGGER: validate selected_option_id belongs to same decision
+-- 2. INDEXES
 -- ═══════════════════════════════════════════════════════════════════
 
-create or replace function validate_selected_option_belongs_to_decision()
-returns trigger
-language plpgsql
-as $$
-begin
-  if NEW.selected_option_id is not null then
-    if not exists (
-      select 1 from decision_options
-      where id = NEW.selected_option_id
-        and decision_id = NEW.id
-    ) then
-      raise exception 'selected_option_id % does not belong to decision %',
-        NEW.selected_option_id, NEW.id;
-    end if;
-  end if;
-  return NEW;
-end;
-$$;
+CREATE INDEX idx_product_decisions_user       ON product_decisions(user_id);
+CREATE INDEX idx_product_decisions_project    ON product_decisions(project_id);
+CREATE INDEX idx_product_decisions_status     ON product_decisions(status);
 
-create trigger trg_decisions_validate_selected_option
-  before insert or update on decisions
-  for each row
-  execute function validate_selected_option_belongs_to_decision();
+CREATE INDEX idx_product_decision_options_decision ON product_decision_options(decision_id);
+CREATE INDEX idx_product_decision_options_user     ON product_decision_options(user_id);
+
+CREATE INDEX idx_product_assumptions_project  ON product_assumptions(project_id);
+CREATE INDEX idx_product_assumptions_decision ON product_assumptions(decision_id);
+CREATE INDEX idx_product_assumptions_user     ON product_assumptions(user_id);
+
+CREATE INDEX idx_product_evidence_project     ON product_evidence(project_id);
+CREATE INDEX idx_product_evidence_user        ON product_evidence(user_id);
+CREATE INDEX idx_product_evidence_source_type ON product_evidence(source_type);
+
+CREATE INDEX idx_product_decision_evidence_links_decision ON product_decision_evidence_links(decision_id);
+CREATE INDEX idx_product_decision_evidence_links_evidence ON product_decision_evidence_links(evidence_id);
+
+CREATE INDEX idx_product_decision_agent_reviews_decision ON product_decision_agent_reviews(decision_id);
+
+CREATE INDEX idx_product_decision_recommendations_decision ON product_decision_recommendations(decision_id);
 
 -- ═══════════════════════════════════════════════════════════════════
--- TRIGGER: auto-update updated_at on all Decision Engine tables
+-- 3. ROW LEVEL SECURITY
 -- ═══════════════════════════════════════════════════════════════════
 
-create or replace function set_updated_at_timestamp()
-returns trigger
-language plpgsql
-as $$
-begin
+ALTER TABLE product_decisions                    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_decision_options             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_assumptions                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_evidence                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_decision_evidence_links      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_decision_agent_reviews       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_decision_recommendations     ENABLE ROW LEVEL SECURITY;
+
+-- product_decisions
+CREATE POLICY "product_decisions_select" ON product_decisions FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_decisions_insert" ON product_decisions FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+CREATE POLICY "product_decisions_update" ON product_decisions FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "product_decisions_delete" ON product_decisions FOR DELETE USING (user_id = auth.uid());
+
+-- product_decision_options
+CREATE POLICY "product_decision_options_select" ON product_decision_options FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_decision_options_insert" ON product_decision_options FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+CREATE POLICY "product_decision_options_update" ON product_decision_options FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "product_decision_options_delete" ON product_decision_options FOR DELETE USING (user_id = auth.uid());
+
+-- product_assumptions
+CREATE POLICY "product_assumptions_select" ON product_assumptions FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_assumptions_insert" ON product_assumptions FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+CREATE POLICY "product_assumptions_update" ON product_assumptions FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "product_assumptions_delete" ON product_assumptions FOR DELETE USING (user_id = auth.uid());
+
+-- product_evidence
+CREATE POLICY "product_evidence_select" ON product_evidence FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_evidence_insert" ON product_evidence FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+CREATE POLICY "product_evidence_update" ON product_evidence FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "product_evidence_delete" ON product_evidence FOR DELETE USING (user_id = auth.uid());
+
+-- product_decision_evidence_links
+CREATE POLICY "product_decision_evidence_links_select" ON product_decision_evidence_links FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_decision_evidence_links_insert" ON product_decision_evidence_links FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+CREATE POLICY "product_decision_evidence_links_delete" ON product_decision_evidence_links FOR DELETE USING (user_id = auth.uid());
+
+-- product_decision_agent_reviews
+CREATE POLICY "product_decision_agent_reviews_select" ON product_decision_agent_reviews FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_decision_agent_reviews_insert" ON product_decision_agent_reviews FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+
+-- product_decision_recommendations
+CREATE POLICY "product_decision_recommendations_select" ON product_decision_recommendations FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "product_decision_recommendations_insert" ON product_decision_recommendations FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  AND project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 4. TRIGGERS
+-- ═══════════════════════════════════════════════════════════════════
+
+-- updated_at trigger function (create if not exists)
+CREATE OR REPLACE FUNCTION set_updated_at_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
   NEW.updated_at = now();
-  return NEW;
-end;
-$$;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-create trigger trg_decisions_updated_at
-  before update on decisions
-  for each row execute function set_updated_at_timestamp();
+CREATE TRIGGER trg_product_decisions_updated_at
+  BEFORE UPDATE ON product_decisions
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at_timestamp();
 
-create trigger trg_decision_options_updated_at
-  before update on decision_options
-  for each row execute function set_updated_at_timestamp();
+CREATE TRIGGER trg_product_decision_options_updated_at
+  BEFORE UPDATE ON product_decision_options
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at_timestamp();
 
-create trigger trg_assumptions_updated_at
-  before update on assumptions
-  for each row execute function set_updated_at_timestamp();
+CREATE TRIGGER trg_product_assumptions_updated_at
+  BEFORE UPDATE ON product_assumptions
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at_timestamp();
 
-create trigger trg_evidence_updated_at
-  before update on evidence
-  for each row execute function set_updated_at_timestamp();
+CREATE TRIGGER trg_product_evidence_updated_at
+  BEFORE UPDATE ON product_evidence
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at_timestamp();
 
-create trigger trg_decision_evidence_links_updated_at
-  before update on decision_evidence_links
-  for each row execute function set_updated_at_timestamp();
+-- Validate selected_option_id belongs to the same decision
+CREATE OR REPLACE FUNCTION validate_selected_option_belongs_to_decision()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.selected_option_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM product_decision_options
+      WHERE id = NEW.selected_option_id AND decision_id = NEW.id
+    ) THEN
+      RAISE EXCEPTION 'selected_option_id does not belong to this decision';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-create trigger trg_decision_agent_reviews_updated_at
-  before update on decision_agent_reviews
-  for each row execute function set_updated_at_timestamp();
-
-create trigger trg_decision_recommendations_updated_at
-  before update on decision_recommendations
-  for each row execute function set_updated_at_timestamp();
-
+CREATE TRIGGER trg_validate_selected_option
+  BEFORE INSERT OR UPDATE ON product_decisions
+  FOR EACH ROW EXECUTE FUNCTION validate_selected_option_belongs_to_decision();

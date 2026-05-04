@@ -190,3 +190,14 @@ export function IconUsers(props: IconProps) {
     </svg>
   );
 }
+
+export function IconScale(props: IconProps) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 3v18" />
+      <path d="M3 7l3 9a5.002 5.002 0 006 0l3-9" />
+      <path d="M9 7l3 9a5.002 5.002 0 006 0l3-9" />
+      <path d="M12 3l-3 4h6l-3-4z" />
+    </svg>
+  );
+}
