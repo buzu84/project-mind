@@ -159,7 +159,7 @@ export default function PrdPage() {
                       {prd.input?.productName ?? "Untitled PRD"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-400" suppressHydrationWarning>
                     {new Date(prd.created_at).toLocaleDateString()}
                   </span>
                 </Card>

@@ -172,6 +172,7 @@ export async function POST(req: Request) {
     retrieveRelevantContext("product roadmap priorities risks milestones", projectId, user.id).catch(() => ({
       context: "",
       results: [],
+      qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 },
     })),
   ]);
 

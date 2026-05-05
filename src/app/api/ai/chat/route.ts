@@ -17,7 +17,10 @@ const SYSTEM_PROMPT = `You are ProductMind, an expert AI product strategist. You
 
 Always be concise, actionable, and structured. Use bullet points and headers when appropriate. Ground your advice in real-world product management best practices.
 
-When relevant feedback or research data is provided, reference it in your analysis. Cite specific insights when they support your recommendations.`;
+When relevant feedback or research data is provided, reference it in your analysis. Cite specific insights when they support your recommendations.
+
+IMPORTANT — Project isolation:
+You are operating inside ONE specific project only. You only have access to the current project's metadata, feedback, research, and context provided below. If the user asks about a different project by name, you must NOT invent or infer details about that project. Instead, say you do not have access to that project in this chat and suggest they switch to that project for project-specific analysis.`;
 
 function buildProjectContext(
   project: {
@@ -114,7 +117,18 @@ export async function POST(req: Request) {
     const history = (historyRaw ?? []).reverse();
 
   const projectContext = buildProjectContext(project, contextRes.data, ragResult.context);
-  const systemMessage = `${SYSTEM_PROMPT}\n\nYou are assisting with the following project:\n${projectContext}`;
+
+  if (!ragResult.qualityStats.hasRelevantContext) {
+    console.warn("[chat] No relevant RAG context for project", projectId,
+      "— retrievedChunks:", ragResult.qualityStats.retrievedChunks,
+      "discardedChunks:", ragResult.qualityStats.discardedChunks);
+  }
+
+  const noContextWarning = ragResult.qualityStats.hasRelevantContext
+    ? ""
+    : "\n\nIMPORTANT: You do not have relevant project evidence for this question. Do not fabricate insights based on assumed context. If the user asks about specific feedback, research, or data, let them know you don't have enough relevant evidence to answer confidently.";
+
+  const systemMessage = `${SYSTEM_PROMPT}${noContextWarning}\n\nYou are assisting with the following project:\n${projectContext}`;
 
 
   const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [

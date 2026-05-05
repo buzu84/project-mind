@@ -242,7 +242,9 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
                     <span>{CONFIDENCE_LABELS[confidence] ?? confidence}</span>
                     <span className="flex items-center gap-1">
                       <IconClock className="h-3 w-3" />
-                      {new Date(insight.created_at).toLocaleDateString()}
+                      <time suppressHydrationWarning dateTime={insight.created_at}>
+                        {new Date(insight.created_at).toLocaleDateString()}
+                      </time>
                     </span>
                   </div>
                 </Card>

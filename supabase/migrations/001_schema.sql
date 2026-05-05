@@ -126,14 +126,18 @@ create index idx_document_chunks_embedding on document_chunks
   using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
 -- Similarity search function
+-- Accepts query_embedding as text because Supabase JS .rpc() sends params as
+-- JSON strings, and the implicit text→vector cast is unreliable across versions.
 create or replace function match_document_chunks(
-  query_embedding vector(1536),
+  query_embedding text,
   match_project_id uuid,
-  match_threshold float default 0.78,
-  match_count int default 5
+  match_threshold float default 0.3,
+  match_count int default 8
 )
 returns table (
   id uuid,
+  project_id uuid,
+  document_id uuid,
   content text,
   similarity float
 )
@@ -141,12 +145,14 @@ language sql stable
 as $$
   select
     document_chunks.id,
+    document_chunks.project_id,
+    document_chunks.document_id,
     document_chunks.content,
-    1 - (document_chunks.embedding <=> query_embedding) as similarity
+    1 - (document_chunks.embedding <=> query_embedding::vector) as similarity
   from document_chunks
   where document_chunks.project_id = match_project_id
-    and 1 - (document_chunks.embedding <=> query_embedding) > match_threshold
-  order by document_chunks.embedding <=> query_embedding
+    and 1 - (document_chunks.embedding <=> query_embedding::vector) > match_threshold
+  order by document_chunks.embedding <=> query_embedding::vector
   limit match_count;
 $$;
 

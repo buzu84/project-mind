@@ -385,7 +385,9 @@ export function MultiAgentClient({
                         )}
                         <span className="flex items-center gap-1 text-xs text-gray-400">
                           <IconClock className="h-3 w-3" />
-                          {new Date(review.created_at).toLocaleDateString()}
+                          <time suppressHydrationWarning dateTime={review.created_at}>
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </time>
                         </span>
                       </div>
                     </div>
