@@ -189,7 +189,9 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
           </p>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
             <IconClock className="h-3 w-3" />
-            {new Date(doc.created_at).toLocaleDateString()}
+            <time suppressHydrationWarning dateTime={doc.created_at}>
+              {new Date(doc.created_at).toLocaleDateString()}
+            </time>
           </div>
         </div>
         <div className="ml-4 flex flex-shrink-0 items-center gap-2">
