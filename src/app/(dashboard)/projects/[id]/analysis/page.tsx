@@ -139,7 +139,7 @@ export default function AnalysisPage() {
                       {a.input?.productName ?? "Untitled Analysis"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-400" suppressHydrationWarning>
                     {new Date(a.created_at).toLocaleDateString()}
                   </span>
                 </Card>
