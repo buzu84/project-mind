@@ -206,8 +206,8 @@ export async function POST(req: Request) {
           .limit(10)
       : Promise.resolve({ data: [] }),
     includeRag
-      ? retrieveRelevantContext(question, projectId, user.id).catch(() => ({ context: "", results: [] }))
-      : Promise.resolve({ context: "", results: [] }),
+      ? retrieveRelevantContext(question, projectId, user.id).catch(() => ({ context: "", results: [], qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 } }))
+      : Promise.resolve({ context: "", results: [], qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 } }),
   ]);
 
   const insightsList = ((insightsRes as any).data ?? []) as Array<{ type: string; title: string; content: string }>;
