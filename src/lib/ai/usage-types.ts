@@ -12,6 +12,7 @@ export type AIUsageFeature =
   | "competitive_analysis"
   | "document_embedding"
   | "query_embedding"
+  | "decision_review"
   | "rag_search"
   | "other";
 
@@ -84,6 +85,7 @@ export const FEATURE_LABELS: Record<AIUsageFeature, string> = {
   feature_prioritization: "Feature Prioritization",
   prd: "PRD Generator",
   competitive_analysis: "Competitive Analysis",
+  decision_review: "Decision Review",
   document_embedding: "Document Embedding",
   query_embedding: "Query Embedding",
   rag_search: "RAG Search",
