@@ -12,6 +12,8 @@ AI-powered product decision assistant for product managers, founders, and softwa
 - **AI Insights** – Generate strategic insights across risk, opportunity, assumption, and action categories
 - **Product Roadmap** – AI-generated Now/Next/Later roadmap with 30/60/90-day plans, risks, dependencies, and success metrics
 - **Multi-Agent Review** – Four AI personas (PM, CTO, UX Researcher, Growth Marketer) review your product decisions with consensus summary
+- **Decision Engine** – Track product decisions with AI-powered analysis: structured options, assumptions, risks, evidence citations, and recommendations with confidence scoring
+- **Evidence Layer** – Reusable retrieval layer with intent-specific configs, quality gates, citation utilities, and project-scoped evidence for all AI workflows
 - **AI Chat** – Streaming chat with project-aware AI strategist (global + project-scoped with RAG context)
 - **Feedback & Research** – Collect, edit, and manage customer feedback with source tagging and RAG-powered retrieval
 - **RAG Pipeline** – Document chunking, OpenAI embeddings, and pgvector similarity search for context-aware AI responses
@@ -95,6 +97,7 @@ src/
 │   │   │       ├── roadmap/     # AI roadmap generator
 │   │   │       ├── multi-agent-review/ # Multi-persona review
 │   │   │       ├── chat/        # Project-scoped AI chat
+│   │   │       ├── decisions/   # Decision Engine + AI analysis
 │   │   │       ├── feedback/    # Feedback documents CRUD
 │   │   │       └── context/     # Project context builder
 │   │   ├── ai-chat/             # Global AI assistant
@@ -109,6 +112,8 @@ src/
 │   └── document-renderer.tsx    # Markdown-to-cards renderer for PRD/Analysis
 ├── lib/
 │   ├── ai/                      # AI utilities (pricing, tracking, mock generators, normalizers)
+│   ├── decisions/               # Decision Engine service, schemas, review AI
+│   ├── evidence/                # Evidence Layer (retrieval, citations, intent configs)
 │   ├── rag/                     # RAG pipeline (chunking, embeddings, vector search)
 │   ├── supabase/                # Supabase clients
 │   ├── auth/                    # Auth helpers
