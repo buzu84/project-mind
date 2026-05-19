@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
-import { IconPlus, IconClock, IconScale } from "@/components/icons";
+import { IconPlus, IconClock, IconScale, IconSparkles } from "@/components/icons";
 import { DecisionForm } from "./decision-form";
 
 export interface ProductDecision {
@@ -56,6 +57,7 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
   const [decisions, setDecisions] = useState<ProductDecision[]>(initialDecisions);
   const [showForm, setShowForm] = useState(false);
   const [editingDecision, setEditingDecision] = useState<ProductDecision | null>(null);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   async function refreshDecisions() {
@@ -87,6 +89,26 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
       refreshDecisions();
     } else {
       toast("Failed to delete decision", "error");
+    }
+  }
+
+  async function handleAnalyze(decisionId: string) {
+    setAnalyzingId(decisionId);
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/decisions/${decisionId}/analyze`,
+        { method: "POST" },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Analysis failed.");
+      }
+      toast("Decision analyzed successfully");
+      refreshDecisions();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Could not analyze decision.", "error");
+    } finally {
+      setAnalyzingId(null);
     }
   }
 
@@ -139,18 +161,21 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
         <div className="mt-6 space-y-3">
           {decisions.map((d) => (
             <Card key={d.id} className="flex items-center justify-between py-4">
-              <div className="min-w-0 flex-1">
+              <Link href={`/projects/${projectId}/decisions/${d.id}`} className="min-w-0 flex-1 hover:opacity-80 transition">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900 truncate">{d.title}</span>
                   <Badge variant={statusBadgeVariant[d.status] ?? "default"}>
                     {statusLabels[d.status] ?? d.status}
                   </Badge>
                   <Badge>{categoryLabels[d.category] ?? d.category}</Badge>
+                  {d.confidence_score != null && (
+                    <span className="text-xs text-gray-400">{d.confidence_score}%</span>
+                  )}
                 </div>
                 {d.problem_statement && (
                   <p className="mt-1 text-xs text-gray-500 line-clamp-1">{d.problem_statement}</p>
                 )}
-              </div>
+              </Link>
               <div className="ml-4 flex items-center gap-2 flex-shrink-0">
                 <span className="flex items-center gap-1 text-xs text-gray-400">
                   <IconClock className="h-3 w-3" />
@@ -158,6 +183,16 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
                     {new Date(d.updated_at).toLocaleDateString()}
                   </time>
                 </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={analyzingId === d.id}
+                  onClick={() => handleAnalyze(d.id)}
+                  className="gap-1"
+                >
+                  <IconSparkles className="h-3.5 w-3.5" />
+                  {analyzingId === d.id ? "Analyzing…" : "Analyze"}
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

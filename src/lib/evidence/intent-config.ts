@@ -35,7 +35,7 @@ export const RETRIEVAL_INTENT_CONFIG: Record<RetrievalIntent, IntentConfig> = {
   },
   decision_review: {
     defaultLimit: 12,
-    minSimilarity: 0.65,
+    minSimilarity: 0.25,
     queryPrefix: "decision trade-offs risks assumptions evidence",
     preferredSourceTypes: ["feedback", "document", "research", "competitor"],
   },
