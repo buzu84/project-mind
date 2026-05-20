@@ -9,7 +9,7 @@ export const organizationJsonLd: WithContext<Organization> = {
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
   description:
-    "AI-powered product decision assistant for product managers, founders, and software teams.",
+    "AI-powered product management workspace for PMs, founders, and product teams.",
   foundingDate: "2026",
   sameAs: [],
 };
@@ -22,7 +22,7 @@ export const softwareApplicationJsonLd: WithContext<SoftwareApplication> = {
   operatingSystem: "Web",
   url: SITE_URL,
   description:
-    "AI-powered product decision assistant that helps teams generate PRDs, prioritize features, and analyze competition.",
+    "AI-powered product management workspace that helps teams generate PRDs, prioritize roadmaps, and run competitive analysis — grounded in project context via RAG.",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -41,29 +41,54 @@ export const softwareApplicationJsonLd: WithContext<SoftwareApplication> = {
 
 export const faqItems = [
   {
-    question: "What is ProductMind?",
+    question: "What exactly does ProductMind do?",
     answer:
-      "ProductMind is an AI-powered product decision assistant that helps product managers, founders, and software teams make better product decisions. It can generate PRDs, prioritize features using the RICE framework, and provide competitive analysis.",
+      "ProductMind is an AI-powered workspace for product managers and founders. It helps you generate production-ready PRDs, prioritize features using RICE and ICE frameworks, run competitive landscape analysis, build roadmaps, and get multi-perspective product reviews — all from a single project workspace. Think of it as an AI co-pilot for the strategic side of product management.",
   },
   {
-    question: "How does the PRD Generator work?",
+    question: "Who is ProductMind built for?",
     answer:
-      "The PRD Generator takes your product idea description and uses AI to create a comprehensive Product Requirements Document. It includes sections like Executive Summary, Problem Statement, Goals & Success Metrics, User Stories, Functional Requirements, and more.",
+      "ProductMind is designed for product managers, startup founders, product leads, and cross-functional teams who need to make faster, more structured product decisions. It's especially useful for solo PMs or small teams who don't have dedicated analysts, strategists, or research teams.",
   },
   {
-    question: "What is the RICE framework for feature prioritization?",
+    question: "How does the AI actually work under the hood?",
     answer:
-      "RICE stands for Reach, Impact, Confidence, and Effort. ProductMind uses AI to score each of your features across these four dimensions, then calculates a priority score to help you decide what to build next.",
+      "ProductMind uses OpenAI's GPT-4o for generation tasks and text-embedding-3-small for semantic search. When you upload feedback documents, they're chunked, embedded, and stored in a vector database (pgvector). AI features like PRD generation, roadmap planning, and decision review use retrieval-augmented generation (RAG) to ground outputs in your actual project context — not just generic responses.",
   },
   {
-    question: "Is ProductMind free to use?",
+    question: "Can I edit the AI-generated content?",
     answer:
-      "ProductMind offers a free plan that includes 10 AI-powered decisions per month. This covers PRD generation, feature prioritization, and competitive analysis.",
+      "Yes. Every generated artifact — PRDs, roadmaps, competitive analyses, feature scores — is fully editable after generation. AI outputs are a starting point, not a final answer. We strongly recommend human review and refinement for all generated content.",
   },
   {
-    question: "What AI model does ProductMind use?",
+    question: "Is my data stored securely?",
     answer:
-      "ProductMind uses OpenAI's GPT-4o model to power its AI features, ensuring high-quality, contextual product insights and recommendations.",
+      "All data is stored in a Supabase-managed PostgreSQL database with row-level security (RLS) enabled. Each user can only access their own projects and data. Authentication is handled via Supabase Auth with email confirmation and OAuth support. We do not share your data with third parties beyond the AI model provider (OpenAI) for processing requests.",
+  },
+  {
+    question: "Is ProductMind free?",
+    answer:
+      "ProductMind currently offers free access during its early-access phase. AI operations are rate-limited (20 standard operations per hour, 5 heavy operations per 15 minutes) to manage costs. A paid tier with higher limits is planned for the future.",
+  },
+  {
+    question: "How does roadmap prioritization work?",
+    answer:
+      "ProductMind generates prioritized roadmaps using your project context, feature list, and goals. It produces a Now/Next/Later view and a 30/60/90-day action plan, including risk assessment, dependencies, and success metrics. Prioritization is informed by RICE scoring, strategic alignment, and any feedback documents you've uploaded.",
+  },
+  {
+    question: "What does competitive analysis cover?",
+    answer:
+      "The competitive analysis generator identifies key competitors, compares feature sets, analyzes positioning and pricing strategies, and highlights market gaps and opportunities. Results are structured and stored per project, so you can revisit and update them as your market evolves.",
+  },
+  {
+    question: "What are the AI's limitations?",
+    answer:
+      "AI outputs are based on the context you provide and the model's training data — they can be incomplete, biased, or incorrect. ProductMind is a decision-support tool, not a decision-making tool. We recommend treating all generated content as a well-informed draft that requires human judgment, domain expertise, and validation before acting on it.",
+  },
+  {
+    question: "What is the multi-agent review?",
+    answer:
+      "The multi-agent review runs your project through four AI personas — a Product Manager, CTO, UX Researcher, and Growth Marketer — each providing an independent perspective. It then generates a consensus summary highlighting agreements, disagreements, and blind spots. It's designed to simulate the kind of cross-functional feedback you'd get from a real product review meeting.",
   },
 ] as const;
 
