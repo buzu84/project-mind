@@ -123,36 +123,43 @@ function SignUpForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Jane Doe"
+            autoComplete="name"
             required
           />
           <Input
-            id="email"
+            id="signup-email"
+            name="signup-email"
             label="Email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
             required
           />
           <Input
-            id="password"
+            id="signup-password"
+            name="signup-password"
             label="Password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onBlur={() => setPasswordTouched(true)}
             placeholder="Min 6 characters"
+            autoComplete="new-password"
             error={passwordError ?? undefined}
             required
           />
           <Input
-            id="confirmPassword"
+            id="signup-confirm-password"
+            name="signup-confirm-password"
             label="Confirm Password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             onBlur={() => setConfirmTouched(true)}
             placeholder="Re-enter your password"
+            autoComplete="new-password"
             error={confirmError ?? undefined}
             required
           />
