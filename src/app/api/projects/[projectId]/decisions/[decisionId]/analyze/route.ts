@@ -62,7 +62,7 @@ export async function POST(
       return NextResponse.json({ error: message }, { status: 503 });
     }
     return NextResponse.json(
-      { error: "Could not analyze decision. Please try again." },
+      { error: isDev ? message : "Could not analyze decision. Please try again." },
       { status: 502 },
     );
   }

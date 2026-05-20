@@ -282,9 +282,8 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
 
       {isFormOpen && (
         <Card className="mb-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4">
             <h3 className="text-base font-semibold text-gray-900">New Feature Idea</h3>
-            <button type="button" onClick={() => setIsFormOpen(false)} className="text-sm text-gray-400 hover:text-gray-600 transition">Cancel</button>
           </div>
           <form ref={formRef} action={handleAddFeature} className="space-y-4">
             <div>
@@ -353,6 +352,13 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
               </button>
             ))}
           </div>
+
+          {/* AI scoring note */}
+          {sorted.some((f) => getScoreState(f) !== "not_scored") && (
+            <p className="mb-3 text-xs text-gray-400">
+              Scores are AI-estimated based on your project context. Similar features may receive different scores due to differences in reach, impact, effort, and confidence.
+            </p>
+          )}
 
           {/* Table */}
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">

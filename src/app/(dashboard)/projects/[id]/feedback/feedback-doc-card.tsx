@@ -102,15 +102,8 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
   if (isEditing) {
     return (
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3">
           <h4 className="text-sm font-semibold text-gray-900">Edit Feedback</h4>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="text-sm text-gray-400 hover:text-gray-600 transition"
-          >
-            Cancel
-          </button>
         </div>
 
         {error && (

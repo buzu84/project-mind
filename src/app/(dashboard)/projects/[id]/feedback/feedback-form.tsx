@@ -56,15 +56,8 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
 
   return (
     <Card>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4">
         <h3 className="text-base font-semibold text-gray-900">New Feedback Document</h3>
-        <button
-          type="button"
-          onClick={() => { setIsOpen(false); setResult(null); }}
-          className="text-sm text-gray-400 hover:text-gray-600 transition"
-        >
-          Cancel
-        </button>
       </div>
 
       {result?.error && (

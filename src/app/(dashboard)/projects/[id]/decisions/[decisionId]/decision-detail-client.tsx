@@ -66,10 +66,10 @@ export function DecisionDetailClient({
       const result = await res.json();
       toast("Decision analyzed successfully");
       setConfidenceScore(result.confidenceScore ?? null);
-      // Refresh server data
       router.refresh();
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Could not analyze decision.", "error");
+      const msg = err instanceof Error ? err.message : "Could not analyze decision.";
+      toast(msg, "error");
     } finally {
       setAnalyzing(false);
     }
@@ -95,15 +95,32 @@ export function DecisionDetailClient({
             )}
           </div>
         </div>
-        <Button
-          onClick={handleAnalyze}
-          disabled={analyzing}
-          className="gap-1.5"
-        >
-          <IconSparkles className="h-4 w-4" />
-          {analyzing ? "Analyzing…" : hasAnalysis ? "Re-Analyze" : "Analyze Decision"}
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            className="gap-1.5"
+          >
+            <IconSparkles className="h-4 w-4" />
+            {analyzing ? "Analyzing…" : hasAnalysis ? "Re-Analyze" : "Analyze Decision"}
+          </Button>
+          {!hasAnalysis && !analyzing && (
+            <p className="text-[11px] text-gray-400 text-right max-w-[220px]">
+              Uses project context and uploaded evidence to generate options, assumptions, risks, and a recommendation.
+            </p>
+          )}
+        </div>
       </div>
+
+      {analyzing && (
+        <Card className="border-brand-200 bg-brand-50 text-center py-8">
+          <IconSparkles className="mx-auto h-7 w-7 text-brand-600 animate-pulse" />
+          <p className="mt-2 text-sm font-medium text-brand-900">Analyzing decision…</p>
+          <p className="mt-1 text-xs text-brand-600">
+            Retrieving project evidence, evaluating options, and generating a structured recommendation.
+          </p>
+        </Card>
+      )}
 
       {/* Problem statement */}
       {decision.problem_statement && (
@@ -133,14 +150,22 @@ export function DecisionDetailClient({
           </h3>
           <p className="text-sm text-gray-800 mb-3">{String(recommendation.recommendation ?? "")}</p>
 
-          {Array.isArray(recommendation.reasoning) && recommendation.reasoning.length > 0 && (
-            <div className="mb-3">
-              <h4 className="text-xs font-semibold text-gray-600 uppercase mb-1">Reasoning</h4>
-              <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
-                {(recommendation.reasoning as string[]).map((r: string, i: number) => <li key={i}>{r}</li>)}
-              </ul>
-            </div>
-          )}
+          {(() => {
+            const reasoningRaw = recommendation.reasoning;
+            const reasoningList: string[] = Array.isArray(reasoningRaw)
+              ? reasoningRaw
+              : typeof reasoningRaw === "string" && reasoningRaw.trim()
+                ? reasoningRaw.split("\n").filter(Boolean)
+                : [];
+            return reasoningList.length > 0 ? (
+              <div className="mb-3">
+                <h4 className="text-xs font-semibold text-gray-600 uppercase mb-1">Reasoning</h4>
+                <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                  {reasoningList.map((r: string, i: number) => <li key={i}>{r}</li>)}
+                </ul>
+              </div>
+            ) : null;
+          })()}
 
           {Array.isArray(recommendation.next_validation_steps) && recommendation.next_validation_steps.length > 0 && (
             <div>

@@ -19,6 +19,7 @@ import { trackAIUsage, extractTokenUsage } from "@/lib/ai/usage-tracking";
 import { retrieveEvidence, createEvidenceCitations, formatEvidenceForPrompt } from "@/lib/evidence";
 import type { EvidenceCitation } from "@/lib/evidence";
 import { decisionReviewOutputSchema, type DecisionReviewOutput } from "./review-schemas";
+import { normalizeDecisionReviewOutput, formatZodIssuesForLog, formatZodIssuesForRetry } from "./review-normalize";
 
 const isDev = process.env.NODE_ENV === "development";
 const MODEL = "gpt-4o";
@@ -81,6 +82,15 @@ export async function analyzeDecision(
   const startTime = Date.now();
   const supabase = createClient();
 
+  const log = (phase: string, detail?: Record<string, unknown>) => {
+    if (isDev) {
+      // eslint-disable-next-line no-console
+      console.log(`[decision-review] ${phase}`, detail ? JSON.stringify(detail) : "");
+    }
+  };
+
+  log("Phase 1: Auth", { userId: userId.slice(0, 8) + "…" });
+
   // 1. Verify project ownership
   const { data: project, error: projErr } = await supabase
     .from("projects")
@@ -88,7 +98,11 @@ export async function analyzeDecision(
     .eq("id", projectId)
     .eq("user_id", userId)
     .single();
-  if (projErr || !project) throw new Error("Project not found or access denied.");
+  if (projErr || !project) {
+    log("Phase 1 FAILED", { error: projErr?.message ?? "no data" });
+    throw new Error("Project not found or access denied.");
+  }
+  log("Phase 2: Project loaded", { name: (project as any).name });
 
   // 2. Load decision (with ownership check)
   const { data: decision, error: decErr } = await supabase
@@ -98,8 +112,12 @@ export async function analyzeDecision(
     .eq("user_id", userId)
     .eq("project_id", projectId)
     .single();
-  if (decErr || !decision) throw new Error("Decision not found or access denied.");
+  if (decErr || !decision) {
+    log("Phase 3 FAILED: Decision load", { error: decErr?.message ?? "no data", decisionId });
+    throw new Error("Decision not found or access denied.");
+  }
   const dec = decision as DecisionRow;
+  log("Phase 3: Decision loaded", { title: dec.title });
 
   // 3. Load structured project context (optional)
   const { data: ctx } = await supabase
@@ -107,6 +125,7 @@ export async function analyzeDecision(
     .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
     .eq("project_id", projectId)
     .maybeSingle();
+  log("Phase 4: Context loaded", { hasContext: !!ctx });
 
   // 4. Retrieve evidence via Evidence Layer
   const evidenceQuery = [dec.title, dec.problem_statement, dec.context_summary]
@@ -124,17 +143,11 @@ export async function analyzeDecision(
   const evidenceBlock = formatEvidenceForPrompt(evidenceResult.candidates);
   const hasRelevantEvidence = evidenceResult.candidates.length > 0;
 
-  if (isDev) {
-    const simScores = evidenceResult.candidates.map((c) => c.similarityScore);
-    // eslint-disable-next-line no-console
-    console.log("[decision-review] Evidence stats:", JSON.stringify({
-      retrieved: evidenceResult.total,
-      used: evidenceResult.candidates.length,
-      hasRelevantEvidence,
-      minSimilarity: simScores.length > 0 ? Math.min(...simScores).toFixed(3) : null,
-      maxSimilarity: simScores.length > 0 ? Math.max(...simScores).toFixed(3) : null,
-    }));
-  }
+  log("Phase 5: Evidence retrieved", {
+    retrieved: evidenceResult.total,
+    used: evidenceResult.candidates.length,
+    hasRelevantEvidence,
+  });
 
   // 5. Build user prompt
   const validCitationIds = new Set(citations.map((c) => c.citationId));
@@ -149,22 +162,31 @@ export async function analyzeDecision(
 
   if (!isReal) {
     aiOutput = buildMockOutput(dec, hasRelevantEvidence);
+    log("Phase 6: Mock AI output generated");
   } else {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error("AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false.");
     }
 
+    log("Phase 6: Calling OpenAI");
     const result = await callOpenAIWithRetry(userPrompt);
     aiOutput = result.output;
     totalPromptTokens = result.totalPromptTokens;
     totalCompletionTokens = result.totalCompletionTokens;
     retryCount = result.retryCount;
+    log("Phase 7: OpenAI + Zod passed", {
+      options: aiOutput.options.length,
+      assumptions: aiOutput.assumptions.length,
+      confidence: aiOutput.recommendation.confidenceScore,
+      retryCount,
+    });
   }
 
   // 7. Sanitize citation IDs in output
   aiOutput = sanitizeCitationIds(aiOutput, validCitationIds);
 
   // 8. Save to database (insert-before-delete strategy)
+  log("Phase 8: Saving to database", { citationsCount: citations.length });
   const result = await saveAnalysisResults(supabase, {
     userId,
     projectId,
@@ -174,10 +196,16 @@ export async function analyzeDecision(
   });
 
   // 9. Update decision confidence score
+  log("Phase 9: DB save completed", {
+    recommendationId: result.recommendationId,
+    optionsCreated: result.optionsCreated,
+    assumptionsCreated: result.assumptionsCreated,
+    evidenceCreated: result.evidenceCreated,
+  });
   await supabase
     .from("product_decisions")
     .update({
-      confidence_score: aiOutput.recommendation.confidenceScore,
+      confidence_score: Math.round(aiOutput.recommendation.confidenceScore),
       updated_at: new Date().toISOString(),
     })
     .eq("id", decisionId)
@@ -242,7 +270,7 @@ async function callOpenAIWithRetry(
     if (attempt > 0 && lastError) {
       messages.push({
         role: "user",
-        content: `Your previous response had validation errors:\n${lastError}\n\nPlease fix and return valid JSON matching the exact schema. Ensure: 3-4 options, at least 1 assumption, at least 1 risk, all confidenceScores are 0-100.`,
+        content: `Your previous response had validation errors:\n${lastError}\n\nCritical rules:\n- ALL property names must be camelCase: confidenceScore, riskLevel, evidenceStatus, validationMethod, supportingCitationIds, expectedImpact, effortEstimate, supportingEvidence, nextValidationSteps\n- confidenceScore must be a number (not string), range 0-100\n- options array must have exactly 3 or 4 items\n- assumptions array must have at least 1 item\n- risks array must have at least 1 item\n- pros and cons arrays must each have at least 1 item\n- assumption.type MUST be exactly one of: market, user, technical, growth, pricing, ux, business, other. Do NOT use legal, compliance, operational, financial, engineering, adoption, customer, usability, or any other value.\n- Return valid JSON only. No markdown, no code fences, no extra text.`,
       });
     }
 
@@ -272,17 +300,26 @@ async function callOpenAIWithRetry(
       continue;
     }
 
+    // Normalize common AI output variations (snake_case → camelCase, string numbers → numbers, etc.)
+    if (parsed && typeof parsed === "object") {
+      parsed = normalizeDecisionReviewOutput(parsed as Record<string, unknown>);
+    }
+
     const validated = decisionReviewOutputSchema.safeParse(parsed);
     if (!validated.success) {
-      const flat = validated.error.flatten();
-      const issues = Object.entries(flat.fieldErrors)
-        .map(([field, errs]) => `${field}: ${(errs ?? []).join(", ")}`)
-        .slice(0, 10)
-        .join("; ");
-      lastError = issues || "Schema validation failed.";
-      if (isDev) console.error(`[decision-review] Attempt ${attempt + 1}: Zod failed:`, lastError);
+      const issuesForRetry = formatZodIssuesForRetry(validated.error);
+      lastError = issuesForRetry || "Schema validation failed.";
+      if (isDev) {
+        // eslint-disable-next-line no-console
+        console.error(`[decision-review] Attempt ${attempt + 1}: Zod validation failed:`);
+        for (const line of formatZodIssuesForLog(validated.error)) {
+          // eslint-disable-next-line no-console
+          console.error(`  ${line}`);
+        }
+      }
       if (attempt >= MAX_RETRIES) {
-        throw new Error("AI response did not match expected format after retry. Please try again.");
+        const devDetail = isDev ? ` Validation: ${issuesForRetry}` : "";
+        throw new Error(`AI response did not match expected format after retry. Please try again.${devDetail}`);
       }
       continue;
     }
@@ -380,16 +417,19 @@ function buildUserPrompt(
   }
 
   parts.push("\n## Output Instructions");
-  parts.push("Return a single JSON object with this exact shape:");
+  parts.push("Return a single JSON object with this exact shape. ALL property names MUST be camelCase (e.g. confidenceScore, not confidence_score):");
   parts.push(`{
-  "summary": "string (concise analysis summary)",
-  "confidenceScore": number (0-100),
-  "assumptions": [{ "statement": "...", "type": "market|user|technical|growth|pricing|ux|business|other", "riskLevel": "low|medium|high", "evidenceStatus": "unsupported|weak|moderate|strong", "validationMethod": "optional string", "supportingCitationIds": ["[1]"] }],
-  "options": [{ "title": "...", "description": "...", "pros": ["..."], "cons": ["..."], "risks": ["..."], "expectedImpact": "optional", "effortEstimate": "low|medium|high|unknown", "reversibility": "low|medium|high|unknown", "confidenceScore": number, "supportingCitationIds": ["[1]"] }],
-  "risks": [{ "title": "...", "description": "...", "severity": "low|medium|high", "mitigation": "optional", "supportingCitationIds": ["[1]"] }],
-  "recommendation": { "recommendation": "...", "reasoning": ["..."], "supportingEvidence": ["..."], "assumptions": ["..."], "risks": ["..."], "alternatives": ["..."], "nextValidationSteps": ["..."], "confidenceScore": number }
+  "summary": "string (concise analysis summary, min 10 chars)",
+  "confidenceScore": 55,
+  "assumptions": [{ "statement": "string (min 5 chars)", "type": "market|user|technical|growth|pricing|ux|business|other", "riskLevel": "low|medium|high", "evidenceStatus": "unsupported|weak|moderate|strong", "validationMethod": "optional string", "supportingCitationIds": ["[1]"] }],
+  "options": [{ "title": "string", "description": "string", "pros": ["at least one"], "cons": ["at least one"], "risks": ["string"], "expectedImpact": "optional string", "effortEstimate": "low|medium|high|unknown", "reversibility": "low|medium|high|unknown", "confidenceScore": 50, "supportingCitationIds": ["[1]"] }],
+  "risks": [{ "title": "string", "description": "string", "severity": "low|medium|high", "mitigation": "optional string", "supportingCitationIds": ["[1]"] }],
+  "recommendation": { "recommendation": "string (min 10 chars)", "reasoning": ["at least one"], "supportingEvidence": ["string"], "assumptions": ["string"], "risks": ["string"], "alternatives": ["string"], "nextValidationSteps": ["string"], "confidenceScore": 55 }
 }`);
-  parts.push("Generate exactly 3-4 options. Generate at least 1 assumption and 1 risk.");
+  parts.push("Rules: exactly 3-4 options, at least 1 assumption, at least 1 risk. All confidenceScore values must be numbers (not strings). All property names must be camelCase.");
+  parts.push("\nCRITICAL — assumption.type MUST be exactly one of: market, user, technical, growth, pricing, ux, business, other");
+  parts.push("Do NOT use: legal, compliance, operational, product, strategy, risk, financial, regulatory, revenue, engineering, adoption, customer, usability, design, security, infrastructure, execution, process.");
+  parts.push("If the assumption is about legal/compliance/regulatory topics, use \"business\". If about finances/revenue, use \"pricing\". If about engineering/architecture, use \"technical\". If about adoption/retention, use \"growth\". If about usability/design, use \"ux\". If about customers/personas, use \"user\".");
 
   return parts.join("\n");
 }
@@ -454,7 +494,7 @@ async function saveAnalysisResults(
         project_id: projectId,
         source_type: citation.sourceType === "unknown" ? "feedback" : citation.sourceType,
         source_id: citation.sourceId ?? null,
-        title: citation.sourceTitle ?? null,
+        title: citation.sourceTitle ?? "Retrieved evidence",
         claim: citation.snippet,
         content: citation.snippet,
         relevance_score: citation.similarityScore,
@@ -463,7 +503,7 @@ async function saveAnalysisResults(
       .select("id")
       .single();
     if (error) {
-      if (isDev) console.error("[decision-review] Evidence insert failed:", error.message);
+      if (isDev) console.error("[decision-review] Evidence insert failed:", error.message, error.details);
       continue;
     }
     if (data) {
@@ -491,9 +531,11 @@ async function saveAnalysisResults(
       user_id: userId,
       project_id: projectId,
       decision_id: decisionId,
-      statement: assumption.statement,
+      assumption_type: assumption.type,
       type: assumption.type,
+      statement: assumption.statement,
       risk_level: assumption.riskLevel,
+      status: assumption.evidenceStatus ?? "untested",
       evidence_status: assumption.evidenceStatus,
       validation_method: assumption.validationMethod ?? null,
       generated_by: GENERATED_BY,
@@ -534,8 +576,13 @@ async function saveAnalysisResults(
       user_id: userId,
       project_id: projectId,
       decision_id: decisionId,
+      // Original schema columns
+      summary: aiOutput.recommendation.recommendation,
+      reasoning: Array.isArray(aiOutput.recommendation.reasoning)
+        ? aiOutput.recommendation.reasoning.join("\n")
+        : String(aiOutput.recommendation.reasoning ?? ""),
+      // Extended columns (added by alignment migration)
       recommendation: aiOutput.recommendation.recommendation,
-      reasoning: aiOutput.recommendation.reasoning,
       supporting_evidence: aiOutput.recommendation.supportingEvidence,
       assumptions: aiOutput.recommendation.assumptions,
       risks: aiOutput.recommendation.risks,
@@ -548,10 +595,10 @@ async function saveAnalysisResults(
     .single();
 
   if (recError || !recData) {
-    if (isDev) console.error("[decision-review] Recommendation insert failed, rolling back");
+    if (isDev) console.error("[decision-review] Recommendation insert failed:", recError?.message);
     await cleanupIds(supabase, userId, [...evidenceIds, ...newLinkIds, ...newAssumptionIds, ...newOptionIds],
       ["product_evidence", "product_decision_evidence_links", "product_assumptions", "product_decision_options"]);
-    throw new Error("Failed to save recommendation. No data was changed.");
+    throw new Error(`Failed to save recommendation: ${recError?.message ?? "unknown error"}`);
   }
 
   // ── Phase 2: Delete old records (new ones are safe) ────────────

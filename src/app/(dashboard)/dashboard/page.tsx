@@ -14,6 +14,7 @@ import {
   IconClock,
   IconTrendingUp,
   IconPlus,
+  IconBookOpen,
 } from "@/components/icons";
 import { getMonthlyUsageSummary } from "@/lib/ai/usage-tracking";
 import { FEATURE_LABELS } from "@/lib/ai/usage-types";
@@ -119,6 +120,26 @@ export default async function DashboardPage() {
           Here&apos;s what&apos;s happening with your products today.
         </p>
       </div>
+
+      {/* Onboarding CTA — shown only for new users */}
+      {(projectCount ?? 0) === 0 && (
+        <Link href="/getting-started" className="group block">
+          <Card className="flex items-center gap-4 border-brand-200 bg-brand-50 transition hover:border-brand-300 hover:shadow-md">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-600 transition group-hover:bg-brand-200">
+              <IconBookOpen className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-brand-900">New to ProductMind?</p>
+              <p className="text-xs text-brand-700">
+                Learn the recommended workflow and how to get the best AI outputs from your project context.
+              </p>
+            </div>
+            <span className="hidden flex-shrink-0 text-xs font-medium text-brand-600 sm:block">
+              5 min overview →
+            </span>
+          </Card>
+        </Link>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -20,7 +20,7 @@ interface ScoredFeature {
   effort: number;
   rice_score: number;
   ice_score: number;
-  ai_commentary: string;
+  ai_commentary: unknown;
 }
 
 const SYSTEM_PROMPT = `You are ProductMind, an expert product strategist. Score the given feature ideas using RICE and ICE frameworks.
@@ -214,6 +214,24 @@ export async function POST(req: Request) {
       const rice_score = (reach * impact * confidence) / effort;
       const ice_score = (impact * confidence * 10) / effort;
 
+      // Normalize ai_commentary to readable string — AI may return string, object, or array
+      let commentary: string | null = null;
+      if (typeof match.ai_commentary === "string") {
+        commentary = match.ai_commentary;
+      } else if (match.ai_commentary != null && typeof match.ai_commentary === "object") {
+        // Convert { Reach: "...", Impact: "...", Summary: "..." } to readable text
+        if (Array.isArray(match.ai_commentary)) {
+          commentary = (match.ai_commentary as unknown[]).map(String).join("\n");
+        } else {
+          commentary = Object.entries(match.ai_commentary as Record<string, unknown>)
+            .map(([k, v]) => `${k}: ${String(v ?? "")}`)
+            .join("\n");
+        }
+      } else if (match.ai_commentary != null) {
+        commentary = String(match.ai_commentary);
+      }
+      if (commentary) commentary = commentary.slice(0, 1000);
+
       await supabase
         .from("feature_ideas")
         .update({
@@ -223,7 +241,7 @@ export async function POST(req: Request) {
           effort,
           rice_score: Math.round(rice_score * 100) / 100,
           ice_score: Math.round(ice_score * 100) / 100,
-          ai_commentary: match.ai_commentary?.slice(0, 1000) ?? null,
+          ai_commentary: commentary,
         })
         .eq("id", feature.id);
     }
