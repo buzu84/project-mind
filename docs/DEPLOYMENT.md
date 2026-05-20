@@ -115,7 +115,7 @@ All AI routes are rate-limited per authenticated user:
 | Tier | Routes | Limit |
 |---|---|---|
 | Standard | chat, global-chat, insights, prioritize, score-features | 20 requests / hour |
-| Heavy | PRD, roadmap, competitive-analysis, multi-agent-review | 5 requests / 15 minutes |
+| Heavy | PRD, roadmap, competitive-analysis, multi-agent-review, decision-analyze | 5 requests / 15 minutes |
 
 Rate-limited requests return HTTP 429 with `Retry-After` header.
 

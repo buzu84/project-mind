@@ -113,20 +113,52 @@ function checkRateLimit(key: string, limit: number, windowMs: number): RateLimit
   };
 }
 
+// ── Logging helper ────────────────────────────────────────────────
+
+function logRateLimitDecision(
+  feature: "standard" | "heavy",
+  user: AppUser,
+  isAdminBypass: boolean,
+  result: RateLimitResult,
+) {
+  // Never log in test; avoid noise in dev unless DEBUG is set
+  if (process.env.NODE_ENV === "test") return;
+  const info = {
+    email: user.email ?? "(no email)",
+    userId: user.id,
+    feature,
+    isAdminBypass,
+    allowed: result.allowed,
+    remaining: result.remaining,
+    resetInSeconds: result.resetInSeconds,
+  };
+  if (!result.allowed) {
+    console.warn("[rate-limit] BLOCKED", info);
+  } else if (process.env.DEBUG) {
+    console.log("[rate-limit] allowed", info);
+  }
+}
+
 // ── Public API used by all AI routes ──────────────────────────────
 
 /** Standard AI limit: 20 requests/hour (free), unlimited (admin) */
 export function checkStandardAILimit(user: AppUser): RateLimitResult {
-  if (isAdminUser(user)) return ALLOWED_UNLIMITED;
-  const { limit, windowMs } = TIER_LIMITS.free.standard;
-  return checkRateLimit(`ai:${user.id}`, limit, windowMs);
+  const admin = isAdminUser(user);
+  const result = admin
+    ? ALLOWED_UNLIMITED
+    : checkRateLimit(`ai:${user.id}`, TIER_LIMITS.free.standard.limit, TIER_LIMITS.free.standard.windowMs);
+  logRateLimitDecision("standard", user, admin, result);
+  return result;
 }
 
 /** Heavy AI limit: 5 requests/15 min (free), unlimited (admin) */
 export function checkHeavyAILimit(user: AppUser): RateLimitResult {
-  if (isAdminUser(user)) return ALLOWED_UNLIMITED;
-  const { limit, windowMs } = TIER_LIMITS.free.heavy;
-  return checkRateLimit(`ai-heavy:${user.id}`, limit, windowMs);
+  const admin = isAdminUser(user);
+  const result = admin
+    ? ALLOWED_UNLIMITED
+    : checkRateLimit(`ai-heavy:${user.id}`, TIER_LIMITS.free.heavy.limit, TIER_LIMITS.free.heavy.windowMs);
+  logRateLimitDecision("heavy", user, admin, result);
+  return result;
 }
 
 /** Build a 429 JSON response */

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSiteUrl } from "@/lib/url";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const publishableKey =
@@ -9,7 +10,7 @@ const publishableKey =
   "";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as
@@ -20,6 +21,9 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/dashboard";
   const errorParam = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
+
+  // Use the centralized site URL so redirects never land on localhost in production
+  const origin = getSiteUrl();
 
   // Handle error passed as query param (some Supabase flows)
   if (errorParam) {

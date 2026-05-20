@@ -174,7 +174,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
               <p className="text-xs text-gray-500">
                 {isAdmin
                   ? "Unlimited AI usage — no rate limits applied"
-                  : "Unlimited AI features during beta"}
+                  : "All AI features included — usage limits apply (see below)"}
               </p>
             </div>
           </div>
