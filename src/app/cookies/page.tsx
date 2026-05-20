@@ -88,8 +88,6 @@ export default function CookiePolicyPage() {
               <span className="font-medium text-brand-600">privacy@productmind.app</span>.
             </p>
           </section>
-
-          {/* TODO: Update cookie table when analytics/marketing cookies are added */}
         </div>
 
         <div className="mt-12 border-t border-gray-200 pt-6 flex gap-4">
