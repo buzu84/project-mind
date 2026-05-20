@@ -118,7 +118,8 @@ export async function POST(req: Request) {
 
   const projectContext = buildProjectContext(project, contextRes.data, ragResult.context);
 
-  if (!ragResult.qualityStats.hasRelevantContext) {
+  if (!ragResult.qualityStats.hasRelevantContext && process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
     console.warn("[chat] No relevant RAG context for project", projectId,
       "— retrievedChunks:", ragResult.qualityStats.retrievedChunks,
       "discardedChunks:", ragResult.qualityStats.discardedChunks);
