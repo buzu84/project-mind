@@ -178,6 +178,19 @@ Dashboard activity excludes internal infrastructure events (`rag_search`, `query
 - Relative timestamps ("2 hours ago")
 - Activity grouped by day
 
+### Data model distinction: `decisions` vs `ai_usage`
+
+These are **intentionally different concepts**:
+
+| Table | Contains | Used by | Concept |
+|---|---|---|---|
+| `decisions` | Saved AI-generated artifacts (PRDs, competitive analyses) with full `input`/`output` JSON | Project detail "Generated Documents" section, individual PRD/analysis detail pages | **Saved outputs / documents** |
+| `ai_usage` | Operational telemetry (model, tokens, cost, latency, feature, status) | Dashboard "Recent AI Activity", `/usage` page | **Activity / usage tracking** |
+
+The `decisions` table is a legacy artifact store — it holds user-facing generated content that can be revisited. The `ai_usage` table is a telemetry log — it records that an AI action happened, but does not store the generated content itself.
+
+**Future consolidation**: The `decisions` table could be renamed to `generated_documents` or `ai_artifacts` for clarity. Newer features (Decision Review, Insights, Roadmap) store their outputs in dedicated tables rather than `decisions`, so the legacy table is only used by PRD Generator and Competitive Analysis.
+
 ---
 
 ## Infrastructure / Deployment Improvements

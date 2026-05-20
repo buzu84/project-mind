@@ -324,9 +324,10 @@ export default async function ProjectDetailPage({
         )}
       </div>
 
-      {/* AI Generation History (legacy decisions table) */}
+      {/* Generated Documents — saved PRDs, competitive analyses, etc. from the decisions table */}
       <div className="mt-10">
-        <h3 className="mb-4 text-base font-semibold text-gray-900">AI Generation History</h3>
+        <h3 className="mb-1 text-base font-semibold text-gray-900">Generated Documents</h3>
+        <p className="mb-4 text-xs text-gray-400">PRDs and competitive analyses generated for this project.</p>
         {decisions.length === 0 ? (
           <Card className="flex flex-col items-center justify-center py-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
