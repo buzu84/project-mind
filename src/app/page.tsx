@@ -45,7 +45,7 @@ const workflows = [
   {
     step: "03",
     title: "Get structured AI outputs",
-    description: "Generate PRDs, roadmaps, decision reviews, and competitive analyses — grounded in your evidence, fully editable.",
+    description: "Generate PRDs, roadmaps, decision reviews, and competitive analyses — grounded in your evidence, ready for export and review.",
   },
 ];
 
@@ -187,7 +187,7 @@ export default async function LandingPage() {
           Everything inside the workspace
         </h2>
         <p className="mt-3 mb-12 text-center text-gray-500">
-          Each capability is project-scoped, context-aware, and fully editable
+          Each capability is project-scoped, context-aware, and regenerable
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {capabilities.map((c) => (

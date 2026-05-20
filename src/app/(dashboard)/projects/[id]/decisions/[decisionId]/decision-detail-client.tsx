@@ -193,6 +193,11 @@ export function DecisionDetailClient({
                         {String(opt.effort_estimate)} effort
                       </Badge>
                     )}
+                    {opt.reversibility && String(opt.reversibility) !== "unknown" && (
+                      <Badge variant="default">
+                        {String(opt.reversibility)} reversibility
+                      </Badge>
+                    )}
                     {opt.confidence_score != null && (
                       <span className="text-xs text-gray-400">{String(opt.confidence_score)}%</span>
                     )}
@@ -235,6 +240,9 @@ export function DecisionDetailClient({
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm text-gray-800">{String(a.statement)}</p>
                   <div className="flex gap-1.5 flex-shrink-0">
+                    {a.assumption_type && (
+                      <Badge variant="default">{String(a.assumption_type)}</Badge>
+                    )}
                     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${riskColors[String(a.risk_level ?? "medium")]}`}>
                       {String(a.risk_level ?? "medium")} risk
                     </span>

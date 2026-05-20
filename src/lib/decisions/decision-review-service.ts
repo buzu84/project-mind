@@ -582,6 +582,11 @@ async function saveAnalysisResults(
         ? aiOutput.recommendation.reasoning.join("\n")
         : String(aiOutput.recommendation.reasoning ?? ""),
       // Extended columns (added by alignment migration)
+      // NOTE: We write to next_validation_steps (alignment migration column).
+      // The original next_steps column from 20260504_decision_engine.sql is
+      // unused/dead for Decision Review — it was superseded by
+      // next_validation_steps in 20260520_decision_review_schema_alignment.sql.
+      // A future cleanup migration can drop next_steps if no other feature uses it.
       recommendation: aiOutput.recommendation.recommendation,
       supporting_evidence: aiOutput.recommendation.supportingEvidence,
       assumptions: aiOutput.recommendation.assumptions,
@@ -616,24 +621,45 @@ async function deleteOldRecords(
   projectId: string,
   newIds: Set<string>,
 ): Promise<void> {
-  // Delete old recommendations (only AI-generated)
+  // ┌─────────────────────────────────────────────────────────────────────────┐
+  // │ FUTURE WARNING — EDITABLE / MANUAL OUTPUTS                            │
+  // │                                                                        │
+  // │ This cleanup currently deletes rows where generated_by IS NULL.        │
+  // │ This is ONLY safe because no manual creation UI exists yet — all       │
+  // │ null rows are legacy AI-generated records from before generated_by     │
+  // │ was added.                                                             │
+  // │                                                                        │
+  // │ BEFORE shipping manual/editable outputs:                               │
+  // │ 1. New manual rows MUST set generated_by = "manual" (not null).        │
+  // │ 2. Change filters below to ONLY delete generated_by = GENERATED_BY.   │
+  // │ 3. Remove the `|| r.generated_by === null` fallback.                  │
+  // │ 4. Consider a versioning/history strategy so re-analyze doesn't       │
+  // │    silently replace user-edited content.                               │
+  // │ 5. Consider a confirmation prompt: "Re-analyzing will replace the     │
+  // │    current AI-generated analysis. Your manual edits will be lost."     │
+  // └─────────────────────────────────────────────────────────────────────────┘
+
+  // Delete old recommendations (AI-generated, including legacy rows without generated_by
+  // that were created before the generated_by column was added)
   const { data: oldRecs } = await supabase.from("product_decision_recommendations")
     .select("id, generated_by").eq("decision_id", decisionId).eq("user_id", userId);
-  for (const r of (oldRecs ?? []).filter((r: any) => !newIds.has(r.id) && r.generated_by === GENERATED_BY)) {
+  for (const r of (oldRecs ?? []).filter((r: any) => !newIds.has(r.id) && (r.generated_by === GENERATED_BY || r.generated_by === null))) {
     await supabase.from("product_decision_recommendations").delete().eq("id", r.id).eq("user_id", userId);
   }
 
-  // Delete old options (only AI-generated — never delete generated_by IS NULL)
+  // Delete old options (AI-generated or legacy null generated_by)
+  // When manual option creation is added, change null filter to only GENERATED_BY
   const { data: oldOpts } = await supabase.from("product_decision_options")
     .select("id, generated_by").eq("decision_id", decisionId).eq("user_id", userId);
-  for (const o of (oldOpts ?? []).filter((o: any) => !newIds.has(o.id) && o.generated_by === GENERATED_BY)) {
+  for (const o of (oldOpts ?? []).filter((o: any) => !newIds.has(o.id) && (o.generated_by === GENERATED_BY || o.generated_by === null))) {
     await supabase.from("product_decision_options").delete().eq("id", o.id).eq("user_id", userId);
   }
 
-  // Delete old assumptions (only AI-generated — preserve manual/null)
+  // Delete old assumptions (AI-generated or legacy null generated_by)
+  // When manual assumption creation is added, change null filter to only GENERATED_BY
   const { data: oldAssumptions } = await supabase.from("product_assumptions")
     .select("id, generated_by").eq("decision_id", decisionId).eq("user_id", userId);
-  for (const a of (oldAssumptions ?? []).filter((a: any) => !newIds.has(a.id) && a.generated_by === GENERATED_BY)) {
+  for (const a of (oldAssumptions ?? []).filter((a: any) => !newIds.has(a.id) && (a.generated_by === GENERATED_BY || a.generated_by === null))) {
     await supabase.from("product_assumptions").delete().eq("id", a.id).eq("user_id", userId);
   }
 

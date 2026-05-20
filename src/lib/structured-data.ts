@@ -58,7 +58,7 @@ export const faqItems = [
   {
     question: "Can I edit the AI-generated content?",
     answer:
-      "Yes. Every generated artifact — PRDs, roadmaps, competitive analyses, feature scores — is fully editable after generation. AI outputs are a starting point, not a final answer. We strongly recommend human review and refinement for all generated content.",
+      "AI outputs — PRDs, roadmaps, competitive analyses, decision reviews — are structured starting points designed for human review. You can regenerate any output with updated context, and copy results for use in your own documents. In-app editing of individual generated fields is on the roadmap. We strongly recommend reviewing and validating all generated content before acting on it.",
   },
   {
     question: "Is my data stored securely?",

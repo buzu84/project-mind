@@ -53,7 +53,7 @@ const workflowSteps = [
     step: "04",
     title: "Use AI tools",
     description:
-      "With context and evidence in place, each AI tool draws on your project data to produce structured, editable outputs. You can run tools in any order, but the recommended flow is: PRD Generator → Feature Prioritizer → AI Roadmap → Decisions.",
+      "With context and evidence in place, each AI tool draws on your project data to produce structured outputs you can review, regenerate, and use as starting points. You can run tools in any order, but the recommended flow is: PRD Generator → Feature Prioritizer → AI Roadmap → Decisions.",
     where: "Project page → tool cards (PRD Generator, Feature Prioritizer, AI Roadmap, etc.).",
   },
 ];
@@ -98,7 +98,7 @@ const tools = [
     name: "Decisions",
     does: "Analyzes a product decision using structured reasoning and retrieved project evidence.",
     bestInputs: "A clearly stated decision or question. Relevant feedback documents uploaded to the project.",
-    outputs: "Options with pros/cons, assumptions, evidence citations, risks, and a confidence-scored recommendation.",
+    outputs: "Options with pros/cons, assumptions, retrieved evidence, risks, and a confidence-scored recommendation.",
     bestFor: "Making high-stakes product decisions with evidence-based reasoning instead of gut feeling.",
   },
   {
@@ -109,11 +109,18 @@ const tools = [
     bestFor: "Getting cross-functional feedback when you don't have a full team to review with.",
   },
   {
-    name: "AI Chat",
-    does: "A per-project chat assistant that can answer questions using your uploaded evidence and project context.",
+    name: "AI Chat (per project)",
+    does: "A per-project chat assistant that answers questions using your uploaded evidence and project context.",
     bestInputs: "Specific questions about your product, feedback, or strategy. Works best with uploaded documents.",
     outputs: "Context-aware conversational responses grounded in your project data.",
     bestFor: "Quick questions, exploring feedback themes, brainstorming within project context.",
+  },
+  {
+    name: "AI Assistant (global)",
+    does: "A general-purpose product management chat available from the sidebar. It does not have access to any specific project's data or uploaded evidence.",
+    bestInputs: "General product strategy questions, framework explanations, best practices.",
+    outputs: "General conversational responses based on product management knowledge.",
+    bestFor: "Generic questions that aren't tied to a specific project. For project-grounded answers, use the per-project AI Chat instead.",
   },
 ];
 
@@ -123,7 +130,7 @@ const bestPractices = [
   { do: "Include constraints and tradeoffs", why: "Prevents the AI from recommending things you can't build." },
   { do: "Add competitor context", why: "Improves competitive analysis and positioning recommendations." },
   { do: "Keep project context updated", why: "As your product evolves, update goals and constraints so outputs stay relevant." },
-  { do: "Review and edit all AI outputs", why: "AI outputs are starting points. Human judgment is always required." },
+  { do: "Review all AI outputs before acting on them", why: "AI outputs are starting points — not final decisions. Human judgment is always required." },
 ];
 
 const commonMistakes = [
