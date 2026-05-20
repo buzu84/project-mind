@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSiteUrl } from "@/lib/url";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const publishableKey =
@@ -8,7 +9,7 @@ const publishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   "";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const cookieStore = cookies();
   const supabase = createServerClient(supabaseUrl, publishableKey, {
     cookies: {
@@ -25,9 +26,6 @@ export async function POST(request: NextRequest) {
 
   await supabase.auth.signOut();
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
-
-  return NextResponse.redirect(new URL("/", origin), { status: 302 });
+  return NextResponse.redirect(`${getSiteUrl()}/`, { status: 302 });
 }
 
