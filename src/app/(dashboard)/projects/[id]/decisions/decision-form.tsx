@@ -102,9 +102,6 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
         <h2 className="text-xl font-bold text-gray-900">
           {isEdit ? "Edit Decision" : "New Decision"}
         </h2>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
       </div>
 
       <Input

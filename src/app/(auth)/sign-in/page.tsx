@@ -162,6 +162,7 @@ function SignInForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
             required
           />
           <Input
@@ -171,6 +172,7 @@ function SignInForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
+            autoComplete="current-password"
             required
           />
           <div className="flex justify-end">

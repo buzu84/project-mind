@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
   const [editingDecision, setEditingDecision] = useState<ProductDecision | null>(null);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   async function refreshDecisions() {
     const res = await fetch(`/api/projects/${projectId}/decisions`);
@@ -104,7 +106,7 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
         throw new Error(body.error ?? "Analysis failed.");
       }
       toast("Decision analyzed successfully");
-      refreshDecisions();
+      router.push(`/projects/${projectId}/decisions/${decisionId}`);
     } catch (err) {
       toast(err instanceof Error ? err.message : "Could not analyze decision.", "error");
     } finally {

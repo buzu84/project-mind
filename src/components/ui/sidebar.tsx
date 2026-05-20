@@ -12,6 +12,7 @@ import {
   IconLogOut,
   IconSparkles,
   IconTrendingUp,
+  IconBookOpen,
 } from "@/components/icons";
 
 const mainNav = [
@@ -19,6 +20,7 @@ const mainNav = [
   { href: "/projects", label: "Projects", icon: IconProjects },
   { href: "/ai-chat", label: "AI Assistant", icon: IconChat },
   { href: "/usage", label: "AI Usage", icon: IconTrendingUp },
+  { href: "/getting-started", label: "Getting Started", icon: IconBookOpen },
 ];
 
 const bottomNav = [

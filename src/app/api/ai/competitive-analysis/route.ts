@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const { projectId, productName, industry, competitors } = parsed.data;
   const supabase = createClient();
 
-  const { data: project } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", user.id).single();
+  const { data: project } = await supabase.from("projects").select("id, description, target_users, market, business_model, goals").eq("id", projectId).eq("user_id", user.id).single();
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const isReal = isRealAI();
@@ -66,8 +66,27 @@ export async function POST(req: Request) {
     );
   }
 
-  const systemPrompt = `You are a competitive intelligence analyst. Produce a detailed competitive analysis in Markdown. Include: Market Overview, Competitor Profiles, Feature Comparison Matrix, SWOT Analysis, Strategic Recommendations, and Positioning Map description.`;
-  const userPrompt = `Product: ${productName}\nIndustry: ${industry}${competitors ? `\nKnown competitors: ${competitors}` : ""}`;
+  const systemPrompt = `You are a competitive intelligence analyst. Produce a detailed competitive analysis in Markdown. Include: Market Overview, Competitor Profiles, Feature Comparison Matrix, SWOT Analysis, Strategic Recommendations, and Positioning Map description.
+
+Important rules:
+- Ground your analysis in the product context provided below. Do NOT invent geographic markets, user segments, or competitors that are not mentioned or implied by the product context.
+- If the product context specifies a geography, market, or industry, restrict your analysis to that scope.
+- If no specific geography is mentioned, do not assume one. Analyze at the level of specificity the context supports.
+- Clearly label any assumptions you make.`;
+
+  // Build context-enriched user prompt
+  const contextLines: string[] = [
+    `Product: ${productName}`,
+    `Industry: ${industry}`,
+  ];
+  if (competitors) contextLines.push(`Known competitors: ${competitors}`);
+  if (project.description) contextLines.push(`Product description: ${project.description}`);
+  if (project.target_users) contextLines.push(`Target users: ${project.target_users}`);
+  if (project.market) contextLines.push(`Market/Industry: ${project.market}`);
+  if (project.business_model) contextLines.push(`Business model: ${project.business_model}`);
+  if (project.goals) contextLines.push(`Goals: ${project.goals}`);
+
+  const userPrompt = contextLines.join("\n");
 
   try {
     const result = await generateCompletionWithUsage(systemPrompt, userPrompt);
