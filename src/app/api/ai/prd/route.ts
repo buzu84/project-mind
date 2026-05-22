@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const systemPrompt = `You are a senior product manager. Generate a comprehensive Product Requirements Document (PRD) in Markdown format. Include: Executive Summary, Problem Statement, Goals & Success Metrics, User Stories, Functional Requirements, Non-Functional Requirements, Timeline, and Risks.`;
+  const systemPrompt = `You are a senior product manager. Generate a comprehensive Product Requirements Document (PRD) in Markdown format. Use ## (h2) headings for each major section: Executive Summary, Problem Statement, Goals & Success Metrics, User Stories, Functional Requirements, Non-Functional Requirements, Timeline, and Risks. Do NOT wrap all sections under a single ## heading; each section must be its own ## heading.`;
   const userPrompt = `Product: ${productName}\nDescription: ${productDescription}${targetAudience ? `\nTarget Audience: ${targetAudience}` : ""}`;
 
 
