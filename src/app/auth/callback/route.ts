@@ -20,9 +20,8 @@ export async function GET(request: Request) {
     | null;
   const next = searchParams.get("next") ?? "/dashboard";
   const errorParam = searchParams.get("error");
-  const errorDescription = searchParams.get("error_description");
 
-  // Use the centralized site URL so redirects never land on localhost in production
+  // Use the centralized site URL
   const origin = getSiteUrl();
 
   // Handle error passed as query param (some Supabase flows)

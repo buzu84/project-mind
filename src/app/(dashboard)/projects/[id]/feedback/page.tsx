@@ -2,7 +2,6 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { IconArrowLeft, IconDocument } from "@/components/icons";
 import { FeedbackForm } from "./feedback-form";

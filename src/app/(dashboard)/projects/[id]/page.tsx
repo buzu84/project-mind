@@ -161,8 +161,6 @@ export default async function ProjectDetailPage({
     [];
   const featureCount =
     (project.feature_ideas as { count: number }[])?.[0]?.count ?? 0;
-  const messageCount =
-    (project.messages as { count: number }[])?.[0]?.count ?? 0;
   const insightCount =
     (project.insights as { count: number }[])?.[0]?.count ?? 0;
 
