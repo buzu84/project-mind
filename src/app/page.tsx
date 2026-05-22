@@ -126,12 +126,12 @@ export default async function LandingPage() {
           >
             {user ? "Go to Dashboard" : "Get started — it\u2019s free"}
           </Link>
-          <a
-            href="#features"
+          <Link
+            href="/#features"
             className="rounded-lg border border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 hover:bg-gray-100 transition"
           >
             See how it works
-          </a>
+          </Link>
         </div>
       </section>
 

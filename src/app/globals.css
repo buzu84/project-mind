@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Offset anchor targets so sticky/fixed headers don't obscure them */
+  [id] {
+    scroll-margin-top: 2rem;
+  }
+
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
   }
