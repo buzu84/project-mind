@@ -4,6 +4,111 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { IconSparkles, IconUser } from "@/components/icons";
 
+/* ------------------------------------------------------------------ */
+/*  Lightweight markdown renderer for chat messages                    */
+/* ------------------------------------------------------------------ */
+
+/** Render inline markdown: **bold**, `code` */
+function InlineMarkdown({ text }: { text: string }) {
+  const parts = text.split(/(\*\*.+?\*\*|`.+?`)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>;
+        }
+        if (part.startsWith("`") && part.endsWith("`")) {
+          return <code key={i} className="rounded bg-gray-100 px-1 py-0.5 text-xs font-mono">{part.slice(1, -1)}</code>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
+function ChatMarkdown({ text }: { text: string }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+  let key = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) { i++; continue; }
+
+    // Headings
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const cls = level <= 2
+        ? "text-sm font-semibold text-gray-900 mt-3 mb-1"
+        : "text-sm font-medium text-gray-800 mt-2 mb-0.5";
+      elements.push(<p key={key++} className={cls}><InlineMarkdown text={headingMatch[2]} /></p>);
+      i++;
+      continue;
+    }
+
+    // HR
+    if (/^-{3,}$/.test(trimmed) || /^\*{3,}$/.test(trimmed)) {
+      elements.push(<hr key={key++} className="my-2 border-gray-200" />);
+      i++;
+      continue;
+    }
+
+    // Bullet list
+    if (/^\s*[-*•]\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*[-*•]\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*•]\s+/, "").trim());
+        i++;
+      }
+      elements.push(
+        <ul key={key++} className="my-1 space-y-0.5 pl-4">
+          {items.map((item, j) => (
+            <li key={j} className="list-disc text-sm text-gray-600 leading-relaxed marker:text-gray-400">
+              <InlineMarkdown text={item} />
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // Numbered list
+    if (/^\s*\d+[.)]\s/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*\d+[.)]\s/.test(lines[i].trim())) {
+        items.push(lines[i].replace(/^\s*\d+[.)]\s+/, "").trim());
+        i++;
+      }
+      elements.push(
+        <ol key={key++} className="my-1 space-y-0.5 pl-4">
+          {items.map((item, j) => (
+            <li key={j} className="list-decimal text-sm text-gray-600 leading-relaxed marker:text-gray-400">
+              <InlineMarkdown text={item} />
+            </li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    // Regular line
+    elements.push(
+      <p key={key++} className="text-sm leading-relaxed text-gray-600">
+        <InlineMarkdown text={trimmed} />
+      </p>
+    );
+    i++;
+  }
+
+  return <div className="space-y-1">{elements}</div>;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
@@ -15,7 +120,7 @@ export interface ChatMessage {
 interface ChatShellProps {
   initialMessages: ChatMessage[];
   apiEndpoint: string;
-  buildRequestBody: (message: string) => Record<string, unknown>;
+  buildRequestBody: (_message: string) => Record<string, unknown>;
   suggestions: string[];
   emptyTitle: string;
   emptyDescription: string;
@@ -232,8 +337,12 @@ export function ChatShell({
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 text-sm leading-relaxed text-gray-600 whitespace-pre-wrap break-words">
-                    {msg.content}
+                  <div className="mt-1 break-words">
+                    {msg.role === "assistant" ? (
+                      <ChatMarkdown text={msg.content} />
+                    ) : (
+                      <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{msg.content}</p>
+                    )}
                     {msg.id.startsWith("streaming-") && isStreaming && (
                       <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" />
                     )}

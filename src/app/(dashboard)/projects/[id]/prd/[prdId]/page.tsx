@@ -51,9 +51,10 @@ export default async function PrdResultPage({
   const prd = decision as unknown as Decision;
   const content = prd.output?.content ?? "";
   const productName = prd.input?.productName ?? "PRD";
+  const productDesc = prd.input?.productDescription;
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <Link
         href={`/projects/${project.id}`}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
@@ -62,31 +63,36 @@ export default async function PrdResultPage({
         Back to {project.name}
       </Link>
 
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            📄 {productName}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 break-words">
+            {productName}
           </h1>
-          <div className="mt-2 flex items-center gap-3">
-            <p className="text-sm text-gray-500">
-              Generated on{" "}
-              {new Date(prd.created_at).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
+          {productDesc && (
+            <p className="mt-1 max-w-xl text-sm text-gray-500 leading-relaxed">{productDesc}</p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="info">PRD</Badge>
             {prd.input?.targetAudience && (
               <Badge variant="default">{prd.input.targetAudience}</Badge>
             )}
+            <span className="text-xs text-gray-400">·</span>
+            <p className="text-xs text-gray-400">
+              <time suppressHydrationWarning dateTime={prd.created_at}>
+                {new Date(prd.created_at).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+            </p>
           </div>
         </div>
         <Link
           href={`/projects/${project.id}/prd`}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+          className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
         >
-          + Generate another PRD
+          + Generate another
         </Link>
       </div>
 

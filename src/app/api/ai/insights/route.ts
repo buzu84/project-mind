@@ -249,7 +249,7 @@ export async function POST(req: Request) {
     });
 
     // Normalize through shared pipeline
-    const { insights: normalized, rawParsedCount, error: parseError } = normalizeInsightsFromAI(raw);
+    const { insights: normalized, error: parseError } = normalizeInsightsFromAI(raw);
 
     if (normalized.length === 0) {
       return NextResponse.json(
