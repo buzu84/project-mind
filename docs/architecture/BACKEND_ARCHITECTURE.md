@@ -26,8 +26,8 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // 2. Rate limiting
-  const rl = await checkHeavyAILimit(user, "decision_review");
+  // 2. Rate limiting (synchronous — no await needed)
+  const rl = checkHeavyAILimit(user);
   if (!rl.allowed) return rateLimitResponse(rl);
 
   // 3. Input validation (Zod)
@@ -76,32 +76,11 @@ Next.js Route Handlers provide the same capabilities (request parsing, response 
 
 ## Authentication Flow
 
-```mermaid
-graph TD
-    A[Every Request] --> B[Edge Middleware]
-    B --> C[Refresh Supabase session cookie]
-    C --> D[Route Handler]
-    D --> E[getCurrentUser]
-    E --> F{Valid session?}
-    F -->|Yes| G[Continue with user.id]
-    F -->|No| H[Return 401]
-```
-
-- **Edge Middleware** (`src/middleware.ts`): Runs on every request. Refreshes the Supabase auth session cookie so it doesn't expire during active use.
-- **`getCurrentUser()`**: Called at the start of every protected route. Returns the authenticated user or null.
-- **RLS (Row-Level Security)**: Even if auth is bypassed, Supabase RLS policies prevent accessing other users' data at the database level. This is defense-in-depth.
+Every request passes through Edge Middleware (session refresh) → `getCurrentUser()` → RLS enforcement. See [AUTH_AND_SECURITY.md](AUTH_AND_SECURITY.md) for the full session flow and [AUTH_FLOW.md](../api/AUTH_FLOW.md) for step-by-step API details.
 
 ## Rate Limiting
 
-Implemented in `lib/ai/rate-limiter.ts` using an in-memory sliding window algorithm.
-
-| Tier | Limit | Features |
-|---|---|---|
-| Standard | 20 requests / hour | Chat, Insights, Feature Scoring, Prioritization |
-| Heavy | 5 requests / 15 min | PRD, Roadmap, Competitive Analysis, Decision Review, Multi-Agent |
-
-- **Admin bypass**: Users whose email is in `ADMIN_EMAILS` env var skip rate limits.
-- **Limitation**: In-memory state resets on serverless cold start. Acceptable for MVP; Redis/Upstash is the planned upgrade.
+Two tiers: Standard (20/hour) and Heavy (5/15min). In-memory sliding window with admin bypass. See [RATE_LIMITING.md](../api/RATE_LIMITING.md) for the full reference.
 
 ## Usage Tracking
 
@@ -125,19 +104,7 @@ The `void` prefix makes tracking non-blocking — if tracking fails, the user's 
 
 ## Error Handling
 
-| Status | Meaning | When |
-|---|---|---|
-| 400 | Bad Request | Zod validation failed, missing required fields |
-| 401 | Unauthorized | No valid session |
-| 404 | Not Found | Resource doesn't exist or user doesn't own it |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 502 | Bad Gateway | OpenAI returned invalid/unparseable response |
-| 500 | Internal Error | Unexpected server error |
-
-All error responses follow a consistent shape:
-```json
-{ "error": "Human-readable error message" }
-```
+All errors return `{ "error": "Human-readable message" }`. Status codes: 400 (validation), 401 (auth), 404 (not found/not owned), 429 (rate limit), 502 (OpenAI failure), 503 (not configured). See [ERROR_HANDLING.md](ERROR_HANDLING.md) for the full reference.
 
 ## Structured AI Output Handling
 

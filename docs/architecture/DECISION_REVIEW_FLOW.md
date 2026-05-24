@@ -1,6 +1,6 @@
 # Decision Review — Orchestration Flow
 
-The Decision Review is ProductMind's most complex AI workflow. When a user clicks "Analyze Decision", a 10-phase pipeline executes server-side.
+The Decision Review is ProductMind's most complex AI workflow. When a user clicks "Analyze Decision", a multi-phase pipeline executes server-side.
 
 ## Flow Diagram
 
@@ -159,7 +159,19 @@ The AI must return this exact structure:
 | `src/app/api/projects/[projectId]/decisions/[decisionId]/analyze/route.ts` | Thin route handler |
 | `src/lib/decisions/decision-review-service.ts` | Main orchestrator (~700 lines) |
 | `src/lib/decisions/review-schemas.ts` | Zod output schema |
-| `src/lib/decisions/review-normalize.ts` | AI output normalization |
+| `src/lib/decisions/review-normalize.ts` | AI output normalization (~30 enum aliases) |
 | `src/lib/evidence/retrieval-service.ts` | Evidence retrieval |
 | `src/lib/rag/vector-search.ts` | pgvector similarity search |
+
+## Current Limitations
+
+- **No streaming.** The analyze endpoint is synchronous — the client waits 5-15 seconds for the full result. The UI shows a loading spinner.
+- **No transactions.** Insert-before-delete is not wrapped in a database transaction. Supabase JS client doesn't support multi-statement transactions. Partial failures are possible but unlikely.
+- **No versioning.** Re-analysis replaces everything. There is no history of previous analyses.
+- **One retry only.** If the AI returns invalid JSON twice, the user sees an error. No automatic fallback to a simpler prompt.
+- **Evidence citations not rendered inline.** The AI may output `[1]`, `[2]` references in recommendation text, but these are not rendered as clickable links in the UI.
+
+See also:
+- [`api/DECISION_ENGINE_API.md`](../api/DECISION_ENGINE_API.md) — CRUD API, schemas, legacy fields
+- [`api/AI_API_WORKFLOWS.md`](../api/AI_API_WORKFLOWS.md) — how the analyze endpoint fits into the broader AI route pattern
 

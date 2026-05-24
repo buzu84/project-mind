@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     .from("decisions")
     .select("id, type, input, created_at")
     .eq("project_id", projectId)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (type) {

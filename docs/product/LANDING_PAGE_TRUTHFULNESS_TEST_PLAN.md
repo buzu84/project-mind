@@ -1,254 +1,162 @@
 # Landing Page Truthfulness Test Plan
 
-Manual QA plan to verify that every claim on the ProductMind landing page is backed by real, working product behavior.
+Verifies that every claim on the ProductMind landing page (`src/app/page.tsx`) and structured data (`src/lib/structured-data.ts`) matches real, working product behavior. This is **not** a general regression checklist — see `docs/qa/MANUAL_TESTING.md` for that.
 
 ---
 
-## 1. Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |---|---|
-| Deployed URL | `NEXT_PUBLIC_SITE_URL` (e.g. `https://project-mind-ten.vercel.app`) |
-| Supabase project | Auth enabled, email confirmation on, RLS policies applied |
-| Environment variables | `OPENAI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
-| Test user A | Registered via signup, email confirmed |
-| Test user B | Separate account for cross-project isolation tests |
-| AI mock mode | `USE_REAL_AI=true` (or unset) for truthfulness tests; mock mode for structure-only checks |
-| Rate limit | Test user should **not** be in `ADMIN_EMAILS` for rate-limit tests |
+| Running app | `npm run dev` or deployed URL |
+| Auth | Signed-in user with at least one project containing a feedback document with a unique phrase |
+| AI mode | `USE_REAL_AI=true` for claim verification; `USE_REAL_AI=false` acceptable for structural checks only |
+| Second user | Separate account for cross-project isolation checks (sections 5, 7) |
 
 ---
 
-## 2. Test Data
+## 1. Hero Section Claims
 
-### Project 1 — "SmartMenu" (with evidence)
+**Source**: `src/app/page.tsx` lines 109–136
 
-- **Name**: SmartMenu
-- **Description**: AI-powered restaurant menu recommendation engine
-- **Target users**: Restaurant owners, diners
-- **Goals**: Increase average order value, reduce decision fatigue
-- **Feedback document** (unique phrase for retrieval verification):
-  > "During the Lisbon pilot, 73% of diners said the allergen filter was more important than personalized suggestions."
-
-### Project 2 — "SmartMenu" decision without evidence
-
-- Use the same project but create a decision on a topic **not** covered by any uploaded document (e.g. "Should we support cryptocurrency payments?").
-
-### Project 3 — "FitTrack" (cross-project isolation)
-
-- **Name**: FitTrack
-- **Description**: Wearable fitness analytics dashboard
-- **Feedback document** (unique phrase):
-  > "Beta testers in the Helsinki cohort reported that sleep tracking accuracy dropped below 60% on devices with AMOLED screens."
-
-Owned by **Test user B**.
+| # | Claim / Copy | Where to verify | Pass? |
+|---|---|---|---|
+| 1.1 | "AI-Powered Product Management" | Tagline only — OK if any AI feature works | ☐ |
+| 1.2 | "From idea to roadmap, faster" | Verify PRD → Feature Prioritizer → Roadmap flow completes end-to-end | ☐ |
+| 1.3 | "structured PRDs, prioritized roadmaps, and competitive insights — grounded in your actual project context" | PRD uses project context (DB fields). Roadmap uses RAG. Competitive analysis uses project context. Confirm none use generic-only prompts. | ☐ |
+| 1.4 | CTA "Get started — it's free" links to `/sign-up` (logged out) | Click while logged out → `/sign-up` | ☐ |
+| 1.5 | CTA shows "Go to Dashboard" and links to `/dashboard` (logged in) | Click while logged in → `/dashboard` | ☐ |
+| 1.6 | "See how it works" links to `/#features` | Click → scrolls to features section | ☐ |
 
 ---
 
-## 3. Evidence-Grounded Decision Reviews
+## 2. Feature Cards (3 cards)
 
-**Landing claim**: _"Analyze product decisions using retrieved project evidence and structured AI reasoning."_
+**Source**: `features` array, `src/app/page.tsx` lines 13–32
 
-| # | Step | Expected | Result |
+### 2a. "Evidence-Grounded Decision Reviews"
+
+| # | Sub-claim | Code truth | Pass? |
 |---|---|---|---|
-| 3.1 | Create project "SmartMenu" and add the Lisbon pilot feedback document. | Document saved, embeddings generated (check `feedback_documents` table, `embeddings_outdated = false`). | ▢ PASS · ▢ FAIL |
-| 3.2 | Create a decision: "Should we prioritize allergen filtering over personalized recommendations?" | Decision row created in `product_decisions`. | ▢ PASS · ▢ FAIL |
-| 3.3 | Click **Analyze Decision**. | AI review completes without error. | ▢ PASS · ▢ FAIL |
-| 3.4 | Verify options are generated. | `product_decision_options` has ≥ 2 rows for this decision. | ▢ PASS · ▢ FAIL |
-| 3.5 | Verify assumptions are generated. | `product_assumptions` has ≥ 1 row linked to this decision. | ▢ PASS · ▢ FAIL |
-| 3.6 | Verify evidence is retrieved from feedback. | `product_evidence` contains a row referencing the Lisbon pilot phrase or the source document. | ▢ PASS · ▢ FAIL |
-| 3.7 | Verify evidence is linked to the decision. | `product_decision_evidence_links` has a row connecting the decision to the evidence. | ▢ PASS · ▢ FAIL |
-| 3.8 | Verify recommendation is generated. | `product_decision_recommendations` has ≥ 1 row. | ▢ PASS · ▢ FAIL |
-| 3.9 | Verify UI displays evidence/citations. | Decision detail page shows evidence cards or citation references. | ▢ PASS · ▢ FAIL |
-| 3.10 | **Cross-project isolation**: Log in as Test user A. Run Analyze Decision on SmartMenu. Verify no FitTrack evidence appears. | No Helsinki/AMOLED/FitTrack content in results. | ▢ PASS · ▢ FAIL |
+| 2.1 | "Analyze product decisions using retrieved project evidence" | Decision review API retrieves evidence. Check `product_evidence` and `product_decision_evidence_links` tables are populated after analysis. | ☐ |
+| 2.2 | "structured AI reasoning" | Output includes options, assumptions, recommendation — verify `product_decision_options`, `product_assumptions`, `product_decision_recommendations` have rows | ☐ |
+| 2.3 | "confidence-scored recommendation" | `product_decisions.confidence_score` and `product_decision_recommendations.confidence_score` are non-null after analysis | ☐ |
+| 2.4 | "not just a gut feeling" | Marketing phrasing — acceptable if 2.1–2.3 pass | ☐ |
 
-**SQL verification queries:**
+### 2b. "PRDs & Prioritized Roadmaps"
 
-```sql
--- 3.4 Options
-SELECT id, title, pros, cons FROM product_decision_options
-WHERE decision_id = '<DECISION_ID>';
+| # | Sub-claim | Code truth | Pass? |
+|---|---|---|---|
+| 2.5 | "Generate stakeholder-ready PRDs" | PRD generation works (`/api/ai/prd`). ⚠️ "stakeholder-ready" is aspirational — PRDs are AI drafts. Verify output has structured sections. | ☐ |
+| 2.6 | "RICE/ICE-scored roadmaps from your project context" | Feature Prioritizer produces RICE/ICE scores. Roadmap generates Now/Next/Later view. | ☐ |
+| 2.7 | "user stories, success metrics, Now/Next/Later timelines, and dependency mapping" | Verify PRD output contains user stories and success metrics. Verify roadmap output contains Now/Next/Later and dependencies. | ☐ |
 
--- 3.5 Assumptions
-SELECT id, assumption_text, status FROM product_assumptions
-WHERE decision_id = '<DECISION_ID>';
+### 2c. "Multi-Perspective Strategic Analysis"
 
--- 3.6 Evidence
-SELECT id, content, source_type, source_id FROM product_evidence
-WHERE decision_id = '<DECISION_ID>';
-
--- 3.7 Evidence links
-SELECT * FROM product_decision_evidence_links
-WHERE decision_id = '<DECISION_ID>';
-
--- 3.8 Recommendation
-SELECT id, recommendation_text, confidence_score FROM product_decision_recommendations
-WHERE decision_id = '<DECISION_ID>';
-```
+| # | Sub-claim | Code truth | Pass? |
+|---|---|---|---|
+| 2.8 | "PM, CTO, UX Researcher, and Growth Marketer personas" | Multi-agent review (`/api/ai/multi-agent-review`) uses exactly these 4 personas. Verify in prompt/output. | ☐ |
+| 2.9 | "evaluate your product independently, then surface a consensus with blind spots" | Output has 4 individual sections + consensus summary | ☐ |
+| 2.10 | "competitive landscape analysis" linked to multi-perspective | Competitive analysis is a separate feature (`/api/ai/competitive-analysis`), not part of multi-agent review. Verify card description doesn't conflate them. | ☐ |
 
 ---
 
-## 4. Confidence-Scored Recommendations
+## 3. "How It Works" Section (3 steps)
 
-**Landing claim**: _"Get options, assumptions, risks, and a confidence-scored recommendation."_
+**Source**: `workflows` array, `src/app/page.tsx` lines 34–50
 
-| # | Step | Expected | Result |
+| # | Claim | Code truth | Pass? |
 |---|---|---|---|
-| 4.1 | After test 3.3, check `product_decisions.confidence_score`. | Non-null numeric value (0–100). | ▢ PASS · ▢ FAIL |
-| 4.2 | Check `product_decision_recommendations.confidence_score`. | Non-null numeric value (0–100). | ▢ PASS · ▢ FAIL |
-| 4.3 | Verify confidence is displayed in UI. | Decision detail page shows "Confidence: **X%**". | ▢ PASS · ▢ FAIL |
-| 4.4 | Create a decision with **no relevant evidence** ("Should we support cryptocurrency payments?") and run Analyze. | Confidence score should still appear but may be lower than 4.1/4.2. | ▢ PASS · ▢ FAIL |
-| 4.5 | Compare confidence scores from 4.1 and 4.4. | Score with evidence ≥ score without evidence (not guaranteed but directionally expected). | ▢ PASS · ▢ FAIL · ▢ INCONCLUSIVE |
-
-**SQL verification:**
-
-```sql
--- 4.1
-SELECT id, title, confidence_score FROM product_decisions
-WHERE id = '<DECISION_ID>';
-
--- 4.2
-SELECT id, confidence_score FROM product_decision_recommendations
-WHERE decision_id = '<DECISION_ID>';
-```
+| 3.1 | Step 01: "Define your product — target users, goals, business model, constraints, and open questions" | Context Builder has these fields. Project form has: name, description, target_users, market, business_model, goals. | ☐ |
+| 3.2 | Step 02: "Documents are indexed for context-aware AI retrieval" | Feedback upload triggers chunking + embedding via pgvector. Verify `document_chunks` table has rows with non-null `embedding`. | ☐ |
+| 3.3 | Step 03: "ready for export and review" | ⚠️ **FLAGGED**. No export/download feature exists. "Review" is accurate (view-only). Copy should remove "export" or clarify it means copy-paste. | ☐ FLAGGED |
 
 ---
 
-## 5. PRDs & Prioritized Roadmaps
+## 4. Capabilities Grid (8 items)
 
-**Landing claim**: _"Generate stakeholder-ready PRDs and RICE/ICE-scored roadmaps from your project context."_
+**Source**: `capabilities` array, `src/app/page.tsx` lines 52–61
 
-### 5a. PRD Generation
+| # | Label | Detail claim | Uses RAG? | Accurate? | Pass? |
+|---|---|---|---|---|---|
+| 4.1 | PRD Generation | "Structured requirements from a product idea" | No — DB context only | Yes | ☐ |
+| 4.2 | RICE & ICE Scoring | "Framework-based feature prioritization" | No | Yes | ☐ |
+| 4.3 | Roadmap Builder | "Now/Next/Later + 30/60/90-day plans" | **Yes** | Yes | ☐ |
+| 4.4 | Competitive Analysis | "Market gaps, positioning, feature comparison" | No — DB context only | Yes | ☐ |
+| 4.5 | Multi-Agent Review | "PM, CTO, UX, Growth perspectives + consensus" | **Yes** (optional) | Yes | ☐ |
+| 4.6 | Decision Engine | "Structured options, assumptions, and evidence" | Implicit via evidence retrieval | Yes | ☐ |
+| 4.7 | RAG-Powered Context | "Feedback docs embedded via pgvector" | **Yes** (this IS the RAG feature) | Yes | ☐ |
+| 4.8 | AI Chat per Project | "Context-aware assistant with retrieval" | **Yes** | Yes | ☐ |
 
-| # | Step | Expected | Result |
-|---|---|---|---|
-| 5.1 | Navigate to SmartMenu → PRD page. | PRD generation form/UI loads. | ▢ PASS · ▢ FAIL |
-| 5.2 | Generate a PRD. | PRD is created with structured sections (executive summary, user stories, success metrics, etc.). | ▢ PASS · ▢ FAIL |
-| 5.3 | Verify PRD is persisted. | Row exists in `prds` table for this project. | ▢ PASS · ▢ FAIL |
-| 5.4 | Verify PRD detail view loads. | Navigate to `/projects/[id]/prd/[prdId]` — content renders. | ▢ PASS · ▢ FAIL |
-
-### 5b. Feature Prioritization (RICE/ICE)
-
-| # | Step | Expected | Result |
-|---|---|---|---|
-| 5.5 | Navigate to SmartMenu → Features page. Add 3+ features. | Features saved. | ▢ PASS · ▢ FAIL |
-| 5.6 | Run AI scoring. | Each feature gets reach, impact, confidence, effort scores. RICE and/or ICE scores calculated. | ▢ PASS · ▢ FAIL |
-| 5.7 | Verify sorting by RICE/ICE works. | Table is sortable by score columns. | ▢ PASS · ▢ FAIL |
-
-### 5c. Roadmap Generation
-
-| # | Step | Expected | Result |
-|---|---|---|---|
-| 5.8 | Navigate to SmartMenu → Roadmap page. | Roadmap generation UI loads. | ▢ PASS · ▢ FAIL |
-| 5.9 | Generate roadmap. | Output includes Now/Next/Later view and/or 30/60/90-day plan. | ▢ PASS · ▢ FAIL |
-| 5.10 | Verify roadmap is persisted. | Row exists in `roadmaps` table. | ▢ PASS · ▢ FAIL |
-| 5.11 | Verify risks, dependencies, success metrics sections. | At least some of these sections appear in output. | ▢ PASS · ▢ FAIL |
+**Note**: No capability card mentions Global AI Assistant. Correct — global chat has no project context and must not be marketed as "context-aware."
 
 ---
 
-## 6. Multi-Perspective Strategic Analysis
+## 5. FAQ Truthfulness
 
-**Landing claim**: _"PM, CTO, UX Researcher, and Growth Marketer personas evaluate your product independently, then surface a consensus with blind spots."_
+**Source**: `faqItems` in `src/lib/structured-data.ts`
 
-| # | Step | Expected | Result |
-|---|---|---|---|
-| 6.1 | Navigate to SmartMenu → Multi-Agent Review page. | Review UI loads. | ▢ PASS · ▢ FAIL |
-| 6.2 | Run multi-agent review. | Review completes without error. | ▢ PASS · ▢ FAIL |
-| 6.3 | Verify exactly 4 persona responses. | Output contains sections for: **Product Manager**, **CTO**, **UX Researcher**, **Growth Marketer**. | ▢ PASS · ▢ FAIL |
-| 6.4 | Verify persona labels match landing page copy. | UI labels match exactly: "Product Manager", "CTO", "UX Researcher", "Growth Marketer". | ▢ PASS · ▢ FAIL |
-| 6.5 | Verify consensus summary exists. | A combined consensus section is displayed after individual perspectives. | ▢ PASS · ▢ FAIL |
-| 6.6 | Verify review is persisted. | Row exists in `multi_agent_reviews` table. | ▢ PASS · ▢ FAIL |
-
-### 6b. Competitive Analysis
-
-| # | Step | Expected | Result |
-|---|---|---|---|
-| 6.7 | Navigate to SmartMenu → Competitive Analysis. | Competitive analysis UI loads. | ▢ PASS · ▢ FAIL |
-| 6.8 | Generate competitive analysis. | Output includes competitors, feature comparison, positioning insights. | ▢ PASS · ▢ FAIL |
-| 6.9 | Verify persistence. | Row in `competitive_analyses` table. | ▢ PASS · ▢ FAIL |
-
----
-
-## 7. Context-Aware AI Retrieval
-
-**Landing claim**: _"Documents are indexed for context-aware AI retrieval."_
-
-| # | Step | Expected | Result |
-|---|---|---|---|
-| 7.1 | Open SmartMenu → AI Chat. Ask: "What did users say about allergen filtering in the Lisbon pilot?" | Response references the Lisbon pilot feedback content. | ▢ PASS · ▢ FAIL |
-| 7.2 | Ask an unrelated question: "What is the capital of France?" | Response does **not** inject project feedback as context. | ▢ PASS · ▢ FAIL |
-| 7.3 | **Cross-project**: In SmartMenu chat, ask "What did beta testers say about sleep tracking on AMOLED screens?" | Response does **not** contain FitTrack/Helsinki content. | ▢ PASS · ▢ FAIL |
-| 7.4 | Verify embeddings exist in DB. | `document_chunks` table has rows for the SmartMenu feedback document with non-null `embedding`. | ▢ PASS · ▢ FAIL |
-
-**SQL verification:**
-
-```sql
--- 7.4
-SELECT id, document_id, content, embedding IS NOT NULL AS has_embedding
-FROM document_chunks
-WHERE document_id IN (
-  SELECT id FROM feedback_documents WHERE project_id = '<SMARTMENU_PROJECT_ID>'
-);
-```
-
----
-
-## 8. Landing Page Copy Verification
-
-| # | Check | Expected | Result |
-|---|---|---|---|
-| 8.1 | No fake testimonials or quotes on page. | None present. | ▢ PASS · ▢ FAIL |
-| 8.2 | No fake customer/company logos. | None present. | ▢ PASS · ▢ FAIL |
-| 8.3 | No fake usage metrics (e.g. "10,000 PMs use…"). | None present. | ▢ PASS · ▢ FAIL |
-| 8.4 | "Evidence-Grounded Decision Reviews" — supported by tests 3.x. | Claim matches behavior. | ▢ PASS · ▢ FAIL |
-| 8.5 | "confidence-scored recommendation" — supported by tests 4.x. | Claim matches behavior. | ▢ PASS · ▢ FAIL |
-| 8.6 | "PRDs & Prioritized Roadmaps" — supported by tests 5.x. | Claim matches behavior. | ▢ PASS · ▢ FAIL |
-| 8.7 | "PM, CTO, UX Researcher, and Growth Marketer" — supported by tests 6.x. | Exact persona names match code. | ▢ PASS · ▢ FAIL |
-| 8.8 | "Documents are indexed for context-aware AI retrieval" — supported by tests 7.x. | Claim matches behavior. | ▢ PASS · ▢ FAIL |
-| 8.9 | FAQ answer about rate limits ("20 standard/hour, 5 heavy/15min") matches `src/lib/ai/rate-limit.ts`. | Values match code. | ▢ PASS · ▢ FAIL |
-| 8.10 | FAQ answer about AI model ("GPT-4o", "text-embedding-3-small") matches actual API calls. | Model names match code. | ▢ PASS · ▢ FAIL |
-| 8.11 | "Built with" footer strip lists only real technologies used. | All listed technologies (Next.js, TypeScript, Supabase, pgvector, OpenAI) are in the codebase. | ▢ PASS · ▢ FAIL |
-
----
-
-## 9. Regression Checks
-
-| # | Check | Expected | Result |
-|---|---|---|---|
-| 9.1 | Sign up with new email. | Confirmation email received, redirect to app after confirming. | ▢ PASS · ▢ FAIL |
-| 9.2 | Sign in with existing user. | Redirects to `/dashboard`. | ▢ PASS · ▢ FAIL |
-| 9.3 | Sign out. | Redirects to landing page at correct domain (`NEXT_PUBLIC_SITE_URL`). | ▢ PASS · ▢ FAIL |
-| 9.4 | Email confirmation redirect. | Redirect goes to production URL, not `localhost`. | ▢ PASS · ▢ FAIL |
-| 9.5 | Rate limiting (non-admin). | After 20 standard AI calls in 1 hour, next call returns 429. | ▢ PASS · ▢ FAIL |
-| 9.6 | Admin bypass. | User in `ADMIN_EMAILS` is not rate-limited. | ▢ PASS · ▢ FAIL |
-| 9.7 | Landing page — desktop layout. | All sections render, no overflow, CTA buttons work. | ▢ PASS · ▢ FAIL |
-| 9.8 | Landing page — mobile layout (≤640px). | Responsive, no horizontal scroll, readable text, tappable buttons. | ▢ PASS · ▢ FAIL |
-| 9.9 | CTA "Get started — it's free" links to `/sign-up` (logged out) or `/dashboard` (logged in). | Correct link. | ▢ PASS · ▢ FAIL |
-
----
-
-## 10. Summary Pass/Fail Checklist
-
-| Section | Tests | Pass | Fail | Notes |
+| # | FAQ question | Risky claim | Accurate? | Pass? |
 |---|---|---|---|---|
-| 3 — Evidence-Grounded Decision Reviews | 3.1–3.10 | | | |
-| 4 — Confidence Scores | 4.1–4.5 | | | |
-| 5 — PRDs & Roadmaps | 5.1–5.11 | | | |
-| 6 — Multi-Perspective Analysis | 6.1–6.9 | | | |
-| 7 — Context-Aware Retrieval | 7.1–7.4 | | | |
-| 8 — Landing Copy Verification | 8.1–8.11 | | | |
-| 9 — Regression | 9.1–9.9 | | | |
-
-**Overall verdict**: ▢ ALL PASS · ▢ HAS FAILURES
-
----
-
-## Claims Requiring Extra Manual Attention
-
-1. **Test 4.5 (confidence comparison)**: The AI may not always produce lower confidence without evidence. Mark as INCONCLUSIVE if scores are similar — this is a directional expectation, not a guaranteed behavior.
-2. **Test 7.2 (irrelevant question)**: The RAG quality gate should prevent injection, but edge cases depend on embedding similarity thresholds.
-3. **Test 9.5 (rate limiting)**: In-memory rate limiter resets on serverless cold starts. Testing requires sustained calls within one instance lifecycle.
+| 5.1 | "What exactly does ProductMind do?" | "production-ready PRDs" | ⚠️ Overclaimed. PRDs are AI-generated drafts. Should say "structured PRDs." | ☐ FLAGGED |
+| 5.2 | "How does the AI actually work?" | "GPT-4o" and "text-embedding-3-small" | Verify against `src/lib/openai.ts` and embedding code | ☐ |
+| 5.3 | "How does the AI actually work?" | "RAG to ground outputs in your actual project context" | Only 3/8 AI features use RAG (chat, roadmap, multi-agent-review). Others use DB context only. Implies all features use RAG. | ☐ FLAGGED |
+| 5.4 | "Can I edit the AI-generated content?" | "copy results for use in your own documents" | No copy-to-clipboard button exists. Users can manually select+copy only. | ☐ FLAGGED |
+| 5.5 | "Can I edit the AI-generated content?" | "In-app editing … is on the roadmap" | Acceptable — clearly labeled as future | ☐ |
+| 5.6 | "Is ProductMind free?" | "20 standard operations per hour, 5 heavy operations per 15 minutes" | Matches `rate-limiter.ts` TIER_LIMITS exactly | ☐ |
+| 5.7 | "Is my data stored securely?" | "row-level security (RLS) enabled" | Verify RLS policies exist in Supabase migrations | ☐ |
+| 5.8 | "Is my data stored securely?" | "OAuth support" | Verify OAuth is configured in Supabase | ☐ |
+| 5.9 | "What are the AI's limitations?" | "decision-support tool, not a decision-making tool" | Honest framing — good | ☐ |
 
 ---
 
-*Last updated: 2026-05-20*
+## 6. Footer Claims
 
+**Source**: `src/app/page.tsx` lines 234–251
+
+| # | Claim | Accurate? | Pass? |
+|---|---|---|---|
+| 6.1 | "Built with Next.js, TypeScript, Supabase, pgvector, and OpenAI" | All present in codebase | ☐ |
+| 6.2 | "RAG-grounded AI outputs" | Partially true — only chat, roadmap, multi-agent-review use RAG. Others use DB context. | ☐ |
+| 6.3 | "Row-level security" | Verify in Supabase migrations | ☐ |
+| 6.4 | "Rate-limited production API" | Rate limiter is in-memory, resets on serverless cold start. "Production" slightly overclaimed. | ☐ FLAGGED |
+| 6.5 | Privacy, Cookies, Terms links | Verify `/privacy`, `/cookies`, `/terms` pages exist and render | ☐ |
+
+---
+
+## 7. Cross-Project Isolation
+
+| # | Check | Pass? |
+|---|---|---|
+| 7.1 | AI Chat for Project A does not surface feedback from Project B | ☐ |
+| 7.2 | Decision review for Project A does not use Project B's evidence | ☐ |
+| 7.3 | Global AI Assistant does not have access to any project's feedback documents | ☐ |
+
+---
+
+## 8. Structured Data / SEO Claims
+
+**Source**: `src/lib/structured-data.ts`
+
+| # | Claim | Accurate? | Pass? |
+|---|---|---|---|
+| 8.1 | `SoftwareApplication.offers.description`: "Free plan with 10 AI decisions per month" | ⚠️ **WRONG**. Rate limit is 20 standard/hour, not "10 per month." Must be corrected. | ☐ FLAGGED |
+| 8.2 | `SoftwareApplication.featureList` includes "Project management dashboard" | ProductMind is a product decision tool, not a project management tool. Misleading. | ☐ FLAGGED |
+
+---
+
+## Summary of Flagged Claims
+
+| # | Location | Issue | Severity | Status |
+|---|---|---|---|---|
+ 3.3  Landing "How it works" step 03  "ready for export" — no export feature exists  Medium  ✅ Fixed → "ready for review"
+| 5.1 | FAQ "What does ProductMind do?" | "production-ready PRDs" — AI drafts, not production-ready | Low | ✅ Fixed → "structured PRDs" |
+| 5.3 | FAQ "How does the AI work?" | Implies all features use RAG — only 3/8 do | Medium | ✅ Fixed → explicitly lists which features use RAG |
+| 5.4 | FAQ "Can I edit?" | "copy results" — no copy button exists | Low | ✅ Fixed → removed "copy results" claim |
+| 6.4 | Footer | "Rate-limited production API" — in-memory, resets on cold start | Low | ✅ Fixed → "Rate-limited API" |
+| 8.1 | Structured data | "10 AI decisions per month" — wrong, actual is 20/hour | **High** | ✅ Fixed → matches rate-limiter.ts |
+| 8.2 | Structured data | "Project management dashboard" — misleading category | Low | ✅ Fixed → replaced with accurate feature list |
+
+---
+
+*Last updated: 2026-05-24*

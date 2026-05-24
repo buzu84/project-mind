@@ -9,7 +9,7 @@ This document captures known non-blocking issues, future cleanup tasks, and prod
 - **Status**: Deployable as MVP / beta / portfolio demo.
 - **Remaining items**: Non-blocking unless marked **[HIGH PRIORITY]** below.
 - **Security**: No known critical vulnerabilities. Security improvements listed are hardening items for commercial launch.
-- **Copy/truthfulness**: All public-facing copy has been audited for accuracy.
+- **Copy/truthfulness**: All public-facing copy has been audited and corrected. See `docs/product/LANDING_PAGE_TRUTHFULNESS_TEST_PLAN.md` and `docs/product/AI_COPY_GUIDELINES.md`.
 
 ---
 

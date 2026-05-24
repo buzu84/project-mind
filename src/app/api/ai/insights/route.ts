@@ -88,19 +88,33 @@ async function saveAndRespond(
     metadata: n.metadata,
   }));
 
-  // Delete old insights, insert new
-  await supabase.from("insights").delete().eq("project_id", projectId);
-  const { error: insertError } = await supabase.from("insights").insert(rows);
+  // Insert-before-delete: save new insights first, then remove old ones.
+  // This prevents data loss if the insert fails.
+  const { data: insertedRows, error: insertError } = await supabase
+    .from("insights")
+    .insert(rows)
+    .select("id, title");
 
   if (insertError) {
     console.error("[INSIGHTS_INSERT_ERROR]", { message: insertError.message });
   }
 
-  // Verify persistence
-  const { data: verifyRows } = await supabase
-    .from("insights")
-    .select("id, title")
-    .eq("project_id", projectId);
+  // Delete old insights (keep newly inserted ones)
+  const newIds = (insertedRows ?? []).map((r: { id: string }) => r.id);
+  if (newIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("insights")
+      .delete()
+      .eq("project_id", projectId)
+      .not("id", "in", `(${newIds.join(",")})`);
+    if (deleteError) {
+      console.error("[INSIGHTS_DELETE_ERROR]", { message: deleteError.message });
+      // Non-fatal: new insights saved, old ones are orphaned but harmless
+    }
+  }
+
+  // Use inserted rows for verification
+  const verifyRows = insertedRows;
 
   // Build response — use DB IDs if available, otherwise synthetic
   const responseInsights = verifyRows && verifyRows.length > 0

@@ -1,6 +1,6 @@
 # System Overview
 
-ProductMind is an AI-powered product decision assistant. It helps product managers generate PRDs, prioritize features, analyze competitors, review decisions with evidence, and plan roadmaps — all grounded in project-specific context via RAG (Retrieval-Augmented Generation).
+ProductMind is an AI-powered product management workspace. It helps product managers generate PRDs, prioritize features, analyze competitors, review decisions with evidence, and plan roadmaps — grounded in project context. Selected features (chat, roadmap, multi-agent review, decision review) use RAG to retrieve from uploaded feedback documents; others use project metadata directly.
 
 ## Architecture at a Glance
 
@@ -25,8 +25,7 @@ ProductMind is an AI-powered product decision assistant. It helps product manage
               │  - PostgreSQL + RLS │  │  - GPT-4o   │
               │  - pgvector         │  │  - Embed    │
               │  - Auth             │  │    3-small  │
-              │  - Edge Functions   │  └─────────────┘
-              └─────────────────────┘
+              └─────────────────────┘  └─────────────┘
 ```
 
 ## Key Design Decisions
@@ -52,10 +51,10 @@ The `USE_REAL_AI` environment variable switches between real OpenAI calls and de
 | AI Assistant (global) | `/api/ai/global-chat` | — | `global_chat_messages` |
 | PRD Generator | `/api/ai/prd` | — | `decisions` table |
 | Feature Prioritizer | `/api/ai/score-features` | — | `feature_ideas` table |
-| AI Roadmap | `/api/ai/roadmap` | — | `roadmaps` table |
+| AI Roadmap | `/api/ai/roadmap` | `lib/rag/` | `roadmaps` table |
 | Competitive Analysis | `/api/ai/competitive-analysis` | — | `decisions` table |
 | AI Insights | `/api/ai/insights` | — | `insights` table |
-| Multi-Agent Review | `/api/ai/multi-agent-review` | — | `multi_agent_reviews` table |
+| Multi-Agent Review | `/api/ai/multi-agent-review` | `lib/rag/` | `multi_agent_reviews` table |
 | Decision Engine | `/api/projects/*/decisions/*` | `lib/decisions/` | `product_decisions` + 6 related tables |
 | Decision Review (AI) | `.../analyze` | `lib/decisions/decision-review-service.ts` | `product_*` tables |
 | Evidence/RAG | Internal service | `lib/evidence/`, `lib/rag/` | `document_chunks` table |
@@ -100,7 +99,7 @@ src/
 │   ├── (auth)/             # Auth pages (sign-in, sign-up, reset)
 │   ├── (dashboard)/        # Protected dashboard pages
 │   ├── api/                # REST-like API route handlers
-│   └── auth/callback/      # OAuth/email confirmation callback
+│   └── auth/callback/      # Email confirmation + password reset callback
 ├── components/             # React UI components
 │   └── ui/                 # Design system primitives
 ├── lib/                    # Service layer (backend logic)
@@ -109,8 +108,7 @@ src/
 │   ├── decisions/          # Decision Engine services, schemas, normalization
 │   ├── evidence/           # Evidence Layer (retrieval, citations, types)
 │   ├── rag/                # RAG pipeline (chunking, embedding, search, context)
-│   └── supabase/           # Supabase client (server, client, middleware)
+│   └── supabase/           # Supabase client (server, client, middleware; service-role via server.ts)
 ├── middleware.ts            # Edge middleware for session refresh
-└── services/               # Legacy service layer (being migrated to lib/)
 ```
 

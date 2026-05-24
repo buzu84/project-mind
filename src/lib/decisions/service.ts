@@ -276,26 +276,6 @@ export async function updateDecisionOption(
   }
 }
 
-export async function deleteDecisionOption(
-  scope: OwnerScope,
-  optionId: string,
-): Promise<ServiceResult<{ id: string }>> {
-  try {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("product_decision_options")
-      .delete()
-      .eq("id", optionId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId);
-
-    if (error) return fail("Could not delete option.");
-    return ok({ id: optionId });
-  } catch {
-    return fail("Could not delete option.");
-  }
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // ASSUMPTIONS
 // ═══════════════════════════════════════════════════════════════════
@@ -328,30 +308,6 @@ export async function createAssumption(
   }
 }
 
-export async function listAssumptionsByProject(
-  scope: OwnerScope,
-  decisionId?: string,
-): Promise<ServiceResult<Record<string, unknown>[]>> {
-  try {
-    const supabase = createClient();
-    let query = supabase
-      .from("product_assumptions")
-      .select("*")
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId);
-
-    if (decisionId) {
-      query = query.eq("decision_id", decisionId);
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false });
-    if (error) return fail("Could not list assumptions.");
-    return ok(data ?? []);
-  } catch {
-    return fail("Could not list assumptions.");
-  }
-}
-
 export async function updateAssumption(
   scope: OwnerScope,
   assumptionId: string,
@@ -378,26 +334,6 @@ export async function updateAssumption(
     return ok({ id: assumptionId });
   } catch {
     return fail("Could not update assumption.");
-  }
-}
-
-export async function deleteAssumption(
-  scope: OwnerScope,
-  assumptionId: string,
-): Promise<ServiceResult<{ id: string }>> {
-  try {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("product_assumptions")
-      .delete()
-      .eq("id", assumptionId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId);
-
-    if (error) return fail("Could not delete assumption.");
-    return ok({ id: assumptionId });
-  } catch {
-    return fail("Could not delete assumption.");
   }
 }
 
@@ -429,46 +365,6 @@ export async function createEvidence(
   }
 }
 
-export async function listEvidenceByProject(
-  scope: OwnerScope,
-): Promise<ServiceResult<Record<string, unknown>[]>> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("product_evidence")
-      .select("*")
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId)
-      .order("created_at", { ascending: false });
-
-    if (error) return fail("Could not list evidence.");
-    return ok(data ?? []);
-  } catch {
-    return fail("Could not list evidence.");
-  }
-}
-
-export async function getEvidenceById(
-  scope: OwnerScope,
-  evidenceId: string,
-): Promise<ServiceResult<Record<string, unknown>>> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("product_evidence")
-      .select("*")
-      .eq("id", evidenceId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId)
-      .single();
-
-    if (error || !data) return fail("Evidence not found.");
-    return ok(data);
-  } catch {
-    return fail("Could not fetch evidence.");
-  }
-}
-
 export async function updateEvidence(
   scope: OwnerScope,
   evidenceId: string,
@@ -495,26 +391,6 @@ export async function updateEvidence(
     return ok({ id: evidenceId });
   } catch {
     return fail("Could not update evidence.");
-  }
-}
-
-export async function deleteEvidence(
-  scope: OwnerScope,
-  evidenceId: string,
-): Promise<ServiceResult<{ id: string }>> {
-  try {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("product_evidence")
-      .delete()
-      .eq("id", evidenceId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId);
-
-    if (error) return fail("Could not delete evidence.");
-    return ok({ id: evidenceId });
-  } catch {
-    return fail("Could not delete evidence.");
   }
 }
 
@@ -557,47 +433,6 @@ export async function createDecisionEvidenceLink(
   }
 }
 
-export async function listLinksByDecision(
-  scope: OwnerScope,
-  decisionId: string,
-): Promise<ServiceResult<Record<string, unknown>[]>> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("product_decision_evidence_links")
-      .select("*")
-      .eq("decision_id", decisionId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId)
-      .order("created_at", { ascending: false });
-
-    if (error) return fail("Could not list evidence links.");
-    return ok(data ?? []);
-  } catch {
-    return fail("Could not list evidence links.");
-  }
-}
-
-export async function deleteDecisionEvidenceLink(
-  scope: OwnerScope,
-  linkId: string,
-): Promise<ServiceResult<{ id: string }>> {
-  try {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("product_decision_evidence_links")
-      .delete()
-      .eq("id", linkId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId);
-
-    if (error) return fail("Could not delete link.");
-    return ok({ id: linkId });
-  } catch {
-    return fail("Could not delete link.");
-  }
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // DECISION AGENT REVIEWS
 // ═══════════════════════════════════════════════════════════════════
@@ -626,27 +461,6 @@ export async function createDecisionAgentReview(
   }
 }
 
-export async function listAgentReviewsByDecision(
-  scope: OwnerScope,
-  decisionId: string,
-): Promise<ServiceResult<Record<string, unknown>[]>> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("product_decision_agent_reviews")
-      .select("*")
-      .eq("decision_id", decisionId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId)
-      .order("created_at", { ascending: true });
-
-    if (error) return fail("Could not list agent reviews.");
-    return ok(data ?? []);
-  } catch {
-    return fail("Could not list agent reviews.");
-  }
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // DECISION RECOMMENDATIONS
 // ═══════════════════════════════════════════════════════════════════
@@ -672,27 +486,6 @@ export async function createDecisionRecommendation(
     return ok(data);
   } catch (e: unknown) {
     return fail(e instanceof Error ? e.message : "Could not create recommendation.");
-  }
-}
-
-export async function listRecommendationsByDecision(
-  scope: OwnerScope,
-  decisionId: string,
-): Promise<ServiceResult<Record<string, unknown>[]>> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("product_decision_recommendations")
-      .select("*")
-      .eq("decision_id", decisionId)
-      .eq("user_id", scope.userId)
-      .eq("project_id", scope.projectId)
-      .order("created_at", { ascending: false });
-
-    if (error) return fail("Could not list recommendations.");
-    return ok(data ?? []);
-  } catch {
-    return fail("Could not list recommendations.");
   }
 }
 
