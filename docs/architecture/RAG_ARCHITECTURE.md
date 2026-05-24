@@ -61,7 +61,7 @@ const result = await retrieveEvidence({
 });
 ```
 
-Each intent (e.g., `decision_review`, `chat`, `insights`) has its own retrieval configuration (number of results, similarity threshold, etc.) defined in `lib/evidence/intent-config.ts`.
+Each intent (e.g., `decision_review`, `chat`, `roadmap_planning`) has its own retrieval configuration (number of results, similarity threshold, etc.) defined in `lib/evidence/intent-config.ts`.
 
 ## Cross-Project Isolation
 
@@ -84,6 +84,36 @@ Embedding similarity can produce false positives — chunks that are semanticall
 ### Why quality gate with degradation?
 The quality gate prevents injecting irrelevant context into AI prompts. Degradation (lowering threshold if no results found) ensures retrieval doesn't fail silently on projects with limited data.
 
+## Feature-by-Feature RAG Usage Matrix
+
+Not every AI feature uses RAG. This matrix classifies each feature's actual context source based on the implementation.
+
+| Feature | Route / Service | Context Source | RAG Retrieval? | Embeddings? | Logs `query_embedding`? | Logs `rag_search`? |
+|---|---|---|---|---|---|---|
+| **AI Chat** (per project) | `api/ai/chat` | Project metadata + `project_context` + conversation history + RAG chunks | ✅ Full RAG (`retrieveRelevantContext`) | ✅ Query embedding | ✅ Yes | Via retrieval log |
+| **AI Roadmap** | `api/ai/roadmap` | Project metadata + `project_context` + recent insights + RAG chunks | ✅ Full RAG (`retrieveRelevantContext`) | ✅ Query embedding | ✅ Yes | Via retrieval log |
+| **Multi-Agent Review** | `api/ai/multi-agent-review` | Project metadata + `project_context` + optional RAG + optional insights | ✅ Full RAG (optional, via `retrieveRelevantContext`) | ✅ Query embedding (when enabled) | ✅ When enabled | Via retrieval log |
+| **Decision Review** | `lib/decisions/decision-review-service.ts` | Decision data + options + assumptions + Evidence Layer RAG | ✅ Full RAG (`retrieveEvidence` → vector search + citations) | ✅ Query embedding | ✅ Yes | ✅ Via `logRetrievalEvent` |
+| **AI Insights** | `api/ai/insights` | Project metadata + `project_context` + recent feedback document summaries (direct DB) | ❌ No RAG | ❌ No | ❌ No | ❌ No |
+| **PRD Generator** | `api/ai/prd` | User-provided fields (product name, description, audience) | ❌ No RAG | ❌ No | ❌ No | ❌ No |
+| **Competitive Analysis** | `api/ai/competitive-analysis` | Project metadata (direct DB) | ❌ No RAG | ❌ No | ❌ No | ❌ No |
+| **Feature Prioritizer** | `api/ai/prioritize` | User-provided feature list + project metadata | ❌ No RAG | ❌ No | ❌ No | ❌ No |
+| **Score Features** | `api/ai/score-features` | Feature ideas from DB + `project_context` | ❌ No RAG | ❌ No | ❌ No | ❌ No |
+| **Global AI Assistant** | `api/ai/global-chat` | None (general product knowledge) | ❌ No RAG | ❌ No | ❌ No | ❌ No |
+| **Feedback Ingestion** | `lib/rag/ingest.ts` (via feedback actions) | N/A (write path) | N/A | ✅ Document embedding | ✅ `document_embedding` | N/A |
+| **Context Builder** | `(dashboard)/projects/[id]/context` | N/A (manual user input, stored in `project_context`) | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Dashboard / Recent AI Activity** | `(dashboard)/dashboard` | Direct DB queries on `ai_usage`, `insights`, `decisions` | ❌ No AI | ❌ No | ❌ No | ❌ No |
+
+**Summary:** 4 of 10 AI features use RAG at runtime. 6 features use direct DB context or user-provided input. Feedback ingestion uses embeddings on the write path only.
+
+### Terminology Guide
+
+- **Full RAG**: Query is embedded → pgvector cosine similarity search → relevant chunks injected into prompt
+- **Direct DB context**: Project metadata / feedback summaries loaded via standard Supabase queries (no vector search)
+- **Project context**: Structured fields from `project_context` table injected into prompt without vector retrieval
+- **AI-generated**: Plain OpenAI completion from user-provided or DB-loaded context
+- **Embedding ingestion**: Document chunked and embedded on upload (write path only, not retrieval)
+
 ## Key Files
 
 | File | Lines | Role |
@@ -95,5 +125,5 @@ The quality gate prevents injecting irrelevant context into AI prompts. Degradat
 | `lib/rag/ingest.ts` | ~50 | Chunk storage |
 | `lib/evidence/retrieval-service.ts` | 183 | High-level retrieval abstraction |
 | `lib/evidence/citations.ts` | ~60 | Citation ID generation |
-| `lib/evidence/intent-config.ts` | ~40 | Per-intent retrieval configuration |
+| `lib/evidence/intent-config.ts` | ~60 | Per-intent retrieval configuration |
 

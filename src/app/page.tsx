@@ -20,7 +20,7 @@ const features = [
   {
     title: "PRDs & Prioritized Roadmaps",
     description:
-      "Generate stakeholder-ready PRDs and RICE/ICE-scored roadmaps from your project context. Outputs include user stories, success metrics, Now/Next/Later timelines, and dependency mapping.",
+      "Generate structured PRDs and RICE/ICE-scored roadmaps from your project context. Outputs include user stories, success metrics, Now/Next/Later timelines, and dependency mapping — designed as starting points for human review.",
     icon: "🗺️",
   },
   {
@@ -45,7 +45,7 @@ const workflows = [
   {
     step: "03",
     title: "Get structured AI outputs",
-    description: "Generate PRDs, roadmaps, decision reviews, and competitive analyses — grounded in your evidence, ready for export and review.",
+    description: "Generate PRDs, roadmaps, decision reviews, and competitive analyses — grounded in your evidence, ready for review.",
   },
 ];
 
@@ -187,7 +187,7 @@ export default async function LandingPage() {
           Everything inside the workspace
         </h2>
         <p className="mt-3 mb-12 text-center text-gray-500">
-          Each capability is project-scoped, context-aware, and regenerable
+          Each capability is project-scoped and regenerable
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {capabilities.map((c) => (
@@ -236,7 +236,7 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-6xl px-6 py-6">
           <p className="text-center text-xs text-gray-400">
             Built with Next.js, TypeScript, Supabase, pgvector, and OpenAI ·
-            RAG-grounded AI outputs · Row-level security · Rate-limited production API
+            RAG retrieval for chat, roadmap &amp; reviews · Row-level security · Rate-limited API
           </p>
         </div>
         <div className="border-t border-gray-100 py-6 text-sm text-gray-500">

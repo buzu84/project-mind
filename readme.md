@@ -1,8 +1,22 @@
 # ProductMind
 
-**AI-powered product decision intelligence platform** for product managers, founders, and software teams.
+A full-stack AI product management workspace built with Next.js, Supabase, pgvector, and OpenAI. Personal portfolio project demonstrating applied AI engineering patterns — structured generation, retrieval-augmented generation (RAG), multi-agent orchestration, and AI output validation.
 
-ProductMind combines structured product management workflows with AI-powered analysis, RAG-based evidence retrieval, and multi-agent review to help teams make better product decisions — grounded in real user feedback, not gut feelings.
+> **This is a solo engineering project, not a startup product.** It explores how AI workflows can be integrated into a real application with proper validation, retrieval, rate limiting, and data isolation — not just raw API calls.
+
+---
+
+## What It Does
+
+ProductMind provides a project workspace where a product manager can:
+
+1. **Define a project** with structured metadata (target users, market, business model, goals)
+2. **Upload feedback documents** (interviews, surveys, support tickets) that get chunked, embedded, and stored for semantic retrieval
+3. **Run AI tools** that use project context and (for some features) retrieved feedback to generate structured outputs
+4. **Review AI-generated artifacts** — PRDs, roadmaps, competitive analyses, decision reviews, insights
+5. **Track AI usage** — token counts, costs, latency, model info across all operations
+
+All AI outputs are project-scoped, validated with Zod schemas, and persisted to Supabase. There is no custom model training — the system uses OpenAI GPT-4o for generation and `text-embedding-3-small` for embeddings.
 
 ---
 
@@ -10,386 +24,312 @@ ProductMind combines structured product management workflows with AI-powered ana
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript (strict) |
+| Frontend | Next.js 14 (App Router), React 18, TypeScript (strict) |
 | Styling | Tailwind CSS 3 |
+| Backend / API | Next.js Route Handlers (14 routes, serverless on Vercel) |
+| Database | Supabase PostgreSQL with Row-Level Security |
+| Vector Search | pgvector (cosine similarity, 1536-dim embeddings) |
+| AI Generation | OpenAI GPT-4o |
+| AI Embeddings | OpenAI text-embedding-3-small |
+| Validation | Zod (request input + AI output validation) |
 | Auth | Supabase Auth (email/password, email confirmation, password reset) |
-| Database | Supabase Postgres + RLS |
-| Vector Store | pgvector (cosine similarity) |
-| Embeddings | OpenAI `text-embedding-3-small` |
-| LLM | OpenAI GPT-4o |
-| Validation | Zod (runtime schema validation for all AI outputs) |
 | Deployment | Vercel (serverless) |
-
----
-
-## Architecture Overview
-
-```mermaid
-graph TB
-    subgraph Client
-        UI[Next.js App Router<br/>React Server Components + Client Components]
-    end
-
-    subgraph API Layer
-        ROUTES[API Routes<br/>Rate Limited · Auth Required]
-    end
-
-    subgraph AI Core
-        RAG[RAG Pipeline<br/>Chunk → Embed → Search → Guard]
-        EVIDENCE[Evidence Layer<br/>Intent-based retrieval · Citations]
-        REVIEW[Decision Review AI<br/>Structured analysis · Zod validated]
-        AGENTS[Multi-Agent Review<br/>4 AI personas + consensus]
-    end
-
-    subgraph Data
-        SUPA[(Supabase Postgres<br/>RLS · Row ownership)]
-        VECTOR[(pgvector<br/>Embeddings store)]
-    end
-
-    subgraph Services
-        TRACK[Usage Tracking<br/>Tokens · Cost · Model]
-        RATE[Rate Limiter<br/>Sliding window · Admin bypass]
-    end
-
-    UI --> ROUTES
-    ROUTES --> RATE
-    ROUTES --> RAG
-    ROUTES --> EVIDENCE
-    ROUTES --> REVIEW
-    ROUTES --> AGENTS
-    RAG --> VECTOR
-    EVIDENCE --> RAG
-    REVIEW --> EVIDENCE
-    ROUTES --> TRACK
-    ROUTES --> SUPA
-    RAG --> SUPA
-```
-
-### Design Principles
-
-- **Project-scoped isolation** — all data and AI context is scoped to a single project; cross-project data leakage is prevented at the database (RLS), retrieval (project_id filter), and prompt level
-- **AI outputs are validated, not trusted** — every structured AI response is parsed through Zod schemas before persistence; invalid JSON triggers one retry before failing gracefully
-- **Mock-first development** — three flags (`USE_MOCK_AUTH`, `USE_MOCK_DB`, `USE_REAL_AI`) enable full local development without external services; production enforces real services at startup
-- **Insert-before-delete** — re-analysis operations write new results before removing previous AI-generated content, preventing data loss on failure
-
----
-
-## Core AI Pipeline
-
-All AI features follow a consistent pipeline:
-
-```
-User Action
-  → Auth check (Supabase session)
-  → Rate limit check (sliding window, per-user)
-  → Context assembly (project metadata + evidence retrieval)
-  → OpenAI API call (GPT-4o, structured prompt)
-  → Zod validation of response
-  → Persist to Supabase
-  → Track usage (tokens, cost, model, operation type)
-  → Return to client
-```
-
-### AI Features
-
-| Feature | Model | Output | Validation |
-|---|---|---|---|
-| Project Chat | GPT-4o | Streaming text | — |
-| AI Insights | GPT-4o | Categorized insights (risk/opportunity/action/assumption) | Zod |
-| PRD Generator | GPT-4o | Structured PRD sections | Zod |
-| Competitive Analysis | GPT-4o | Positioning matrix + recommendations | Zod |
-| Feature Scoring | GPT-4o | RICE/ICE scores per feature | Zod |
-| Roadmap Generator | GPT-4o | Now/Next/Later + 30/60/90-day plan | Zod |
-| Multi-Agent Review | GPT-4o | 4 persona reviews + consensus | Zod |
-| Decision Review | GPT-4o | Options, assumptions, evidence, recommendation | Zod |
-
-### Rate Limiting
-
-In-memory sliding window limiter with two tiers:
-
-| Tier | Limit | Routes |
-|---|---|---|
-| Standard | 20 req / hour | chat, insights, feature scoring |
-| Heavy | 5 req / 15 min | PRD, roadmap, competitive analysis, multi-agent review |
-
-Admin users (configured via `ADMIN_EMAILS` env var) bypass all rate limits.
-
-> **Tradeoff**: In-memory limits reset per serverless instance. Acceptable for MVP; Redis/Upstash recommended for strict enforcement.
-
----
-
-## RAG / Evidence Layer
-
-### Ingestion
-
-```
-Feedback Document
-  → Chunker (split by paragraphs, ~500 token chunks)
-  → OpenAI text-embedding-3-small (1536 dimensions)
-  → Store in document_chunks table (pgvector)
-  → Indexed with project_id for scoped retrieval
-```
-
-### Retrieval (Hybrid Semantic + Lexical)
-
-```
-User Query / AI Prompt
-  → Generate query embedding
-  → pgvector cosine similarity search (match_document_chunks RPC)
-  → Threshold degradation strategy (0.3 → 0.2 → 0.0) for diagnostics
-  → Quality gate: MIN_PROMPT_SIMILARITY = 0.2 filters low-quality matches
-  → Lexical guard: validates distinctive terms appear in chunk content
-  → Project-scoped: only chunks from current project are searched
-  → Assemble context for LLM prompt
-```
-
-**Why hybrid?** Pure semantic similarity produces false positives when chunks contain domain-generic language. The lexical guard catches cases where a chunk scores high on embedding similarity but contains none of the user's distinctive terms (e.g., product names, technical identifiers).
-
-**Why threshold degradation?** Starting strict (0.3) and falling back to looser thresholds (0.2, then 0.0) ensures the system finds *something* when embeddings exist, while the quality gate prevents garbage from reaching the prompt.
-
-### Evidence Layer
-
-The Evidence Layer (`src/lib/evidence/`) wraps RAG into a reusable retrieval service used by multiple AI features:
-
-- **Intent-based configuration** — each AI feature (chat, decision review, PRD generation) has its own retrieval config (max chunks, similarity threshold, prompt template)
-- **`EvidenceCandidate` type** — standardized shape for retrieved evidence with similarity score, source metadata, and chunk content
-- **Citation utilities** — format evidence into numbered citations for AI prompts and render citation references in UI
-
----
-
-## Decision Review AI Flow
-
-```
-Analyze Decision (button click)
-  → Load decision + project context from Supabase
-  → Retrieve evidence via Evidence Layer (intent: decision_review)
-  → Build structured prompt with decision context + evidence citations
-  → GPT-4o generates: options, assumptions, risks, recommendation + confidence
-  → Validate full response with Zod schema
-  → Insert new AI-generated records (options, assumptions, evidence links, recommendation)
-  → Delete previous AI-generated records (WHERE generated_by = 'ai')
-  → Track usage (tokens, cost)
-```
-
-### Safety: `generated_by` Ownership
-
-All AI-generated decision data is tagged with `generated_by = 'ai'`. Manual entries default to `'manual'`. Re-analysis only deletes `generated_by = 'ai'` rows — user-created content is never touched.
-
-### Safety: Insert-Before-Delete
-
-New AI results are inserted *before* old ones are deleted. If the insert fails, old data remains intact. This prevents the "blank state" failure mode where analysis fails and previous results are already gone.
-
----
-
-## Security & Isolation
-
-| Mechanism | Scope | Implementation |
-|---|---|---|
-| Row Level Security | All tables | Supabase RLS policies enforce `user_id = auth.uid()` |
-| Project ownership | Child tables | JOIN through `projects` table to verify ownership |
-| Route protection | All `/dashboard/*` | Middleware refreshes session; redirects unauthenticated users |
-| API auth | All API routes | Server-side session check before processing |
-| RAG isolation | Vector search | `project_id` filter in `match_document_chunks` RPC |
-| Env guards | Production startup | Mock flags in production throw fatal errors |
-| AI output validation | All structured AI | Zod schemas reject malformed LLM responses |
-| Admin isolation | Rate limiter | Admin emails checked server-side only; never exposed to client |
-
----
-
-## Current Implementation Status
-
-### ✅ Implemented
-
-- Project management (CRUD with structured metadata)
-- Project context builder (personas, metrics, pain points, competitors, goals, constraints)
-- Feedback documents (CRUD with source tagging)
-- RAG pipeline (chunking → embedding → pgvector search → quality gates → lexical guard)
-- Evidence retrieval layer (intent-based, project-scoped, with citations)
-- AI Chat (streaming, project-scoped with RAG, global mode)
-- AI Insights (risk, opportunity, assumption, action categories)
-- PRD Generator (structured sections, persistence, detail view)
-- Competitive Analysis (positioning, recommendations, persistence)
-- Feature Ideas with RICE/ICE AI scoring
-- AI Roadmap (Now/Next/Later, 30/60/90-day, risks, dependencies)
-- Multi-Agent Review (PM, CTO, UX Researcher, Growth Marketer personas + consensus)
-- Decision Engine (decisions CRUD, AI-powered analysis with structured outputs)
-- AI usage tracking (tokens, cost, model, operation across all features)
-- Rate limiting (sliding window, standard/heavy tiers, admin bypass)
-- Supabase Auth (email/password, email confirmation, password reset, account deletion)
-- RLS + project-scoped data isolation
-- Zod validation on all structured AI outputs
-- `generated_by` ownership tracking for safe re-analysis
-- Cross-project isolation (DB, RAG, prompt level)
-- Confidence scoring on AI recommendations
-- Supabase persistence for all AI outputs
-- Manual QA / smoke test plans
-- Production safety guards (env validation, mock-mode blocking)
-
-### 🚧 Planned / Not Yet Implemented
-
-- Full multi-agent orchestration (agents currently run sequentially, not autonomously)
-- Background job processing (all AI runs synchronously in request lifecycle)
-- Streaming for structured AI outputs (only chat currently streams)
-- Evaluation framework for AI output quality
-- Autonomous agent workflows
-- Production observability stack (structured logging, error tracking, APM)
-- Redis-backed rate limiting for strict serverless enforcement
-- PDF / Notion export for PRDs and roadmaps
-- Team collaboration (multi-user projects)
 
 ---
 
 ## Features
 
-- **Project Management** — Create, edit, and delete projects with structured metadata
-- **Project Context Builder** — Personas, metrics, pain points, competitors, strategic goals, constraints
-- **PRD Generator** — AI-generated product requirement documents with structured rendering
-- **Feature Prioritizer** — RICE & ICE scoring with AI-powered estimation
-- **Competitive Analysis** — Competitive landscape, positioning insights, strategic recommendations
-- **AI Insights** — Strategic insights across risk, opportunity, assumption, and action categories
-- **Product Roadmap** — Now/Next/Later roadmap with 30/60/90-day plans, risks, dependencies
-- **Multi-Agent Review** — Four AI personas review product decisions with consensus summary
-- **Decision Engine** — AI-powered decision analysis with options, assumptions, evidence, and confidence scoring
-- **Evidence Layer** — Intent-based retrieval with quality gates, citations, and project scoping
-- **AI Chat** — Streaming chat with RAG context (global + project-scoped)
-- **Feedback & Research** — Customer feedback collection with source tagging and RAG ingestion
-- **AI Usage Tracking** — Token, cost, and operation monitoring across all AI features
-- **Authentication** — Supabase Auth with email/password, email confirmation, password reset, account deletion
-- **Rate Limiting** — Per-user AI rate limiting with admin bypass
-- **Settings** — Profile management, account security, account deletion
+| Feature | What it does |
+|---|---|
+| **Project Workspace** | Create projects with structured metadata (name, description, target users, market, business model, goals) |
+| **Context Builder** | Add structured context across 8 sections (personas, metrics, pain points, competitors, goals, constraints, open questions) |
+| **Feedback & Research** | Upload documents that get chunked, embedded via pgvector, and indexed for semantic retrieval |
+| **AI Chat** (per project) | Streaming conversational assistant scoped to one project — uses RAG to retrieve from uploaded feedback |
+| **Global AI Assistant** | General product strategy chat — no project context, no RAG |
+| **PRD Generator** | Generates a structured Product Requirements Document from project metadata |
+| **Feature Prioritizer** | RICE and ICE scoring for feature ideas with AI commentary |
+| **Competitive Analysis** | Market positioning, competitor comparison, gap analysis from project metadata |
+| **AI Insights** | Strategic risks, opportunities, assumptions, and recommended actions |
+| **AI Roadmap** | Now/Next/Later roadmap + 30/60/90-day plan — uses RAG |
+| **Multi-Agent Review** | 4 AI personas (PM, CTO, UX Researcher, Growth Marketer) independently evaluate, then produce a consensus with disagreements and blind spots |
+| **Decision Review** | Structured decision analysis: options, assumptions, evidence retrieval, confidence-scored recommendation |
+| **Generated Documents** | Stored PRDs, competitive analyses, and prioritization results viewable per project |
+| **AI Usage Tracking** | Per-call telemetry: model, tokens, cost, latency, feature, status (mock/real) |
+| **Rate Limiting** | In-memory sliding window: 20 standard/hour, 5 heavy/15min, admin bypass |
+
+---
+
+## AI Architecture: What Uses RAG and What Doesn't
+
+Not all features use retrieval. This table shows exactly what each AI feature does:
+
+| Feature | Context Source | Uses RAG? | Streaming? | Validation |
+|---|---|---|---|---|
+| AI Chat (per project) | Project metadata + RAG from feedback | ✅ Yes | ✅ SSE | — |
+| AI Roadmap | Project metadata + RAG from feedback | ✅ Yes | No | Zod |
+| Multi-Agent Review | Project metadata + RAG (optional) | ✅ Yes | No | Zod (per persona) |
+| Decision Review | Project metadata + Evidence Layer (RAG + citations) | ✅ Yes | No | Zod + normalization |
+| PRD Generator | Project metadata from DB | ❌ No | No | Zod |
+| Competitive Analysis | Project metadata from DB | ❌ No | No | Zod |
+| AI Insights | Project metadata from DB | ❌ No | No | Zod + normalization |
+| Feature Prioritizer | Feature list + project metadata | ❌ No | No | Zod |
+| Feature Scoring | Feature descriptions | ❌ No | No | Zod |
+| Global AI Assistant | None (general knowledge only) | ❌ No | ✅ SSE | — |
+
+**4 of 10 AI features** use retrieval-augmented generation at runtime. The others generate from project metadata stored in Supabase. Intent configs exist for PRD and competitive analysis but are not yet wired into their route handlers.
+
+---
+
+## Technical Highlights
+
+### RAG Pipeline with Quality Gates
+
+Not a toy "embed and search" — the retrieval pipeline includes:
+
+- **Chunking** (~500 chars, ~50 char overlap) → **Embedding** (text-embedding-3-small, 1536d) → **pgvector storage**
+- **Threshold degradation** (0.3 → 0.2 → 0.0) — starts strict, falls back for low-data projects
+- **Quality gate** (MIN_PROMPT_SIMILARITY = 0.2) — discards irrelevant chunks before prompt injection
+- **Lexical guard** — keyword overlap check catches embedding false positives
+- **Project-scoped** — `project_id` filter in vector search prevents cross-project leakage
+
+Implementation: `src/lib/rag/` (chunker, embeddings, vector-search, context-builder — ~700 lines)
+
+### Evidence Layer
+
+Wraps RAG with intent-specific configuration per AI feature:
+
+- 7 retrieval intents (chat, decision_review, roadmap_planning, etc.) with distinct thresholds, limits, and query prefixes
+- Citation generation for AI prompts (not rendered in UI)
+- `EvidenceCandidate` typed results with similarity scores
+
+Implementation: `src/lib/evidence/` (retrieval-service, citations, intent-config, types — ~370 lines)
+
+### Multi-Agent Review Orchestration
+
+4 AI personas run in parallel, then a consensus is synthesized:
+
+```
+PM evaluation ─┐
+CTO evaluation ─┤ (parallel) → Consensus
+UX evaluation  ─┤
+Growth evaluation┘
+```
+
+Each persona response is Zod-validated independently. Optional RAG context and existing insights can be included. 5 OpenAI calls per review — the most expensive feature.
+
+Implementation: `src/app/api/ai/multi-agent-review/route.ts` (~330 lines)
+
+### Decision Review Pipeline
+
+The most complex AI workflow — a 10-phase orchestration:
+
+```
+Auth → Rate limit → Load decision → Load project context → Retrieve evidence (RAG)
+→ Build prompt with citations → GPT-4o structured generation → Normalize AI output
+→ Zod validate (retry once on failure) → Insert new records → Delete old AI records
+→ Update confidence score → Track usage
+```
+
+Safety: insert-before-delete prevents data loss. `generated_by` marker prevents re-analysis from deleting manual edits.
+
+Implementation: `src/lib/decisions/decision-review-service.ts` (~700 lines)
+
+### Structured AI Output Validation
+
+LLMs don't reliably produce valid JSON. Every structured AI response goes through:
+
+```
+JSON.parse() → Normalization (snake_case→camelCase, string→number, alias mapping)
+→ Zod schema validation → Retry with error feedback if invalid
+```
+
+The normalization layer handles ~30 enum aliases (e.g., `"legal"` → `"business"`, `"financial"` → `"pricing"`).
+
+### Streaming Chat (SSE)
+
+Project chat and global chat use Server-Sent Events for real-time token delivery:
+
+- `ReadableStream` on the server pushes `data: "token"\n\n` chunks
+- Final event includes message ID and timestamp for persistence
+- Partial content saved on stream interruption (best-effort)
+
+### Security & Data Isolation
+
+| Layer | Mechanism |
+|---|---|
+| Database | Row-Level Security (RLS) on every table — `auth.uid() = user_id` |
+| Application | Explicit `.eq("user_id", user.id)` on every query |
+| API | `getCurrentUser()` check in every route handler |
+| RAG | `project_id` filter in vector search |
+| Prompt | Project context scoped per request |
+| Admin | `ADMIN_EMAILS` checked server-side only, never exposed to client |
+
+### Usage Telemetry
+
+Every AI call — real or mock — logs to the `ai_usage` table:
+
+- Model, feature, tokens (prompt + completion), estimated cost
+- Latency, status (success/error), mock flag
+- Project ID, user ID, feature-specific metadata
+- Fire-and-forget pattern (`void trackAIUsage(...)`) — telemetry never blocks responses
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────┐
+│               Vercel (Serverless)                 │
+│                                                   │
+│  Next.js App Router    14 API Routes    Service   │
+│  (React SSR + CSR)     (REST-like)      Layer     │
+│                                         (lib/)    │
+└────────────┬───────────────────┬─────────────────┘
+             │                   │
+   ┌─────────▼────────┐   ┌─────▼─────┐
+   │    Supabase       │   │  OpenAI   │
+   │  PostgreSQL + RLS │   │  GPT-4o   │
+   │  pgvector         │   │  Embed    │
+   │  Auth             │   │  3-small  │
+   └──────────────────┘   └───────────┘
+```
+
+### Request Flow (AI Route)
+
+1. **Auth** — Edge Middleware refreshes session; `getCurrentUser()` validates
+2. **Rate limit** — In-memory sliding window check (standard or heavy tier)
+3. **Input validation** — Zod schema on request body
+4. **Ownership** — Project loaded with `.eq("user_id", user.id)` + RLS
+5. **Context assembly** — Project metadata from DB; + RAG retrieval for 4 features
+6. **AI call** — OpenAI GPT-4o with structured prompt
+7. **Output validation** — Zod parse, normalize, retry once on failure
+8. **Persistence** — Save to Supabase
+9. **Telemetry** — `void trackAIUsage(...)` (non-blocking)
+10. **Response** — JSON or SSE stream
 
 ---
 
 ## Project Structure
 
 ```
-src/
+src/                           143 files, ~19K lines
 ├── app/
-│   ├── (auth)/                    # Sign-in, sign-up pages
-│   ├── (dashboard)/               # Protected dashboard layout
-│   │   ├── dashboard/             # Dashboard homepage
-│   │   ├── projects/[id]/         # Project detail + AI tools
-│   │   │   ├── prd/               # PRD generator + detail view
-│   │   │   ├── analysis/          # Competitive analysis + detail
-│   │   │   ├── features/          # Feature ideas + RICE/ICE scoring
-│   │   │   ├── insights/          # AI strategic insights
-│   │   │   ├── roadmap/           # AI roadmap generator
-│   │   │   ├── multi-agent-review/# Multi-persona review
-│   │   │   ├── chat/              # Project-scoped AI chat
-│   │   │   ├── decisions/         # Decision Engine + AI analysis
-│   │   │   ├── feedback/          # Feedback documents CRUD
-│   │   │   └── context/           # Project context builder
-│   │   ├── ai-chat/               # Global AI assistant
-│   │   ├── usage/                 # AI usage history
-│   │   └── settings/              # User settings
-│   ├── api/
-│   │   ├── ai/                    # AI API routes (chat, insights, PRD, etc.)
-│   │   ├── decisions/             # Decision Engine API
-│   │   └── projects/              # Project API routes
-│   ├── auth/callback/             # Supabase email confirmation callback
-│   └── page.tsx                   # Marketing landing page
-├── components/
-│   ├── ui/                        # Reusable UI primitives
-│   ├── chat-shell.tsx             # Shared streaming chat component
-│   └── document-renderer.tsx      # Markdown-to-cards renderer
+│   ├── (auth)/                # Sign-in, sign-up, password reset
+│   ├── (dashboard)/           # Protected pages (projects, AI tools, settings)
+│   ├── api/                   # 14 API route handlers
+│   │   ├── ai/                # 9 AI generation routes
+│   │   ├── decisions/         # Decision Engine CRUD
+│   │   └── projects/          # Project + decision analyze routes
+│   ├── auth/callback/         # Email confirmation + password reset callback
+│   └── page.tsx               # Landing page
+├── components/                # React UI components + design system
 ├── lib/
-│   ├── ai/                        # AI utilities (pricing, tracking, rate limiter, mock generators)
-│   ├── decisions/                 # Decision Engine (service, schemas, review AI)
-│   ├── evidence/                  # Evidence Layer (retrieval, citations, intent configs)
-│   ├── rag/                       # RAG pipeline (chunking, embeddings, vector search, context builder)
-│   ├── supabase/                  # Supabase clients (server, browser)
-│   ├── auth/                      # Auth helpers
-│   ├── env.ts                     # Runtime environment validation
-│   └── openai.ts                  # OpenAI client singleton
-├── services/                      # Data access services
-├── types/                         # Shared TypeScript types
-└── middleware.ts                  # Auth session refresh + route protection
+│   ├── ai/                    # Rate limiter, usage tracking, pricing, mock generators
+│   ├── decisions/             # Decision Engine service, Zod schemas, normalization
+│   ├── evidence/              # Evidence Layer (retrieval, citations, intent configs)
+│   ├── rag/                   # RAG pipeline (chunking, embedding, vector search)
+│   ├── supabase/              # Server + browser Supabase clients
+│   └── auth/                  # Auth helpers, mock auth, admin detection
+├── types/                     # Shared TypeScript types
+└── middleware.ts              # Auth session refresh + route protection
 ```
 
 ---
 
-## Local Development
+## Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- Supabase project ([supabase.com](https://supabase.com) — free tier works)
-- OpenAI API key ([platform.openai.com](https://platform.openai.com))
+- Supabase project (free tier works) — [supabase.com](https://supabase.com)
+- OpenAI API key — [platform.openai.com](https://platform.openai.com)
 
-### Setup
+### Install & Run
 
 ```bash
 git clone <repo-url> && cd project-mind
 npm install
-cp .env.local.example .env.local   # Fill in your values
+cp .env.local.example .env.local   # Fill in credentials
 npm run dev                        # http://localhost:3000
 ```
 
-### Database Migrations
-
-Run in order via **Supabase Dashboard → SQL Editor**. See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full migration list and verification queries.
-
-### Development Modes
-
-| Mode | Config | Use Case |
-|---|---|---|
-| **Full mock** | `USE_MOCK_AUTH=true` `USE_MOCK_DB=true` `USE_REAL_AI=false` | No external services needed |
-| **Mock auth + real AI** | `USE_MOCK_AUTH=true` `USE_MOCK_DB=true` `USE_REAL_AI=true` | Test AI features without Supabase |
-| **Full production** | Real Supabase + OpenAI credentials | End-to-end testing |
-
----
-
-## Environment Variables
+### Environment Variables
 
 ```env
-# Supabase
+# Required
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# OpenAI
 OPENAI_API_KEY=sk-...
-
-# App
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Development flags (set all to false/true for production)
+# Development flags
 NEXT_PUBLIC_USE_MOCK_AUTH=true
 USE_MOCK_AUTH=true
 USE_MOCK_DB=false
 USE_REAL_AI=false
 
-# Admin (optional, server-only)
-ADMIN_EMAILS=admin@example.com,another@example.com
+# Optional
+ADMIN_EMAILS=admin@example.com
 ```
 
----
+### Database
 
-## Scripts
+Run 14 SQL migrations in order via **Supabase Dashboard → SQL Editor**. See `supabase/migrations/` for the full list.
+
+### Development Modes
+
+| Mode | Config | Use Case |
+|---|---|---|
+| Full mock | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=false` | No external services needed |
+| Mock auth + real AI | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=true` | Test AI with mock data |
+| Full production | All real credentials | End-to-end testing |
+
+Production enforces real services — mock flags throw fatal errors at startup.
+
+### Scripts
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start development server |
+| `npm run dev` | Development server |
 | `npm run build` | Production build |
-| `npm run lint` | Run ESLint |
-| `npm run lint:fix` | Fix ESLint issues |
-| `npm run format` | Format with Prettier |
-| `npm run format:check` | Check formatting |
+| `npm run lint` | ESLint |
+| `npm run lint:fix` | ESLint autofix |
+| `npm run format` | Prettier format |
+| `npm run format:check` | Prettier check |
 
 ---
 
-## Deployment
+## Current Limitations
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full deployment guide including:
+This is a portfolio/MVP project. These limitations are intentional or known:
 
-- Vercel environment variables
-- Supabase Auth URL configuration
-- Database migration order
-- Production safety guards
-- Custom domain setup (LH.pl)
-- Post-deploy smoke test checklist
-- Troubleshooting guide
+- **No custom model training** — uses OpenAI APIs; no fine-tuning or self-hosted models
+- **Single-user only** — no team collaboration, shared projects, or multi-user access
+- **No export** — generated outputs are view-only in the app; no PDF/Markdown/copy-to-clipboard
+- **No in-app editing** of AI-generated content — regeneration replaces previous output
+- **RAG is not universal** — only 4 of 10 AI features use retrieval at runtime
+- **In-memory rate limiting** — resets on serverless cold start; acceptable for MVP
+- **No automated tests** — manual QA checklists and smoke test plans exist in `docs/qa/`
+- **No production observability** — console logs + Vercel logs only; no Sentry/Datadog
+- **AI outputs are drafts** — structured starting points for human review, not guaranteed recommendations
+- **Citations are prompt-level only** — evidence is injected into AI prompts as numbered references but not rendered as interactive citations in the UI
+
+---
+
+## Documentation
+
+Comprehensive engineering documentation in [`docs/`](./docs/README.md):
+
+| Area | Docs |
+|---|---|
+| [Architecture](./docs/architecture/) | System overview, backend patterns, data model, RAG architecture, decision review flow, auth, error handling |
+| [API Reference](./docs/api/) | Route inventory, AI workflows, decision engine API, auth flow, rate limiting |
+| [Operations](./docs/operations/) | Deployment, environment variables, observability, incident response |
+| [Product](./docs/product/) | Product positioning, feature limitations, AI copy guidelines, landing page truthfulness audit |
+| [QA](./docs/qa/) | Manual testing checklist, decision review test plan, RAG smoke tests, data lifecycle audit |
+| [Roadmap](./docs/roadmap/) | Technical debt, future architecture directions |
+| [Glossary](./docs/GLOSSARY.md) | 28 codebase-specific term definitions |
 
 ---
 
