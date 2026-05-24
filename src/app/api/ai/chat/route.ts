@@ -246,6 +246,15 @@ export async function POST(req: Request) {
           );
           controller.close();
         } catch (err) {
+          // Save partial content if we received any, to avoid orphaned user message
+          if (fullContent.length > 0) {
+            await supabase
+              .from("messages")
+              .insert({ project_id: projectId, role: "assistant", content: fullContent + "\n\n[Response interrupted]" })
+              .select("id")
+              .single()
+              .catch(() => { /* best-effort */ });
+          }
           const rawMsg = err instanceof Error ? err.message : "Stream failed";
           const errorMsg = rawMsg.includes("401") || rawMsg.includes("API key")
             ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
@@ -257,7 +266,7 @@ export async function POST(req: Request) {
             model: "gpt-4o",
             error: err,
             latencyMs: Date.now() - startTime,
-            metadata: { project_scoped: true, streaming: true },
+            metadata: { project_scoped: true, streaming: true, partialContentLength: fullContent.length },
           });
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`));
           controller.close();
