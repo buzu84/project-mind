@@ -4,13 +4,6 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function generateCompletion(
-  systemPrompt: string,
-  userPrompt: string,
-): Promise<string> {
-  const result = await generateCompletionWithUsage(systemPrompt, userPrompt);
-  return result.content;
-}
 
 export async function generateCompletionWithUsage(
   systemPrompt: string,
