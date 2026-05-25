@@ -15,6 +15,9 @@ import type {
   InputType,
 } from "@/lib/ai/multi-agent-types";
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
+import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { multiAgentReviewToMarkdown } from "@/lib/export/serialize-markdown";
+import { formatDateTime, formatDate, toISOString } from "@/lib/format-date";
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -157,7 +160,7 @@ function ConsensusSection({ review }: { review: MultiAgentReview }) {
   );
 }
 
-function ReviewDetail({ review }: { review: MultiAgentReview }) {
+function ReviewDetail({ review, projectName }: { review: MultiAgentReview; projectName?: string }) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -171,12 +174,13 @@ function ReviewDetail({ review }: { review: MultiAgentReview }) {
             {process.env.NODE_ENV === "development" && review.is_mock && (
               <Badge variant="warning">Mock review</Badge>
             )}
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <time className="flex items-center gap-1 text-xs text-gray-400" dateTime={toISOString(review.created_at)}>
               <IconClock className="h-3 w-3" />
-              {new Date(review.created_at).toLocaleString()}
-            </span>
+              {formatDateTime(review.created_at)}
+            </time>
           </div>
         </div>
+        <CopyMarkdownButton getMarkdown={() => multiAgentReviewToMarkdown(review, projectName)} />
       </div>
 
       {/* Agent cards grid */}
@@ -385,8 +389,8 @@ export function MultiAgentClient({
                         )}
                         <span className="flex items-center gap-1 text-xs text-gray-400">
                           <IconClock className="h-3 w-3" />
-                          <time suppressHydrationWarning dateTime={review.created_at}>
-                            {new Date(review.created_at).toLocaleDateString()}
+                          <time dateTime={toISOString(review.created_at)}>
+                            {formatDate(review.created_at)}
                           </time>
                         </span>
                       </div>
@@ -400,7 +404,7 @@ export function MultiAgentClient({
                 {/* Expanded detail */}
                 {isExpanded && (
                   <div className="mt-4 ml-2 mr-2">
-                    <ReviewDetail review={review} />
+                    <ReviewDetail review={review} projectName={projectName} />
                   </div>
                 )}
               </div>

@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { IconArrowLeft } from "@/components/icons";
 import { DocumentRenderer } from "@/components/document-renderer";
+import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 
 interface Decision {
   id: string;
@@ -90,12 +91,15 @@ export default async function AnalysisResultPage({
             </p>
           </div>
         </div>
-        <Link
-          href={`/projects/${project.id}/analysis`}
-          className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
-        >
-          + New Analysis
-        </Link>
+        <div className="flex flex-shrink-0 gap-2">
+          <CopyMarkdownButton getMarkdown={content} />
+          <Link
+            href={`/projects/${project.id}/analysis`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+          >
+            + New Analysis
+          </Link>
+        </div>
       </div>
 
       <DocumentRenderer content={content} />

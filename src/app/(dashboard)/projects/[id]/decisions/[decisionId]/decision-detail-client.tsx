@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { IconSparkles } from "@/components/icons";
+import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { decisionReviewToMarkdown } from "@/lib/export/serialize-markdown";
 
 type R = Record<string, any>;
 
@@ -96,14 +98,62 @@ export function DecisionDetailClient({
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Button
-            onClick={handleAnalyze}
-            disabled={analyzing}
-            className="gap-1.5"
-          >
+          <div className="flex items-center gap-2">
+            {hasAnalysis && (
+              <CopyMarkdownButton
+                getMarkdown={() =>
+                  decisionReviewToMarkdown({
+                    title: String(decision.title ?? ""),
+                    status: String(decision.status ?? "draft"),
+                    category: String(decision.category ?? "other"),
+                    confidenceScore: confidenceScore,
+                    problemStatement: decision.problem_statement ? String(decision.problem_statement) : null,
+                    contextSummary: decision.context_summary ? String(decision.context_summary) : null,
+                    recommendation: recommendation
+                      ? {
+                          recommendation: String(recommendation.recommendation ?? ""),
+                          confidence_score: recommendation.confidence_score ?? null,
+                          reasoning: recommendation.reasoning ?? [],
+                          next_validation_steps: Array.isArray(recommendation.next_validation_steps) ? recommendation.next_validation_steps : [],
+                        }
+                      : null,
+                    options: options.map((opt: R) => ({
+                      title: String(opt.title),
+                      description: opt.description ? String(opt.description) : null,
+                      pros: Array.isArray(opt.pros) ? opt.pros : [],
+                      cons: Array.isArray(opt.cons) ? opt.cons : [],
+                      effort_estimate: opt.effort_estimate ? String(opt.effort_estimate) : null,
+                      reversibility: opt.reversibility ? String(opt.reversibility) : null,
+                      confidence_score: opt.confidence_score ?? null,
+                    })),
+                    assumptions: assumptions.map((a: R) => ({
+                      statement: String(a.statement),
+                      assumption_type: a.assumption_type ? String(a.assumption_type) : null,
+                      risk_level: a.risk_level ? String(a.risk_level) : null,
+                      evidence_status: a.evidence_status ? String(a.evidence_status) : null,
+                      validation_method: a.validation_method ? String(a.validation_method) : null,
+                    })),
+                    evidence: evidenceLinks.map((link: R) => {
+                      const ev = (link.product_evidence ?? {}) as R;
+                      return {
+                        title: ev.title ? String(ev.title) : null,
+                        claim: String(ev.claim ?? ""),
+                        source_type: String(ev.source_type ?? "unknown"),
+                      };
+                    }),
+                  })
+                }
+              />
+            )}
+            <Button
+              onClick={handleAnalyze}
+              disabled={analyzing}
+              className="gap-1.5"
+            >
             <IconSparkles className="h-4 w-4" />
             {analyzing ? "Analyzing…" : hasAnalysis ? "Re-Analyze" : "Analyze Decision"}
           </Button>
+          </div>
           {!hasAnalysis && !analyzing && (
             <p className="text-[11px] text-gray-400 text-right max-w-[220px]">
               Uses project context and uploaded evidence to generate options, assumptions, risks, and a recommendation.

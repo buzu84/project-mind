@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FEATURE_LABELS } from "@/lib/ai/usage-types";
 import type { AIUsageFeature } from "@/lib/ai/usage-types";
+import { formatDate, formatTime } from "@/lib/format-date";
 
 // Ensure this page always shows fresh data (no static caching)
 export const dynamic = "force-dynamic";
@@ -81,12 +82,9 @@ export default async function UsageHistoryPage() {
                 {usageRows.map((row) => (
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                      {new Date(row.created_at).toLocaleDateString()}{" "}
+                      {formatDate(row.created_at)}{" "}
                       <span className="text-gray-400">
-                        {new Date(row.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatTime(row.created_at)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-700">

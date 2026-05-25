@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { IconSparkles, IconClock } from "@/components/icons";
 import { getFriendlyErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
+import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { insightsToMarkdown } from "@/lib/export/serialize-markdown";
 
 interface Insight {
   id: string;
@@ -126,15 +128,22 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
               Strategic analysis and recommendations for <strong>{projectName}</strong>
             </p>
           </div>
-          <Button
-            onClick={generateInsights}
-            isLoading={isGenerating}
-            disabled={isGenerating}
-            className="gap-2"
-          >
-            <IconSparkles className="h-4 w-4" />
-            {insights.length > 0 ? "Regenerate Insights" : "Generate AI Insights"}
-          </Button>
+          <div className="flex items-center gap-2">
+            {insights.length > 0 && (
+              <CopyMarkdownButton
+                getMarkdown={() => insightsToMarkdown(insights, projectName)}
+              />
+            )}
+            <Button
+              onClick={generateInsights}
+              isLoading={isGenerating}
+              disabled={isGenerating}
+              className="gap-2"
+            >
+              <IconSparkles className="h-4 w-4" />
+              {insights.length > 0 ? "Regenerate Insights" : "Generate AI Insights"}
+            </Button>
+          </div>
         </div>
       </div>
 

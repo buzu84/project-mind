@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getFriendlyErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
+import { formatDate } from "@/lib/format-date";
 
 const MIN_DESCRIPTION_LENGTH = 10;
 
@@ -159,8 +160,8 @@ export default function PrdPage() {
                       {prd.input?.productName ?? "Untitled PRD"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400" suppressHydrationWarning>
-                    {new Date(prd.created_at).toLocaleDateString()}
+                  <span className="text-xs text-gray-400">
+                    {formatDate(prd.created_at)}
                   </span>
                 </Card>
               </Link>
