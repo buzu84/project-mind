@@ -6,6 +6,7 @@ import { getCurrentUser, isDevMode, isMockDb } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatDate, toISOString } from "@/lib/format-date";
 import { CreateProjectForm } from "./create-project-form";
 import {
   IconChevronRight,
@@ -96,8 +97,8 @@ export default async function ProjectsPage() {
                       <span>·</span>
                       <span className="flex items-center gap-1">
                         <IconClock className="h-3 w-3" />
-                        <time suppressHydrationWarning dateTime={project.updated_at}>
-                          {new Date(project.updated_at).toLocaleDateString()}
+                        <time dateTime={toISOString(project.updated_at)}>
+                          {formatDate(project.updated_at)}
                         </time>
                       </span>
                     </div>

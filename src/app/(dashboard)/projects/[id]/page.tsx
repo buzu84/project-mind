@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { JsonLd } from "@/components/json-ld";
 import { createBreadcrumbJsonLd } from "@/lib/structured-data";
 import { DeleteProjectButton } from "./delete-button";
+import { formatDate, toISOString } from "@/lib/format-date";
 import {
   IconDocument,
   IconTarget,
@@ -309,8 +310,8 @@ export default async function ProjectDetailPage({
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1.5 text-xs text-gray-400">
                       <IconClock className="h-3 w-3" />
-                      <time suppressHydrationWarning dateTime={pd.updated_at}>
-                        {new Date(pd.updated_at).toLocaleDateString()}
+                      <time dateTime={toISOString(pd.updated_at)}>
+                        {formatDate(pd.updated_at)}
                       </time>
                     </span>
                     <IconChevronRight className="h-4 w-4 text-gray-300" />
@@ -369,8 +370,8 @@ export default async function ProjectDetailPage({
                   <div className="flex items-center gap-2">
                      <span className="flex items-center gap-1.5 text-xs text-gray-400">
                       <IconClock className="h-3 w-3" />
-                      <time suppressHydrationWarning dateTime={d.created_at}>
-                        {new Date(d.created_at).toLocaleDateString()}
+                      <time dateTime={toISOString(d.created_at)}>
+                        {formatDate(d.created_at)}
                       </time>
                     </span>
                     {href && <IconChevronRight className="h-4 w-4 text-gray-300" />}

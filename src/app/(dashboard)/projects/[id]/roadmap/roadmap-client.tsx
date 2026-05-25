@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { roadmapToMarkdown } from "@/lib/export/serialize-markdown";
 import type { Roadmap, RoadmapItem } from "@/lib/ai/roadmap-types";
+import { formatDateTime } from "@/lib/format-date";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -259,7 +260,7 @@ export function RoadmapClient({
             <span className="flex items-center gap-1.5 text-xs text-gray-400">
               <IconClock className="h-3 w-3" />
               Generated{" "}
-              {new Date(roadmap.created_at).toLocaleString()}
+              {formatDateTime(roadmap.created_at)}
             </span>
           </div>
 
