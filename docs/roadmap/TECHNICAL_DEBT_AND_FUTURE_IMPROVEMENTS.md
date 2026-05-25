@@ -148,7 +148,7 @@ Editable AI outputs are a planned product direction. When implemented, the follo
 | Decision Review expanded view | Surface hidden stored fields (supporting evidence, alternatives, expected impact) in an expandable/drawer UI. |
 | Mobile layout | Badge stacking on Decision Review option cards may need responsive tweaks. |
 | Plan / limits UI | Show remaining rate limit budget to users. |
-| Export / copy | Add "Copy to clipboard" or "Export as Markdown" for generated outputs. |
+| Export / copy | ✅ "Copy Markdown" implemented for PRD, Competitive Analysis, Decision Review, Multi-Agent Review, Roadmap, and Insights. File download (.md) and PDF export remain future work. |
 
 ---
 

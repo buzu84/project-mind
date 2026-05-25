@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { IconSparkles, IconClock } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import type { Roadmap, RoadmapItem } from "./page";
+import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { roadmapToMarkdown } from "@/lib/export/serialize-markdown";
+import type { Roadmap, RoadmapItem } from "@/lib/ai/roadmap-types";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -163,7 +165,9 @@ export function RoadmapClient({
           </div>
           <div className="flex items-center gap-2">
             {roadmap && (
-              <ConfirmDialog
+              <>
+                <CopyMarkdownButton getMarkdown={() => roadmapToMarkdown(roadmap, projectName)} />
+                <ConfirmDialog
                 message="Delete this roadmap? You can regenerate it later."
                 confirmLabel="Delete Roadmap"
                 onConfirm={deleteRoadmap}
@@ -177,6 +181,7 @@ export function RoadmapClient({
                   </Button>
                 }
               />
+              </>
             )}
             <Button
               onClick={generateRoadmap}

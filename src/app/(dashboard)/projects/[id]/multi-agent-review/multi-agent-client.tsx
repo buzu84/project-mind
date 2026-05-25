@@ -15,6 +15,8 @@ import type {
   InputType,
 } from "@/lib/ai/multi-agent-types";
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
+import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { multiAgentReviewToMarkdown } from "@/lib/export/serialize-markdown";
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -157,7 +159,7 @@ function ConsensusSection({ review }: { review: MultiAgentReview }) {
   );
 }
 
-function ReviewDetail({ review }: { review: MultiAgentReview }) {
+function ReviewDetail({ review, projectName }: { review: MultiAgentReview; projectName?: string }) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -177,6 +179,7 @@ function ReviewDetail({ review }: { review: MultiAgentReview }) {
             </span>
           </div>
         </div>
+        <CopyMarkdownButton getMarkdown={() => multiAgentReviewToMarkdown(review, projectName)} />
       </div>
 
       {/* Agent cards grid */}
@@ -400,7 +403,7 @@ export function MultiAgentClient({
                 {/* Expanded detail */}
                 {isExpanded && (
                   <div className="mt-4 ml-2 mr-2">
-                    <ReviewDetail review={review} />
+                    <ReviewDetail review={review} projectName={projectName} />
                   </div>
                 )}
               </div>
