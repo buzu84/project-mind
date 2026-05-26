@@ -1,6 +1,7 @@
 import type { MultiAgentReview, AgentRole, AgentResponse } from "@/lib/ai/multi-agent-types";
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
 import type { Roadmap, RoadmapItem } from "@/lib/ai/roadmap-types";
+import { formatDate } from "@/lib/format-date";
 
 // ── Decision Review ────────────────────────────────────────────────
 
@@ -201,7 +202,7 @@ export function multiAgentReviewToMarkdown(review: MultiAgentReview, projectName
   lines.push(review.question);
   lines.push("");
   lines.push(`**Type:** ${review.input_type === "feature_idea" ? "Feature Idea" : "Product Question"}  `);
-  lines.push(`**Generated:** ${new Date(review.created_at).toLocaleDateString()}  `);
+  lines.push(`**Generated:** ${formatDate(review.created_at)}  `);
   lines.push("");
 
   lines.push("## Agent Perspectives");
@@ -271,7 +272,7 @@ export function roadmapToMarkdown(roadmap: Roadmap, projectName?: string): strin
   lines.push("");
   lines.push(`**${roadmap.title}**`);
   lines.push("");
-  lines.push(`**Generated:** ${new Date(roadmap.created_at).toLocaleDateString()}  `);
+  lines.push(`**Generated:** ${formatDate(roadmap.created_at)}  `);
   lines.push("");
 
   // Now / Next / Later

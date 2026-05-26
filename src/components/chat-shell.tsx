@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { IconSparkles, IconUser } from "@/components/icons";
+import { formatTime } from "@/lib/format-date";
 
 /* ------------------------------------------------------------------ */
 /*  Lightweight markdown renderer for chat messages                    */
@@ -332,8 +333,8 @@ export function ChatShell({
                       {msg.role === "assistant" ? "ProductMind AI" : "You"}
                     </span>
                     {!msg.id.startsWith("streaming-") && !msg.id.startsWith("user-") && msg.createdAt && (
-                      <span className="text-xs text-gray-400" suppressHydrationWarning>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      <span className="text-xs text-gray-400">
+                        {formatTime(msg.createdAt)}
                       </span>
                     )}
                   </div>

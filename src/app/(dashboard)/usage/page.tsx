@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { FEATURE_LABELS } from "@/lib/ai/usage-types";
 import type { AIUsageFeature } from "@/lib/ai/usage-types";
 import { formatDate, formatTime } from "@/lib/format-date";
+import { formatNumber } from "@/lib/format-number";
 
 // Ensure this page always shows fresh data (no static caching)
 export const dynamic = "force-dynamic";
@@ -47,10 +48,13 @@ export default async function UsageHistoryPage() {
         <h2 className="text-2xl font-bold text-gray-900">AI Usage History</h2>
         <p className="mt-1 text-sm text-gray-500">
           Detailed log of all AI operations and their costs.
-          <span className="ml-1" title="Tokens are units of text processed by AI models. Roughly 1 token ≈ 4 characters or ¾ of a word. Cost is based on the number of tokens used.">
-            <span className="cursor-help underline decoration-dotted text-gray-400">What are tokens?</span>
-          </span>
         </p>
+        <details className="mt-2 text-xs text-gray-400">
+          <summary className="cursor-pointer underline decoration-dotted hover:text-gray-600 transition">What are tokens?</summary>
+          <p className="mt-1 text-xs text-gray-500">
+            Tokens are units of text processed by AI models. Roughly 1 token ≈ 4 characters or ¾ of a word. Cost is based on the number of tokens used.
+          </p>
+        </details>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -63,7 +67,7 @@ export default async function UsageHistoryPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="min-w-[800px] w-full text-left text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500">
                 <tr>
                   <th className="px-4 py-3">Date</th>
@@ -102,13 +106,13 @@ export default async function UsageHistoryPage() {
                       {row.model}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-600">
-                      {row.prompt_tokens.toLocaleString()}
+                      {formatNumber(row.prompt_tokens)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-600">
-                      {row.completion_tokens.toLocaleString()}
+                      {formatNumber(row.completion_tokens)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-gray-900">
-                      {row.total_tokens.toLocaleString()}
+                      {formatNumber(row.total_tokens)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-700">
                       ${row.estimated_cost.toFixed(6)}

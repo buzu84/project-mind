@@ -11,6 +11,7 @@ import { IconClock } from "@/components/icons";
 import { updateFeedbackDocument } from "./actions";
 import { DeleteFeedbackButton } from "./delete-button";
 import { useToast } from "@/components/ui/toast";
+import { formatDate, toISOString } from "@/lib/format-date";
 
 const SOURCE_LABELS: Record<string, string> = {
   customer_interview: "Customer Interview",
@@ -167,9 +168,9 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
 
   return (
     <Card className="group">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h4 className="text-sm font-semibold text-gray-900 truncate">{doc.title}</h4>
             {doc.source && (
               <Badge variant={SOURCE_BADGES[doc.source] ?? "default"}>
@@ -182,16 +183,16 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
           </p>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
             <IconClock className="h-3 w-3" />
-            <time suppressHydrationWarning dateTime={doc.created_at}>
-              {new Date(doc.created_at).toLocaleDateString()}
+            <time dateTime={toISOString(doc.created_at)}>
+              {formatDate(doc.created_at)}
             </time>
           </div>
         </div>
-        <div className="ml-4 flex flex-shrink-0 items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2 sm:ml-4">
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="text-xs text-gray-400 hover:text-brand-600 transition opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+            className="text-xs text-gray-400 hover:text-brand-600 transition sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             aria-label={`Edit ${doc.title}`}
           >
             Edit
