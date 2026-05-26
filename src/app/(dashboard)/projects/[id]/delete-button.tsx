@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 import { deleteProject } from "../actions";
 
 interface DeleteProjectButtonProps {
@@ -10,42 +12,35 @@ interface DeleteProjectButtonProps {
 }
 
 export function DeleteProjectButton({ projectId, projectName }: DeleteProjectButtonProps) {
-  const [showConfirm, setShowConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
-  if (!showConfirm) {
-    return (
-      <Button variant="ghost" size="sm" onClick={() => setShowConfirm(true)}>
-        Delete
-      </Button>
-    );
+  function handleDelete() {
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        const res = await deleteProject(projectId);
+        // deleteProject calls redirect() on success (which throws),
+        // so we only reach here on failure.
+        if (!res.success) {
+          toast(res.error ?? "Could not delete project.", "error");
+        }
+        resolve();
+      });
+    });
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-      <p className="text-xs text-red-700">
-        Delete <strong>{projectName}</strong>?
-      </p>
-      <Button
-        variant="danger"
-        size="sm"
-        isLoading={isPending}
-        onClick={() => {
-          startTransition(async () => {
-            await deleteProject(projectId);
-          });
-        }}
-      >
-        Confirm
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowConfirm(false)}
-        disabled={isPending}
-      >
-        Cancel
-      </Button>
-    </div>
+    <ConfirmDialog
+      title={`Delete "${projectName}"?`}
+      message="This will permanently delete the project, all generated documents, feedback, insights, and roadmaps. This action cannot be undone."
+      confirmLabel="Delete Project"
+      variant="danger"
+      onConfirm={handleDelete}
+      trigger={
+        <Button variant="ghost" size="sm" disabled={isPending} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+          Delete
+        </Button>
+      }
+    />
   );
 }

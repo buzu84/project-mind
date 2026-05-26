@@ -7,14 +7,14 @@ import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
 import { checkStandardAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 const featureSchema = z.object({
-  name: z.string(),
-  description: z.string().optional(),
+  name: z.string().max(100),
+  description: z.string().max(300).optional(),
 });
 
 const schema = z.object({
   projectId: z.string(),
   features: z.array(featureSchema).min(1).max(30),
-  criteria: z.string().optional(),
+  criteria: z.string().max(1000).optional(),
 });
 
 export async function POST(req: Request) {

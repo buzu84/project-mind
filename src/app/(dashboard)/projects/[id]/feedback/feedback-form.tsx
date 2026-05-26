@@ -75,6 +75,7 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
             placeholder="e.g. Interview with Enterprise Customer"
             error={fieldError("title")}
             required
+            maxLength={200}
           />
           <div>
             <label htmlFor="source" className="mb-1 block text-sm font-medium text-gray-700">

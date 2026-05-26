@@ -122,18 +122,26 @@ export async function POST(req: Request) {
       );
       if (!match) continue;
 
-      await supabase
+      const scorePayload = {
+        reach: match.reach,
+        impact: match.impact,
+        confidence: match.confidence,
+        effort: match.effort,
+        rice_score: match.rice_score,
+        ice_score: match.ice_score,
+        ai_commentary: match.ai_commentary,
+      };
+      const { error: updErr } = await supabase
         .from("feature_ideas")
-        .update({
-          reach: match.reach,
-          impact: match.impact,
-          confidence: match.confidence,
-          effort: match.effort,
-          rice_score: match.rice_score,
-          ice_score: match.ice_score,
-          ai_commentary: match.ai_commentary,
-        })
+        .update({ ...scorePayload, scored_at: new Date().toISOString() })
         .eq("id", feature.id);
+      // If scored_at column doesn't exist yet, retry without it
+      if (updErr && updErr.code === "42703") {
+        await supabase
+          .from("feature_ideas")
+          .update(scorePayload)
+          .eq("id", feature.id);
+      }
     }
 
     void trackAIUsage({
@@ -147,11 +155,21 @@ export async function POST(req: Request) {
       latencyMs: Date.now() - startTime,
     });
 
-    const { data: updated } = await supabase
+    // Re-fetch updated features (gracefully handle scored_at column not existing yet)
+    const COLS_WITH_SCORED = "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at";
+    const COLS_WITHOUT_SCORED = "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at";
+    let { data: updated, error: refetchErr } = await supabase
       .from("feature_ideas")
-      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at")
+      .select(COLS_WITH_SCORED)
       .eq("project_id", projectId)
       .order("rice_score", { ascending: false });
+    if (refetchErr && refetchErr.code === "42703") {
+      ({ data: updated } = await supabase
+        .from("feature_ideas")
+        .select(COLS_WITHOUT_SCORED)
+        .eq("project_id", projectId)
+        .order("rice_score", { ascending: false }));
+    }
 
     return NextResponse.json({ features: updated ?? [] });
   }
@@ -232,26 +250,43 @@ export async function POST(req: Request) {
       }
       if (commentary) commentary = commentary.slice(0, 1000);
 
-      await supabase
+      const scorePayload = {
+        reach,
+        impact,
+        confidence,
+        effort,
+        rice_score: Math.round(rice_score * 100) / 100,
+        ice_score: Math.round(ice_score * 100) / 100,
+        ai_commentary: commentary,
+      };
+      const { error: updErr } = await supabase
         .from("feature_ideas")
-        .update({
-          reach,
-          impact,
-          confidence,
-          effort,
-          rice_score: Math.round(rice_score * 100) / 100,
-          ice_score: Math.round(ice_score * 100) / 100,
-          ai_commentary: commentary,
-        })
+        .update({ ...scorePayload, scored_at: new Date().toISOString() })
         .eq("id", feature.id);
+      // If scored_at column doesn't exist yet, retry without it
+      if (updErr && updErr.code === "42703") {
+        await supabase
+          .from("feature_ideas")
+          .update(scorePayload)
+          .eq("id", feature.id);
+      }
     }
 
-    // Re-fetch updated features
-    const { data: updated } = await supabase
+    // Re-fetch updated features (gracefully handle scored_at column not existing yet)
+    const COLS_WITH = "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at";
+    const COLS_WITHOUT = "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at";
+    let { data: updated, error: refetchErr } = await supabase
       .from("feature_ideas")
-      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at")
+      .select(COLS_WITH)
       .eq("project_id", projectId)
       .order("rice_score", { ascending: false });
+    if (refetchErr && refetchErr.code === "42703") {
+      ({ data: updated } = await supabase
+        .from("feature_ideas")
+        .select(COLS_WITHOUT)
+        .eq("project_id", projectId)
+        .order("rice_score", { ascending: false }));
+    }
 
 
     return NextResponse.json({ features: updated ?? [] });

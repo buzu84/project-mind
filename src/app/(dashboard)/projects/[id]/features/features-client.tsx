@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { IconSparkles, IconPlus, IconTarget } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
+import { CharacterCounter } from "@/components/ui/character-counter";
 import { createFeatureIdea, updateFeatureIdea, deleteFeatureIdea } from "./actions";
 import type { FeatureIdea } from "./page";
 
@@ -23,17 +24,20 @@ type SortKey = "rice_score" | "ice_score" | "impact" | "effort" | "created_at";
 
 type ScoreState = "not_scored" | "scored" | "outdated";
 
+const MAX_NAME = 200;
+const MAX_DESCRIPTION = 2000;
+
 function getScoreState(f: FeatureIdea): ScoreState {
   const hasScores = f.rice_score > 0 || f.ice_score > 0;
   if (!hasScores) return "not_scored";
-  // If feature was updated after scoring (ai_commentary exists = was scored),
-  // and updated_at is after the scores were set, mark outdated.
-  // Heuristic: if updated_at exists and is after created_at by >1s AND scores exist,
-  // we assume the user edited the feature after scoring.
-  if (f.updated_at && f.ai_commentary) {
-    const scored = new Date(f.created_at).getTime();
+  // A feature is "outdated" if the user edited it AFTER the last scoring run.
+  // We compare updated_at against scored_at. If the feature was updated after
+  // scoring (e.g. name/description changed), it needs re-scoring.
+  if (f.scored_at && f.updated_at) {
+    const scored = new Date(f.scored_at).getTime();
     const updated = new Date(f.updated_at).getTime();
-    // If updated significantly after creation, it was edited after scoring
+    // Allow a small tolerance — the scoring .update() itself triggers
+    // the updated_at DB trigger, so updated_at ≈ scored_at after scoring.
     if (updated > scored + 2000) return "outdated";
   }
   return "scored";
@@ -143,10 +147,17 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
     startTransition(async () => {
       const res = await createFeatureIdea(projectId, formData);
       if (res.success) {
+        const dbId = res.data?.id as string | undefined;
+        if (!dbId) {
+          // Server confirmed insert but didn't return an ID — reload to get real data
+          showToast("Feature added");
+          router.refresh();
+          return;
+        }
         const name = formData.get("name") as string;
         const description = (formData.get("description") as string) || null;
-        const optimistic: FeatureIdea = {
-          id: `temp-${Date.now()}`,
+        const created: FeatureIdea = {
+          id: dbId,
           name,
           description,
           reach: 0, impact: 0, confidence: 0, effort: 0,
@@ -154,7 +165,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
           ai_commentary: null, status: "idea",
           created_at: new Date().toISOString(),
         };
-        setFeatures((prev) => [...prev, optimistic]);
+        setFeatures((prev) => [...prev, created]);
         formRef.current?.reset();
         setFeatureName("");
         setFeatureDesc("");
@@ -201,11 +212,15 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
 
   function handleDelete(featureId: string) {
     startTransition(async () => {
-      await deleteFeatureIdea(projectId, featureId);
-      setFeatures((prev) => prev.filter((f) => f.id !== featureId));
-      if (editingId === featureId) cancelEditing();
-      showToast("Feature deleted");
-      router.refresh();
+      const res = await deleteFeatureIdea(projectId, featureId);
+      if (res.success) {
+        setFeatures((prev) => prev.filter((f) => f.id !== featureId));
+        if (editingId === featureId) cancelEditing();
+        showToast("Feature deleted");
+        router.refresh();
+      } else {
+        setError(res.error ?? "Could not delete feature.");
+      }
     });
   }
 
@@ -245,27 +260,27 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
     <>
 
       <div className="mb-8">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold text-gray-900">Feature Ideas</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Add features and let AI score them using RICE & ICE frameworks for <strong>{projectName}</strong>
+              Add features and let AI score them using RICE &amp; ICE frameworks for <strong>{projectName}</strong>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {features.length > 0 && (
               <Button
                 onClick={handleAIScore}
                 isLoading={isScoring}
                 disabled={isScoring || editingId !== null}
-                className="gap-2"
+                className="gap-2 whitespace-nowrap"
                 variant="secondary"
               >
                 <IconSparkles className="h-4 w-4" />
                 {isScoring ? "Scoring..." : "AI Score All"}
               </Button>
             )}
-            <Button onClick={() => setIsFormOpen(true)} className="gap-2" disabled={isFormOpen}>
+            <Button onClick={() => setIsFormOpen(true)} className="gap-2 whitespace-nowrap" disabled={isFormOpen}>
               <IconPlus className="h-4 w-4" />
               Add Feature
             </Button>
@@ -294,6 +309,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                 onChange={(e) => setFeatureName(e.target.value)}
                 onBlur={() => setNameBlurred(true)}
                 error={nameError ?? undefined}
+                maxLength={MAX_NAME}
               />
             </div>
             <div>
@@ -304,10 +320,14 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                 onChange={(e) => setFeatureDesc(e.target.value)}
                 onBlur={() => setDescBlurred(true)}
                 error={descError ?? undefined}
+                maxLength={MAX_DESCRIPTION}
               />
-              <p className={`mt-1 text-xs ${featureDesc.trim().length >= 20 ? "text-gray-400" : "text-amber-600"}`}>
-                {featureDesc.trim().length} / 20 characters minimum
-              </p>
+              <div className="mt-1 flex items-center justify-between">
+                <p className={`text-xs ${featureDesc.trim().length >= 20 ? "text-gray-400" : "text-amber-600"}`}>
+                  {featureDesc.trim().length} / 20 characters minimum
+                </p>
+                <CharacterCounter current={featureDesc.length} max={MAX_DESCRIPTION} />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => { setIsFormOpen(false); setNameBlurred(false); setDescBlurred(false); }}>Cancel</Button>
@@ -340,8 +360,8 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       ) : features.length > 0 && (
         <>
           {/* Sort controls */}
-          <div className="mb-4 flex items-center gap-2 text-xs">
-            <span className="text-gray-500 font-medium">Sort by:</span>
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-gray-500 font-medium whitespace-nowrap">Sort by:</span>
             {([["rice_score", "RICE"], ["ice_score", "ICE"], ["impact", "Impact"], ["effort", "Effort"], ["created_at", "Newest"]] as [SortKey, string][]).map(([key, label]) => (
               <button
                 key={key}
@@ -362,14 +382,14 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
 
           {/* Table */}
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full text-sm">
+            <table className="min-w-[640px] w-full text-sm table-fixed">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Feature</th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-16" title="Reach: How many users will this impact? (1-10)"><abbr title="Reach">R</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-16" title="Impact: How much will this move the needle? (1-10)"><abbr title="Impact">I</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-16" title="Confidence: How sure are we about the estimates? (1-10)"><abbr title="Confidence">C</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-16" title="Effort: How much work is required? Lower is better. (1-10)"><abbr title="Effort">E</abbr></th>
+                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Reach: How many users will this impact? (1-10)"><abbr title="Reach">R</abbr></th>
+                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Impact: How much will this move the needle? (1-10)"><abbr title="Impact">I</abbr></th>
+                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Confidence: How sure are we about the estimates? (1-10)"><abbr title="Confidence">C</abbr></th>
+                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Effort: How much work is required? Lower is better. (1-10)"><abbr title="Effort">E</abbr></th>
                   <th className="px-3 py-3 text-center font-medium text-gray-500 w-20" title="RICE Score = (Reach × Impact × Confidence) / Effort">RICE</th>
                   <th className="px-3 py-3 text-center font-medium text-gray-500 w-20" title="ICE Score = Impact × Confidence × Ease">ICE</th>
                   <th className="px-3 py-3 text-center font-medium text-gray-500 w-24"></th>
@@ -394,6 +414,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                               onChange={(e) => setEditName(e.target.value)}
                               onBlur={() => setEditNameBlurred(true)}
                               error={editNameError ?? undefined}
+                              maxLength={MAX_NAME}
                             />
                             <div>
                               <Textarea
@@ -403,10 +424,14 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                                 onChange={(e) => setEditDesc(e.target.value)}
                                 onBlur={() => setEditDescBlurred(true)}
                                 error={editDescError ?? undefined}
+                                maxLength={MAX_DESCRIPTION}
                               />
-                              <p className={`mt-1 text-xs ${editDesc.trim().length >= 20 ? "text-gray-400" : "text-amber-600"}`}>
-                                {editDesc.trim().length} / 20 characters minimum
-                              </p>
+                              <div className="mt-1 flex items-center justify-between">
+                                <p className={`text-xs ${editDesc.trim().length >= 20 ? "text-gray-400" : "text-amber-600"}`}>
+                                  {editDesc.trim().length} / 20 characters minimum
+                                </p>
+                                <CharacterCounter current={editDesc.length} max={MAX_DESCRIPTION} />
+                              </div>
                             </div>
                             <div className="flex justify-end gap-2">
                               <Button type="button" variant="secondary" size="sm" onClick={cancelEditing} disabled={editSaving}>
@@ -429,11 +454,11 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                         isHighlighted ? "bg-emerald-50/60" : "hover:bg-gray-50/50"
                       }`}
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 overflow-hidden">
                         <button type="button" onClick={() => setExpandedId(isExpanded ? null : f.id)} className="text-left w-full">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-300 w-5">{idx + 1}</span>
-                            <div className="min-w-0">
+                            <span className="text-xs font-bold text-gray-300 w-5 shrink-0">{idx + 1}</span>
+                            <div className="min-w-0 overflow-hidden">
                               <div className="flex items-center gap-2">
                                 <p className="font-medium text-gray-900">{f.name}</p>
                                 {state === "not_scored" && (
@@ -475,13 +500,14 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                             Edit
                           </button>
                           <ConfirmDialog
-                            message={`Delete "${f.name}"? This cannot be undone.`}
+                            title={`Delete "${f.name}"?`}
+                            message={`This will permanently delete "${f.name}". This action cannot be undone.`}
                             confirmLabel="Delete"
+                            variant="danger"
                             onConfirm={() => handleDelete(f.id)}
                             trigger={
                               <button
                                 type="button"
-                                onClick={(e) => e.stopPropagation()}
                                 className="text-xs text-gray-400 hover:text-red-500 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
                                 aria-label={`Delete ${f.name}`}
                               >

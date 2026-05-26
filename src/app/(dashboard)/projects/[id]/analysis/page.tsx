@@ -10,6 +10,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getFriendlyErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
+import { CharacterCounter } from "@/components/ui/character-counter";
+import { formatDate } from "@/lib/format-date";
+
+const MAX_PRODUCT_NAME = 100;
+const MAX_INDUSTRY = 200;
+const MAX_COMPETITORS = 1000;
 
 interface RecentDecision {
   id: string;
@@ -28,6 +34,7 @@ export default function AnalysisPage() {
 
   const [productName, setProductName] = useState("");
   const [industry, setIndustry] = useState("");
+  const [competitors, setCompetitors] = useState("");
 
   const isFormValid = productName.trim().length > 0 && industry.trim().length > 0;
 
@@ -97,6 +104,7 @@ export default function AnalysisPage() {
           label="Product Name"
           placeholder="e.g. TaskFlow"
           required
+          maxLength={MAX_PRODUCT_NAME}
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
         />
@@ -106,15 +114,24 @@ export default function AnalysisPage() {
           label="Industry / Market"
           placeholder="e.g. Project management SaaS"
           required
+          maxLength={MAX_INDUSTRY}
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
         />
-        <Textarea
-          id="competitors"
-          name="competitors"
-          label="Known Competitors (optional)"
-          placeholder="List competitors, one per line or comma-separated (e.g. Asana, Monday.com, ClickUp)"
-        />
+        <div>
+          <Textarea
+            id="competitors"
+            name="competitors"
+            label="Known Competitors (optional)"
+            placeholder="List competitors, one per line or comma-separated (e.g. Asana, Monday.com, ClickUp)"
+            maxLength={MAX_COMPETITORS}
+            value={competitors}
+            onChange={(e) => setCompetitors(e.target.value)}
+          />
+          <div className="mt-1 flex justify-end">
+            <CharacterCounter current={competitors.length} max={MAX_COMPETITORS} />
+          </div>
+        </div>
         <Button type="submit" isLoading={loading} disabled={loading || !isFormValid}>
           Analyze Competition
         </Button>
@@ -139,8 +156,8 @@ export default function AnalysisPage() {
                       {a.input?.productName ?? "Untitled Analysis"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400" suppressHydrationWarning>
-                    {new Date(a.created_at).toLocaleDateString()}
+                  <span className="text-xs text-gray-400">
+                    {formatDate(a.created_at)}
                   </span>
                 </Card>
               </Link>

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+import { formatDate, toISOString } from "@/lib/format-date";
+import { formatNumber } from "@/lib/format-number";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -201,8 +203,8 @@ export default async function DashboardPage() {
                       </p>
                       <p className="text-xs text-gray-400">
                         Updated{" "}
-                        <time suppressHydrationWarning dateTime={project.updated_at}>
-                          {new Date(project.updated_at).toLocaleDateString()}
+                        <time dateTime={toISOString(project.updated_at)}>
+                          {formatDate(project.updated_at)}
                         </time>
                       </p>
                     </div>
@@ -250,8 +252,8 @@ export default async function DashboardPage() {
                       {FEATURE_LABELS[entry.feature as AIUsageFeature] ?? entry.feature}
                     </p>
                     <p className="mt-0.5 text-xs text-gray-400">
-                      <time suppressHydrationWarning dateTime={entry.created_at}>
-                        {new Date(entry.created_at).toLocaleDateString()}
+                      <time dateTime={toISOString(entry.created_at)}>
+                        {formatDate(entry.created_at)}
                       </time>
                     </p>
                   </div>
@@ -304,7 +306,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {usageSummary.totalTokens.toLocaleString()}
+                  {formatNumber(usageSummary.totalTokens)}
                 </p>
                 <p className="text-xs text-gray-500">Total Tokens</p>
               </div>

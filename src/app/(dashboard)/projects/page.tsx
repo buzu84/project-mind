@@ -41,17 +41,19 @@ export default async function ProjectsPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+            <Badge variant="info">
+              {list.length} project
+              {list.length !== 1 ? "s" : ""}
+            </Badge>
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Manage and organize your product projects
           </p>
         </div>
-        <Badge variant="info">
-          {list.length} project
-          {list.length !== 1 ? "s" : ""}
-        </Badge>
       </div>
 
       <div className="mt-6">
@@ -75,26 +77,26 @@ export default async function ProjectsPage() {
         <div className="mt-6 space-y-3">
           {list.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`}>
-              <Card className="group flex items-center justify-between py-4 transition hover:border-brand-200 hover:shadow-md cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-base font-bold text-brand-600">
+              <Card className="group flex flex-col gap-3 py-4 transition hover:border-brand-200 hover:shadow-md cursor-pointer sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-sm font-bold text-brand-600">
                     {project.name[0]?.toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-brand-700 transition">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 group-hover:text-brand-700 transition break-words">
                       {project.name}
                     </p>
                     {project.description && (
-                      <p className="mt-0.5 text-xs text-gray-400 line-clamp-1 max-w-md">
+                      <p className="mt-0.5 text-xs text-gray-400 line-clamp-1 break-words">
                         {project.description}
                       </p>
                     )}
-                    <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-400">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
                       <span className="flex items-center gap-1">
                         <IconDocument className="h-3 w-3" />
                         {project.decisions?.[0]?.count ?? 0} decisions
                       </span>
-                      <span>·</span>
+                      <span className="hidden sm:inline">·</span>
                       <span className="flex items-center gap-1">
                         <IconClock className="h-3 w-3" />
                         <time dateTime={toISOString(project.updated_at)}>
@@ -104,7 +106,7 @@ export default async function ProjectsPage() {
                     </div>
                   </div>
                 </div>
-                <IconChevronRight className="h-5 w-5 text-gray-300 transition group-hover:text-brand-500" />
+                <IconChevronRight className="hidden h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-brand-500 sm:block" />
               </Card>
             </Link>
           ))}

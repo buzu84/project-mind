@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { IconArrowLeft } from "@/components/icons";
 import { DocumentRenderer } from "@/components/document-renderer";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { DeleteDocumentButton } from "@/components/delete-document-button";
+import { formatDate, toISOString } from "@/lib/format-date";
 
 interface Decision {
   id: string;
@@ -81,17 +83,13 @@ export default async function AnalysisResultPage({
             )}
             <span className="text-xs text-gray-400">·</span>
             <p className="text-xs text-gray-400">
-              <time suppressHydrationWarning dateTime={analysis.created_at}>
-                {new Date(analysis.created_at).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+              <time dateTime={toISOString(analysis.created_at)}>
+                {formatDate(analysis.created_at)}
               </time>
             </p>
           </div>
         </div>
-        <div className="flex flex-shrink-0 gap-2">
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
           <CopyMarkdownButton getMarkdown={content} />
           <Link
             href={`/projects/${project.id}/analysis`}
@@ -99,6 +97,12 @@ export default async function AnalysisResultPage({
           >
             + New Analysis
           </Link>
+          <DeleteDocumentButton
+            projectId={project.id}
+            decisionId={analysis.id}
+            documentLabel="competitive analysis"
+            redirectTo={`/projects/${project.id}`}
+          />
         </div>
       </div>
 

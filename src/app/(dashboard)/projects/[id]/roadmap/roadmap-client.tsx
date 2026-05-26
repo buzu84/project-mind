@@ -139,6 +139,7 @@ export function RoadmapClient({
         throw new Error(data.error || "Failed to delete roadmap");
       }
       setRoadmap(null);
+      toast("Roadmap deleted");
       router.refresh();
     } catch (err) {
       setError(
@@ -155,8 +156,8 @@ export function RoadmapClient({
     <>
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold text-gray-900">
               Product Roadmap
             </h2>
@@ -164,37 +165,42 @@ export function RoadmapClient({
               AI-generated roadmap for <strong>{projectName}</strong>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {roadmap && (
-              <>
-                <CopyMarkdownButton getMarkdown={() => roadmapToMarkdown(roadmap, projectName)} />
-                <ConfirmDialog
-                message="Delete this roadmap? You can regenerate it later."
-                confirmLabel="Delete Roadmap"
-                onConfirm={deleteRoadmap}
-                trigger={
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={isDeleting || isGenerating}
-                  >
-                    {isDeleting ? "Deleting\u2026" : "Delete Roadmap"}
-                  </Button>
-                }
-              />
-              </>
+              <CopyMarkdownButton getMarkdown={() => roadmapToMarkdown(roadmap, projectName)} />
             )}
             <Button
               onClick={generateRoadmap}
               isLoading={isGenerating}
               disabled={isGenerating || isDeleting}
-              className="gap-2"
+              className="gap-2 whitespace-nowrap"
             >
               <IconSparkles className="h-4 w-4" />
               {roadmap ? "Regenerate Roadmap" : "Generate Roadmap"}
             </Button>
           </div>
         </div>
+        {roadmap && (
+          <div className="mt-3 flex justify-end">
+            <ConfirmDialog
+              title="Delete roadmap?"
+              message="This will permanently delete this roadmap. This action cannot be undone. You can regenerate it later."
+              confirmLabel="Delete Roadmap"
+              variant="danger"
+              onConfirm={deleteRoadmap}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDeleting || isGenerating}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  {isDeleting ? "Deleting\u2026" : "Delete Roadmap"}
+                </Button>
+              }
+            />
+          </div>
+        )}
       </div>
 
       {/* Error */}
@@ -248,8 +254,8 @@ export function RoadmapClient({
       {roadmap && !isGenerating && (
         <div className="space-y-10">
           {/* Title & meta */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
               <h3 className="text-lg font-bold text-gray-900">
                 {roadmap.title}
               </h3>
@@ -257,7 +263,7 @@ export function RoadmapClient({
                 <Badge variant="warning">Mock roadmap</Badge>
               )}
             </div>
-            <span className="flex items-center gap-1.5 text-xs text-gray-400">
+            <span className="flex items-center gap-1.5 text-xs text-gray-400 whitespace-nowrap">
               <IconClock className="h-3 w-3" />
               Generated{" "}
               {formatDateTime(roadmap.created_at)}

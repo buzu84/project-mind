@@ -11,8 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { getFriendlyErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/format-date";
+import { CharacterCounter } from "@/components/ui/character-counter";
 
 const MIN_DESCRIPTION_LENGTH = 10;
+const MAX_PRODUCT_NAME = 100;
+const MAX_DESCRIPTION = 2000;
+const MAX_TARGET_AUDIENCE = 500;
 
 interface RecentDecision {
   id: string;
@@ -31,6 +35,7 @@ export default function PrdPage() {
 
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
+  const [targetAudience, setTargetAudience] = useState("");
   const [descriptionTouched, setDescriptionTouched] = useState(false);
 
   const descriptionTooShort = productDescription.length > 0 && productDescription.length < MIN_DESCRIPTION_LENGTH;
@@ -108,6 +113,7 @@ export default function PrdPage() {
           label="Product Name"
           placeholder="e.g. TaskFlow"
           required
+          maxLength={MAX_PRODUCT_NAME}
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
         />
@@ -123,10 +129,16 @@ export default function PrdPage() {
             onChange={(e) => setProductDescription(e.target.value)}
             onBlur={() => setDescriptionTouched(true)}
             error={descriptionError}
+            maxLength={MAX_DESCRIPTION}
           />
-          <p className={`mt-1 text-xs ${descriptionTooShort && descriptionTouched ? "text-red-500" : "text-gray-400"}`}>
-            {productDescription.length} / {MIN_DESCRIPTION_LENGTH} characters
-          </p>
+          <div className="mt-1 flex items-center justify-between">
+            <p className={`text-xs ${descriptionTooShort && descriptionTouched ? "text-red-500" : "text-gray-400"}`}>
+              {productDescription.length < MIN_DESCRIPTION_LENGTH
+                ? `At least ${MIN_DESCRIPTION_LENGTH} characters required`
+                : "Add enough detail for a better PRD."}
+            </p>
+            <CharacterCounter current={productDescription.length} max={MAX_DESCRIPTION} />
+          </div>
         </div>
 
         <Input
@@ -134,6 +146,9 @@ export default function PrdPage() {
           name="targetAudience"
           label="Target Audience (optional)"
           placeholder="e.g. SMB project managers"
+          maxLength={MAX_TARGET_AUDIENCE}
+          value={targetAudience}
+          onChange={(e) => setTargetAudience(e.target.value)}
         />
 
         <Button type="submit" isLoading={loading} disabled={loading || !isFormValid}>

@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IconSparkles, IconClock } from "@/components/icons";
 import { getFriendlyErrorMessage } from "@/lib/errors";
+import { formatDate, toISOString } from "@/lib/format-date";
 import { useToast } from "@/components/ui/toast";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { insightsToMarkdown } from "@/lib/export/serialize-markdown";
 
 interface Insight {
@@ -57,6 +59,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
   const router = useRouter();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [insights, setInsights] = useState<Insight[]>(initialInsights);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -107,6 +110,31 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
     }
   }
 
+  async function deleteInsights() {
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const res = await fetch(
+        `/api/ai/insights?projectId=${encodeURIComponent(projectId)}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete insights");
+      }
+      setInsights([]);
+      setHasLocalUpdate(true);
+      setActiveFilter(null);
+      toast("Insights deleted");
+      router.refresh();
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err));
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   const filteredInsights = activeFilter
     ? insights.filter((i) => i.type === activeFilter)
     : insights;
@@ -121,14 +149,14 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
     <>
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold text-gray-900">AI Insights</h2>
             <p className="mt-1 text-sm text-gray-500">
               Strategic analysis and recommendations for <strong>{projectName}</strong>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {insights.length > 0 && (
               <CopyMarkdownButton
                 getMarkdown={() => insightsToMarkdown(insights, projectName)}
@@ -137,14 +165,35 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
             <Button
               onClick={generateInsights}
               isLoading={isGenerating}
-              disabled={isGenerating}
-              className="gap-2"
+              disabled={isGenerating || isDeleting}
+              className="gap-2 whitespace-nowrap"
             >
               <IconSparkles className="h-4 w-4" />
               {insights.length > 0 ? "Regenerate Insights" : "Generate AI Insights"}
             </Button>
           </div>
         </div>
+        {insights.length > 0 && (
+          <div className="mt-3 flex justify-end">
+            <ConfirmDialog
+              title="Delete all insights?"
+              message="This will permanently delete all AI insights for this project. This action cannot be undone. You can regenerate them later."
+              confirmLabel="Delete Insights"
+              variant="danger"
+              onConfirm={deleteInsights}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDeleting || isGenerating}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  {isDeleting ? "Deleting\u2026" : "Delete Insights"}
+                </Button>
+              }
+            />
+          </div>
+        )}
       </div>
 
       {/* Error */}
@@ -251,8 +300,8 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
                     <span>{CONFIDENCE_LABELS[confidence] ?? confidence}</span>
                     <span className="flex items-center gap-1">
                       <IconClock className="h-3 w-3" />
-                      <time suppressHydrationWarning dateTime={insight.created_at}>
-                        {new Date(insight.created_at).toLocaleDateString()}
+                      <time dateTime={toISOString(insight.created_at)}>
+                        {formatDate(insight.created_at)}
                       </time>
                     </span>
                   </div>

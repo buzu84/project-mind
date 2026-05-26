@@ -80,15 +80,32 @@ This is defense-in-depth. Both layers must agree. The application-level check ex
 - It makes ownership semantics explicit in code (reviewable, debuggable)
 - It provides clearer 404 responses (RLS silently returns empty results)
 
+### Shared Ownership Helper
+
+A shared helper exists for verifying project ownership (`src/lib/auth/verify-project-ownership.ts`):
+```typescript
+import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
+
+const isOwner = await verifyProjectOwnership(projectId, user.id);
+if (!isOwner) return { success: false, error: "Project not found or access denied." };
+```
+Used by: feedback actions (create/delete/update), Decision Engine service layer (via `requireProjectOwnership` wrapper).
+
 ### Project Ownership for AI Routes
-AI routes verify that the authenticated user owns the project before any AI call:
+AI routes verify ownership inline because they also need the full project row for AI context:
 ```typescript
 const { data: project } = await supabase
-  .from("projects").select("id")
+  .from("projects").select("name, description, ...")
   .eq("id", projectId).eq("user_id", user.id).single();
 if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 ```
 The 404 response is intentionally identical whether the project doesn't exist or belongs to another user — prevents resource enumeration.
+
+### Child Table Ownership
+
+Tables without `user_id` (legacy `decisions`, `roadmaps`, `feedback_documents`, `project_context`) inherit ownership through `project_id → projects.user_id`. Mutations on these tables must verify parent project ownership first.
+
+Tables with `user_id` (`product_decisions`, `product_decision_options`, `product_assumptions`, `product_evidence`, `ai_usage`, `global_chat_messages`) are filtered directly by `user_id`.
 
 ### Admin Detection
 ```typescript

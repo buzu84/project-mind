@@ -10,9 +10,9 @@ import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 const schema = z.object({
   projectId: z.string(),
-  productName: z.string().min(1),
-  industry: z.string().min(1),
-  competitors: z.string().optional(),
+  productName: z.string().min(1).max(100),
+  industry: z.string().min(1).max(200),
+  competitors: z.string().max(1000).optional(),
 });
 
 export async function POST(req: Request) {

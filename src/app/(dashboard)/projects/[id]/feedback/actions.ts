@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isDevMode } from "@/lib/auth";
+import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 import type { ActionResult } from "@/lib/validations/project";
 import { ingestDocument, removeDocumentChunks } from "@/lib/rag";
 
@@ -21,6 +22,7 @@ const feedbackSchema = z.object({
   source: z.enum(VALID_SOURCES).optional().transform((v) => v || null),
 });
 
+
 export async function createFeedbackDocument(
   projectId: string,
   formData: FormData,
@@ -28,6 +30,9 @@ export async function createFeedbackDocument(
   try {
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
+
+    const isOwner = await verifyProjectOwnership(projectId, user.id);
+    if (!isOwner) return { success: false, error: "Project not found or access denied." };
 
     const parsed = feedbackSchema.safeParse({
       title: formData.get("title"),
@@ -81,6 +86,9 @@ export async function deleteFeedbackDocument(
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
 
+    const isOwner = await verifyProjectOwnership(projectId, user.id);
+    if (!isOwner) return { success: false, error: "Project not found or access denied." };
+
     // Remove chunks first (also handled by CASCADE but explicit is safer)
     try {
       await removeDocumentChunks(documentId);
@@ -117,6 +125,9 @@ export async function updateFeedbackDocument(
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
 
+    const isOwner = await verifyProjectOwnership(projectId, user.id);
+    if (!isOwner) return { success: false, error: "Project not found or access denied." };
+
     const parsed = feedbackSchema.safeParse({
       title: formData.get("title"),
       content: formData.get("content"),
@@ -140,16 +151,22 @@ export async function updateFeedbackDocument(
       .eq("project_id", projectId)
       .single();
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("feedback_documents")
       .update(parsed.data)
       .eq("id", documentId)
-      .eq("project_id", projectId);
+      .eq("project_id", projectId)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       console.error("[feedback] Update failed:", error.message);
       const detail = isDevMode() ? ` (${error.message})` : "";
       return { success: false, error: `Could not update feedback.${detail}` };
+    }
+
+    if (!updated) {
+      return { success: false, error: "Feedback document not found." };
     }
 
     // If content changed, re-ingest embeddings

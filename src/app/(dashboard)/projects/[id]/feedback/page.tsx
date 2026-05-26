@@ -51,14 +51,16 @@ export default async function FeedbackPage({
       </Link>
 
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Feedback & Research</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-2xl font-bold text-gray-900">Feedback & Research</h2>
+              <Badge variant="info">{docs.length} document{docs.length !== 1 ? "s" : ""}</Badge>
+            </div>
             <p className="mt-1 text-sm text-gray-500">
               Add customer feedback, interview notes, and research for <strong>{project.name}</strong>. The AI uses these when answering your questions.
             </p>
           </div>
-          <Badge variant="info">{docs.length} document{docs.length !== 1 ? "s" : ""}</Badge>
         </div>
       </div>
 

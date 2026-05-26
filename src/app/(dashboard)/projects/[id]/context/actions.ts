@@ -45,17 +45,15 @@ export async function saveProjectContext(
     // Verify ownership: current user must own the project
     const { data: project } = await supabase
       .from("projects")
-      .select("id, user_id")
+      .select("id")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single();
 
     if (!project) {
       return { success: false, error: "Project not found." };
     }
 
-    if (project.user_id !== user.id) {
-      return { success: false, error: "You do not have access to this project." };
-    }
 
     const { error } = await supabase
       .from("project_context")

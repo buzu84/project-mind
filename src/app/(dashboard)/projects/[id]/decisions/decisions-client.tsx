@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { IconPlus, IconClock, IconScale, IconSparkles } from "@/components/icons";
 import { DecisionForm } from "./decision-form";
+import { formatDate, toISOString } from "@/lib/format-date";
 
 export interface ProductDecision {
   id: string;
@@ -131,14 +132,14 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Decisions</h2>
           <p className="mt-1 text-sm text-gray-500">
             Track product, technical, UX, growth and business decisions.
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-1.5">
+        <Button onClick={() => setShowForm(true)} className="gap-1.5 whitespace-nowrap shrink-0">
           <IconPlus className="h-4 w-4" />
           New Decision
         </Button>
@@ -162,9 +163,9 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
       ) : (
         <div className="mt-6 space-y-3">
           {decisions.map((d) => (
-            <Card key={d.id} className="flex items-center justify-between py-4">
+            <Card key={d.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <Link href={`/projects/${projectId}/decisions/${d.id}`} className="min-w-0 flex-1 hover:opacity-80 transition">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900 truncate">{d.title}</span>
                   <Badge variant={statusBadgeVariant[d.status] ?? "default"}>
                     {statusLabels[d.status] ?? d.status}
@@ -178,11 +179,11 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
                   <p className="mt-1 text-xs text-gray-500 line-clamp-1">{d.problem_statement}</p>
                 )}
               </Link>
-              <div className="ml-4 flex items-center gap-2 flex-shrink-0">
+              <div className="flex flex-wrap items-center gap-2 sm:ml-4 sm:flex-nowrap sm:flex-shrink-0">
                 <span className="flex items-center gap-1 text-xs text-gray-400">
                   <IconClock className="h-3 w-3" />
-                  <time suppressHydrationWarning dateTime={d.updated_at}>
-                    {new Date(d.updated_at).toLocaleDateString()}
+                  <time dateTime={toISOString(d.updated_at)}>
+                    {formatDate(d.updated_at)}
                   </time>
                 </span>
                 <Button

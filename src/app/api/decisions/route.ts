@@ -15,11 +15,23 @@ export async function GET(req: NextRequest) {
 
   const supabase = createClient();
 
+  // Verify the project belongs to the user (the legacy `decisions` table
+  // has no user_id column; ownership is via project ownership + RLS).
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!project) {
+    return NextResponse.json({ decisions: [] });
+  }
+
   let query = supabase
     .from("decisions")
     .select("id, type, input, created_at")
     .eq("project_id", projectId)
-    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (type) {

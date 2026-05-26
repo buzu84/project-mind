@@ -19,6 +19,7 @@ export interface FeatureIdea {
   status: string;
   created_at: string;
   updated_at?: string;
+  scored_at?: string;
 }
 
 export default async function FeaturesPage({
@@ -40,11 +41,29 @@ export default async function FeaturesPage({
 
   if (!project) notFound();
 
-  const { data: features } = await supabase
+  // Try with scored_at first; fall back without it if the column doesn't exist yet
+  let features: FeatureIdea[] = [];
+  const { data, error: featErr } = await supabase
     .from("feature_ideas")
-    .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at")
+    .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at")
     .eq("project_id", project.id)
     .order("rice_score", { ascending: false });
+
+  if (featErr && featErr.code === "42703") {
+    // Column scored_at does not exist yet — query without it
+    const { data: fallback } = await supabase
+      .from("feature_ideas")
+      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at")
+      .eq("project_id", project.id)
+      .order("rice_score", { ascending: false });
+    features = (fallback ?? []) as FeatureIdea[];
+  } else if (featErr) {
+    console.error("[features] Query failed:", featErr.message, featErr.code, featErr.details);
+    features = [];
+  } else {
+    features = (data ?? []) as FeatureIdea[];
+  }
+
 
   return (
     <div className="mx-auto max-w-5xl">
