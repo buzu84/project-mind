@@ -9,6 +9,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 import type {
   CreateDecisionInput,
   UpdateDecisionInput,
@@ -31,16 +32,9 @@ interface OwnerScope {
 }
 
 /** Verify the project belongs to the user. Throws if not. */
-async function verifyProjectOwnership({ userId, projectId }: OwnerScope): Promise<void> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("id", projectId)
-    .eq("user_id", userId)
-    .single();
-
-  if (error || !data) {
+async function requireProjectOwnership({ userId, projectId }: OwnerScope): Promise<void> {
+  const owned = await verifyProjectOwnership(projectId, userId);
+  if (!owned) {
     throw new Error("Project not found or access denied.");
   }
 }
@@ -84,7 +78,7 @@ export async function createDecision(
   input: CreateDecisionInput,
 ): Promise<ServiceResult<{ id: string }>> {
   try {
-    await verifyProjectOwnership(scope);
+    await requireProjectOwnership(scope);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("product_decisions")
@@ -288,7 +282,7 @@ export async function createAssumption(
     if (input.decision_id) {
       await verifyDecisionOwnership(scope, input.decision_id);
     } else {
-      await verifyProjectOwnership(scope);
+      await requireProjectOwnership(scope);
     }
     const supabase = createClient();
     const { data, error } = await supabase
@@ -346,7 +340,7 @@ export async function createEvidence(
   input: CreateEvidenceInput,
 ): Promise<ServiceResult<{ id: string }>> {
   try {
-    await verifyProjectOwnership(scope);
+    await requireProjectOwnership(scope);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("product_evidence")

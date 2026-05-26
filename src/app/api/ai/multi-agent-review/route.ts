@@ -8,6 +8,7 @@ import { generateMockMultiAgentReview } from "@/lib/ai/mock-multi-agent";
 import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
 import { isRealAI } from "@/lib/ai/is-real-ai";
 import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
+import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 import type { AgentResponse, ConsensusResponse, AgentRole } from "@/lib/ai/multi-agent-types";
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -328,3 +329,34 @@ export async function POST(req: Request) {
   }
 }
 
+// ── DELETE handler ──────────────────────────────────────────────────
+
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const projectId = searchParams.get("projectId");
+  const reviewId = searchParams.get("reviewId");
+
+  if (!projectId) return NextResponse.json({ error: "Missing projectId" }, { status: 400 });
+  if (!reviewId) return NextResponse.json({ error: "Missing reviewId" }, { status: 400 });
+
+  const isOwner = await verifyProjectOwnership(projectId, user.id);
+  if (!isOwner) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("multi_agent_reviews")
+    .delete()
+    .eq("id", reviewId)
+    .eq("project_id", projectId);
+
+  if (error) {
+    console.error("[multi-agent] Delete failed:", error.message);
+    return NextResponse.json({ error: "Failed to delete review" }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

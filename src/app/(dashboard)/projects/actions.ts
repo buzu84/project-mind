@@ -98,14 +98,21 @@ export async function updateProject(
     }
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("projects")
       .update(parsed.data)
-      .eq("id", projectId);
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       console.error("[projects] Update failed:", error.message);
       return { success: false, error: "Could not update project. Please try again." };
+    }
+
+    if (!updated) {
+      return { success: false, error: "Project not found." };
     }
 
     revalidatePath(`/projects/${projectId}`);
@@ -128,7 +135,8 @@ export async function deleteProject(projectId: string): Promise<ActionResult> {
     const { error } = await supabase
       .from("projects")
       .delete()
-      .eq("id", projectId);
+      .eq("id", projectId)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("[projects] Delete failed:", error.message);

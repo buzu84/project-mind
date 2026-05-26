@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isDevMode } from "@/lib/auth";
+import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 import type { ActionResult } from "@/lib/validations/project";
 
 const featureSchema = z.object({
@@ -19,6 +20,9 @@ export async function createFeatureIdea(
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
 
+    const isOwner = await verifyProjectOwnership(projectId, user.id);
+    if (!isOwner) return { success: false, error: "Project not found." };
+
     const parsed = featureSchema.safeParse({
       name: formData.get("name"),
       description: formData.get("description"),
@@ -29,7 +33,7 @@ export async function createFeatureIdea(
     }
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("feature_ideas")
       .insert({
         project_id: projectId,
@@ -43,7 +47,9 @@ export async function createFeatureIdea(
         ice_score: 0,
         ai_commentary: null,
         status: "idea",
-      });
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("[features] Insert failed:", error.message);
@@ -52,7 +58,7 @@ export async function createFeatureIdea(
     }
 
     revalidatePath(`/projects/${projectId}/features`);
-    return { success: true };
+    return { success: true, data: { id: data?.id } };
   } catch (err) {
     console.error("[features] Unexpected error:", err);
     return { success: false, error: "Could not add feature." };
@@ -68,13 +74,16 @@ export async function updateFeatureIdea(
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
 
+    const isOwner = await verifyProjectOwnership(projectId, user.id);
+    if (!isOwner) return { success: false, error: "Project not found." };
+
     const parsed = featureSchema.safeParse(data);
     if (!parsed.success) {
       return { success: false, fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
     }
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("feature_ideas")
       .update({
         name: parsed.data.name,
@@ -82,12 +91,18 @@ export async function updateFeatureIdea(
         updated_at: new Date().toISOString(),
       })
       .eq("id", featureId)
-      .eq("project_id", projectId);
+      .eq("project_id", projectId)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       console.error("[features] Update failed:", error.message);
       const detail = isDevMode() ? ` (${error.message})` : "";
       return { success: false, error: `Could not update feature.${detail}` };
+    }
+
+    if (!updated) {
+      return { success: false, error: "Feature not found." };
     }
 
     revalidatePath(`/projects/${projectId}/features`);
@@ -105,6 +120,9 @@ export async function deleteFeatureIdea(
   try {
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be signed in." };
+
+    const isOwner = await verifyProjectOwnership(projectId, user.id);
+    if (!isOwner) return { success: false, error: "Project not found." };
 
     const supabase = createClient();
     const { error } = await supabase

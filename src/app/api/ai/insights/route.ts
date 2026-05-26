@@ -8,6 +8,7 @@ import { generateMockInsights } from "@/lib/ai/mock-insights";
 import { isRealAI } from "@/lib/ai/is-real-ai";
 import { normalizeInsightsFromAI, type NormalizedInsight } from "@/lib/ai/normalize-insights";
 import { checkStandardAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
+import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 
 const schema = z.object({
   projectId: z.string().min(1),
@@ -288,4 +289,28 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ error: `AI error: ${msg}` }, { status: 502 });
   }
+}
+
+// ── DELETE handler ──────────────────────────────────────────────────
+
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const projectId = searchParams.get("projectId");
+  if (!projectId) return NextResponse.json({ error: "Missing projectId" }, { status: 400 });
+
+  const isOwner = await verifyProjectOwnership(projectId, user.id);
+  if (!isOwner) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+  const supabase = createClient();
+  const { error } = await supabase.from("insights").delete().eq("project_id", projectId);
+
+  if (error) {
+    console.error("[insights] Delete failed:", error.message);
+    return NextResponse.json({ error: "Failed to delete insights" }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }
