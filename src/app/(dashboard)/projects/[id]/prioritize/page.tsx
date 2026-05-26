@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { CharacterCounter } from "@/components/ui/character-counter";
+
+const MAX_FEATURE_NAME = 100;
+const MAX_FEATURE_DESC = 300;
+const MAX_CRITERIA = 1000;
 
 interface FeatureInput {
   name: string;
@@ -19,6 +24,7 @@ export default function PrioritizePage() {
   const [features, setFeatures] = useState<FeatureInput[]>([
     { name: "", description: "" },
   ]);
+  const [criteria, setCriteria] = useState("");
 
   function addFeature() {
     setFeatures((prev) => [...prev, { name: "", description: "" }]);
@@ -81,6 +87,7 @@ export default function PrioritizePage() {
                   value={feature.name}
                   onChange={(e) => updateFeature(i, "name", e.target.value)}
                   required
+                  maxLength={MAX_FEATURE_NAME}
                   aria-label={`Feature ${i + 1} name`}
                 />
               </div>
@@ -91,6 +98,7 @@ export default function PrioritizePage() {
                   placeholder="Brief description (optional)"
                   value={feature.description}
                   onChange={(e) => updateFeature(i, "description", e.target.value)}
+                  maxLength={MAX_FEATURE_DESC}
                   aria-label={`Feature ${i + 1} description`}
                 />
               </div>
@@ -107,12 +115,20 @@ export default function PrioritizePage() {
           + Add Feature
         </Button>
 
-        <Textarea
-          id="criteria"
-          name="criteria"
-          label="Additional Criteria (optional)"
-          placeholder="e.g. Focus on mobile-first, revenue-generating features"
-        />
+        <div>
+          <Textarea
+            id="criteria"
+            name="criteria"
+            label="Additional Criteria (optional)"
+            placeholder="e.g. Focus on mobile-first, revenue-generating features"
+            maxLength={MAX_CRITERIA}
+            value={criteria}
+            onChange={(e) => setCriteria(e.target.value)}
+          />
+          <div className="mt-1 flex justify-end">
+            <CharacterCounter current={criteria.length} max={MAX_CRITERIA} />
+          </div>
+        </div>
 
         <Button type="submit" isLoading={loading}>
           Prioritize Features

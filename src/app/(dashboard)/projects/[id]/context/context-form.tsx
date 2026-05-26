@@ -3,8 +3,11 @@
 import { useState, useTransition } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { CharacterCounter } from "@/components/ui/character-counter";
 import { CONTEXT_SECTIONS, type ProjectContext, type ContextSectionKey } from "@/lib/context/types";
 import { saveProjectContext } from "./actions";
+
+const MAX_CONTEXT_LENGTH = 3000;
 
 interface ContextFormProps {
   projectId: string;
@@ -14,6 +17,13 @@ interface ContextFormProps {
 export function ContextForm({ projectId, initialData }: ContextFormProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
+  const [sectionValues, setSectionValues] = useState<Record<string, string>>(() => {
+    const values: Record<string, string> = {};
+    for (const section of CONTEXT_SECTIONS) {
+      values[section.key] = initialData?.[section.key] ?? "";
+    }
+    return values;
+  });
   const [expandedSections, setExpandedSections] = useState<Set<ContextSectionKey>>(() => {
     const expanded = new Set<ContextSectionKey>();
     if (initialData) {
@@ -96,11 +106,17 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
                   <Textarea
                     id={section.key}
                     name={section.key}
-                    defaultValue={initialData?.[section.key] ?? ""}
+                    value={sectionValues[section.key] ?? ""}
+                    onChange={(e) =>
+                      setSectionValues((prev) => ({ ...prev, [section.key]: e.target.value }))
+                    }
                     placeholder={section.placeholder}
                     className="min-h-[120px]"
+                    maxLength={MAX_CONTEXT_LENGTH}
                   />
-                  <p className="mt-1.5 text-right text-xs text-gray-400">Max 3000 characters</p>
+                  <div className="mt-1.5 flex justify-end">
+                    <CharacterCounter current={(sectionValues[section.key] ?? "").length} max={MAX_CONTEXT_LENGTH} />
+                  </div>
                 </div>
               )}
             </div>
