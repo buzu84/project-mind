@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { CharacterCounter } from "@/components/ui/character-counter";
 import { DECISION_CATEGORIES, DECISION_STATUSES } from "@/lib/decisions/constants";
 import type { ProductDecision } from "./decisions-client";
+
+const MAX_TITLE = 160;
+const MAX_PROBLEM_STATEMENT = 2000;
+const MAX_CONTEXT = 4000;
 
 const categoryLabels: Record<string, string> = {
   product: "Product",
@@ -113,7 +118,7 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
         error={fieldErrors.title?.[0]}
         required
         minLength={3}
-        maxLength={160}
+        maxLength={MAX_TITLE}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -156,29 +161,39 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
         </div>
       </div>
 
-      <Textarea
-        id="decision-problem"
-        label="Problem Statement"
-        placeholder="What problem or decision are you facing? Be specific."
-        value={problemStatement}
-        onChange={(e) => setProblemStatement(e.target.value)}
-        error={fieldErrors.problem_statement?.[0]}
-        required
-        minLength={10}
-        maxLength={2000}
-        rows={4}
-      />
+      <div>
+        <Textarea
+          id="decision-problem"
+          label="Problem Statement"
+          placeholder="What problem or decision are you facing? Be specific."
+          value={problemStatement}
+          onChange={(e) => setProblemStatement(e.target.value)}
+          error={fieldErrors.problem_statement?.[0]}
+          required
+          minLength={10}
+          maxLength={MAX_PROBLEM_STATEMENT}
+          rows={4}
+        />
+        <div className="mt-1 flex justify-end">
+          <CharacterCounter current={problemStatement.length} max={MAX_PROBLEM_STATEMENT} />
+        </div>
+      </div>
 
-      <Textarea
-        id="decision-context"
-        label="Context (optional)"
-        placeholder="Background context, constraints, prior art..."
-        value={contextSummary}
-        onChange={(e) => setContextSummary(e.target.value)}
-        error={fieldErrors.context_summary?.[0]}
-        maxLength={4000}
-        rows={3}
-      />
+      <div>
+        <Textarea
+          id="decision-context"
+          label="Context (optional)"
+          placeholder="Background context, constraints, prior art..."
+          value={contextSummary}
+          onChange={(e) => setContextSummary(e.target.value)}
+          error={fieldErrors.context_summary?.[0]}
+          maxLength={MAX_CONTEXT}
+          rows={3}
+        />
+        <div className="mt-1 flex justify-end">
+          <CharacterCounter current={contextSummary.length} max={MAX_CONTEXT} />
+        </div>
+      </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>

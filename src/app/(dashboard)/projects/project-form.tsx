@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { CharacterCounter } from "@/components/ui/character-counter";
 import type { ActionResult } from "@/lib/validations/project";
+
+const LIMITS = {
+  description: 2000,
+  goals: 1000,
+} as const;
 
 const initialState: ActionResult = { success: false, error: undefined, fieldErrors: {} };
 
@@ -47,20 +53,34 @@ export function ProjectForm({
   const [showSuccess, setShowSuccess] = useState(false);
   const [descriptionWarning, setDescriptionWarning] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [descriptionValue, setDescriptionValue] = useState(defaultValues?.description ?? "");
+  const [goalsValue, setGoalsValue] = useState(defaultValues?.goals ?? "");
 
+  // Store onSuccess in a ref so it never re-triggers the useEffect
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  // Track state object identity so the effect fires on every new result,
+  // even if success stays true across consecutive saves.
+  const prevStateRef = useRef(safeState);
   useEffect(() => {
+    if (safeState === prevStateRef.current) return;
+    prevStateRef.current = safeState;
+
     if (safeState.success) {
       if (resetOnSuccess) {
         formRef.current?.reset();
+        setDescriptionValue("");
+        setGoalsValue("");
       }
       setShowSuccess(true);
-      onSuccess?.();
+      onSuccessRef.current?.();
 
       // Auto-dismiss after 4 seconds
       const timer = setTimeout(() => setShowSuccess(false), 4000);
       return () => clearTimeout(timer);
     }
-  }, [safeState.success, onSuccess, resetOnSuccess]);
+  }, [safeState, resetOnSuccess]);
 
   const fieldError = (field: string) =>
     safeState.fieldErrors?.[field]?.[0] ?? undefined;
@@ -128,11 +148,16 @@ export function ProjectForm({
           name="description"
           label="Description"
           placeholder="What does the product do? What problem does it solve?"
-          defaultValue={defaultValues?.description ?? ""}
+          value={descriptionValue}
+          onChange={(e) => setDescriptionValue(e.target.value)}
           error={fieldError("description")}
           onBlur={handleDescriptionBlur}
+          maxLength={LIMITS.description}
         />
-        <p className="mt-1 text-xs text-gray-400">Add at least 1–2 sentences to get better AI insights.</p>
+        <div className="mt-1 flex items-center justify-between">
+          <p className="text-xs text-gray-400">Add enough context for better AI output.</p>
+          <CharacterCounter current={descriptionValue.length} max={LIMITS.description} />
+        </div>
         {descriptionWarning && (
           <p className="mt-1 text-xs text-amber-600">{descriptionWarning}</p>
         )}
@@ -157,14 +182,21 @@ export function ProjectForm({
         />
       </div>
 
-      <Textarea
-        id="goals"
-        name="goals"
-        label="Goals"
-        placeholder="e.g. Reach 1,000 active teams within 6 months of launch"
-        defaultValue={defaultValues?.goals ?? ""}
-        error={fieldError("goals")}
-      />
+      <div>
+        <Textarea
+          id="goals"
+          name="goals"
+          label="Goals"
+          placeholder="e.g. Reach 1,000 active teams within 6 months of launch"
+          value={goalsValue}
+          onChange={(e) => setGoalsValue(e.target.value)}
+          error={fieldError("goals")}
+          maxLength={LIMITS.goals}
+        />
+        <div className="mt-1 flex justify-end">
+          <CharacterCounter current={goalsValue.length} max={LIMITS.goals} />
+        </div>
+      </div>
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <SubmitButton label={submitLabel} />
