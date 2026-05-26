@@ -201,24 +201,19 @@ export default async function ProjectDetailPage({
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-xl font-bold text-brand-600">
-            {project.name[0]?.toUpperCase()}
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
-            {project.description && (
-              <p className="mt-0.5 text-sm text-gray-500">{project.description}</p>
-            )}
-            <div className="mt-2 flex items-center gap-3">
-              <Badge variant="info">{decisions.length} decisions</Badge>
-              <Badge>{featureCount} features</Badge>
-              <Badge variant="success">{insightCount} insights</Badge>
-            </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-bold text-gray-900 break-words">{project.name}</h2>
+          {project.description && (
+            <p className="mt-1 text-sm text-gray-500 break-words">{project.description}</p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge variant="info">{decisions.length} decisions</Badge>
+            <Badge>{featureCount} features</Badge>
+            <Badge variant="success">{insightCount} insights</Badge>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Link href={`/projects/${project.id}/edit`}>
             <Button variant="secondary" size="sm" className="gap-1.5">
               <IconSettings className="h-3.5 w-3.5" />
@@ -294,20 +289,22 @@ export default async function ProjectDetailPage({
           <div className="space-y-2">
             {productDecisions.map((pd: { id: string; title: string; category: string; status: string; updated_at: string }) => (
               <Link key={pd.id} href={`/projects/${project.id}/decisions`}>
-                <Card className="flex items-center justify-between py-4 cursor-pointer hover:border-gray-300 hover:shadow-md transition">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-50">
+                <Card className="flex flex-col gap-3 py-4 cursor-pointer hover:border-gray-300 hover:shadow-md transition sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50">
                       <IconScale className="h-4 w-4 text-cyan-600" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={pdStatusBadge[pd.status] ?? "default"}>
-                        {pdStatusLabels[pd.status] ?? pd.status}
-                      </Badge>
-                      <Badge>{pdCategoryLabels[pd.category] ?? pd.category}</Badge>
-                      <span className="text-sm font-medium text-gray-700">{pd.title}</span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant={pdStatusBadge[pd.status] ?? "default"}>
+                          {pdStatusLabels[pd.status] ?? pd.status}
+                        </Badge>
+                        <Badge>{pdCategoryLabels[pd.category] ?? pd.category}</Badge>
+                      </div>
+                      <p className="mt-1 text-sm font-medium text-gray-700 break-words">{pd.title}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
                     <span className="flex items-center gap-1.5 text-xs text-gray-400">
                       <IconClock className="h-3 w-3" />
                       <time dateTime={toISOString(pd.updated_at)}>
@@ -355,19 +352,21 @@ export default async function ProjectDetailPage({
                     : decisionTypeLabels[d.type] ?? d.type;
 
               const inner = (
-                <Card className={`flex items-center justify-between py-4${href ? " cursor-pointer hover:border-gray-300 hover:shadow-md transition" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
+                <Card className={`flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between${href ? " cursor-pointer hover:border-gray-300 hover:shadow-md transition" : ""}`}>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50">
                       <IconSparkles className="h-4 w-4 text-gray-400" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={decisionBadgeVariants[d.type]}>
-                        {decisionTypeLabels[d.type]}
-                      </Badge>
-                      <span className="text-sm font-medium text-gray-700">{title}</span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant={decisionBadgeVariants[d.type]}>
+                          {decisionTypeLabels[d.type]}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-sm font-medium text-gray-700 break-words">{title}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
                      <span className="flex items-center gap-1.5 text-xs text-gray-400">
                       <IconClock className="h-3 w-3" />
                       <time dateTime={toISOString(d.created_at)}>
