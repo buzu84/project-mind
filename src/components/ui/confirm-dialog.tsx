@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useId } from "react";
+import { useState, useEffect, useRef, useId, cloneElement, type ReactElement } from "react";
 import { Button } from "./button";
 
 interface ConfirmDialogProps {
@@ -8,7 +8,8 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   onConfirm: () => void | Promise<void>;
-  trigger: React.ReactNode;
+  /** Must be a single React element (e.g. `<Button>` or `<button>`). */
+  trigger: ReactElement<Record<string, unknown>>;
   variant?: "danger" | "primary";
 }
 
@@ -24,6 +25,7 @@ export function ConfirmDialog({
   const [loading, setLoading] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
+  const descId = useId();
 
   // Focus cancel button on open, handle Escape
   useEffect(() => {
@@ -47,17 +49,27 @@ export function ConfirmDialog({
     }
   }
 
+  // Clone the trigger element to attach click/keyboard handlers directly,
+  // avoiding a wrapper element that would create a duplicate tab stop.
+  const triggerEl = cloneElement(trigger, {
+    onClick: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      // Call the trigger's original onClick if present
+      if (typeof trigger.props.onClick === "function") {
+        trigger.props.onClick(e);
+      }
+      if (!e.defaultPrevented) {
+        setOpen(true);
+      }
+    },
+  });
+
   return (
     <>
-      <span
-        onClick={() => setOpen(true)}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(true); } }}
-        role="button"
-        tabIndex={0}
-      >{trigger}</span>
+      {triggerEl}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descId}>
           <div
             className="fixed inset-0 bg-black/40"
             onClick={() => !loading && setOpen(false)}
@@ -65,7 +77,7 @@ export function ConfirmDialog({
           />
           <div className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-xl">
             <h3 id={titleId} className="text-base font-semibold text-gray-900">{title}</h3>
-            <p className="mt-2 text-sm text-gray-600">{message}</p>
+            <p id={descId} className="mt-2 text-sm text-gray-600">{message}</p>
             <div className="mt-5 flex items-center justify-end gap-2">
               <Button
                 ref={cancelRef}

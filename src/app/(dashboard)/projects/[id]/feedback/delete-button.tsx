@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { deleteFeedbackDocument } from "./actions";
 
 interface DeleteFeedbackButtonProps {
@@ -12,6 +14,8 @@ interface DeleteFeedbackButtonProps {
 export function DeleteFeedbackButton({ projectId, documentId }: DeleteFeedbackButtonProps) {
   const [confirming, setConfirming] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const router = useRouter();
 
   if (!confirming) {
     return (
@@ -34,8 +38,15 @@ export function DeleteFeedbackButton({ projectId, documentId }: DeleteFeedbackBu
         isLoading={isPending}
         onClick={() => {
           startTransition(async () => {
-            await deleteFeedbackDocument(projectId, documentId);
-            setConfirming(false);
+            const res = await deleteFeedbackDocument(projectId, documentId);
+            if (res.success) {
+              toast("Feedback deleted");
+              setConfirming(false);
+              router.refresh();
+            } else {
+              toast(res.error ?? "Could not delete document.", "error");
+              setConfirming(false);
+            }
           });
         }}
       >

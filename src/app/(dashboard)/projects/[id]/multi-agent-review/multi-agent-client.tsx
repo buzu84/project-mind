@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { IconSparkles, IconClock } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type {
   MultiAgentReview,
   AgentRole,
@@ -17,7 +18,10 @@ import type {
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { multiAgentReviewToMarkdown } from "@/lib/export/serialize-markdown";
+import { CharacterCounter } from "@/components/ui/character-counter";
 import { formatDateTime, formatDate, toISOString } from "@/lib/format-date";
+
+const MAX_QUESTION = 3000;
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -208,6 +212,7 @@ export function MultiAgentClient({
   const { toast } = useToast();
   const [reviews, setReviews] = useState<MultiAgentReview[]>(initialReviews);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const [inputType, setInputType] = useState<InputType>("product_question");
@@ -255,6 +260,30 @@ export function MultiAgentClient({
       setError(err instanceof Error ? err.message : "Failed to generate review");
     } finally {
       setIsGenerating(false);
+    }
+  }
+
+  async function deleteReview(reviewId: string) {
+    setIsDeleting(reviewId);
+    setError(null);
+
+    try {
+      const res = await fetch(
+        `/api/ai/multi-agent-review?projectId=${encodeURIComponent(projectId)}&reviewId=${encodeURIComponent(reviewId)}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete review");
+      }
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      if (expandedId === reviewId) setExpandedId(null);
+      toast("Review deleted");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete review");
+    } finally {
+      setIsDeleting(null);
     }
   }
 
@@ -308,10 +337,11 @@ export function MultiAgentClient({
           value={question}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
           error={validationError ?? undefined}
+          maxLength={MAX_QUESTION}
         />
 
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-gray-400">{question.length}/3000</span>
+          <CharacterCounter current={question.length} max={MAX_QUESTION} />
           <Button
             onClick={runReview}
             isLoading={isGenerating}
@@ -369,13 +399,15 @@ export function MultiAgentClient({
             return (
               <div key={review.id}>
                 {/* Summary row */}
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : review.id)}
+                <div
                   className="w-full text-left rounded-xl border border-gray-200 bg-white px-5 py-4 transition hover:border-gray-300 hover:shadow-sm"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : review.id)}
+                      className="flex-1 min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+                    >
                       <p className="text-sm font-semibold text-gray-900 truncate">
                         {review.question}
                       </p>
@@ -394,12 +426,36 @@ export function MultiAgentClient({
                           </time>
                         </span>
                       </div>
+                    </button>
+                    <div className="ml-4 flex items-center gap-2">
+                      <ConfirmDialog
+                        title="Delete this review?"
+                        message="This will permanently delete this multi-agent review. This action cannot be undone."
+                        confirmLabel="Delete Review"
+                        variant="danger"
+                        onConfirm={() => deleteReview(review.id)}
+                        trigger={
+                          <button
+                            type="button"
+                            className="text-xs text-gray-400 hover:text-red-500 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded px-1"
+                            disabled={isDeleting === review.id}
+                            aria-label={`Delete review: ${review.question}`}
+                          >
+                            {isDeleting === review.id ? "Deleting\u2026" : "Delete"}
+                          </button>
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : review.id)}
+                        className="text-gray-400 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+                        aria-label={isExpanded ? "Collapse review" : "Expand review"}
+                      >
+                        {isExpanded ? "\u25B2" : "\u25BC"}
+                      </button>
                     </div>
-                    <span className="ml-4 text-gray-400 text-sm">
-                      {isExpanded ? "\u25B2" : "\u25BC"}
-                    </span>
                   </div>
-                </button>
+                </div>
 
                 {/* Expanded detail */}
                 {isExpanded && (
