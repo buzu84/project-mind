@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { RoadmapClient } from "./roadmap-client";
-import type { Roadmap } from "@/lib/ai/roadmap-types";
+import { parseRoadmapRow, type ParsedRoadmap } from "@/lib/validation/json-parsers";
 
 export default async function RoadmapPage({
   params,
@@ -44,7 +44,7 @@ export default async function RoadmapPage({
       <RoadmapClient
         projectId={project.id}
         projectName={project.name}
-        initialRoadmap={(roadmap as Roadmap) ?? null}
+        initialRoadmap={roadmap ? parseRoadmapRow(roadmap as Record<string, unknown>) : null}
       />
     </div>
   );

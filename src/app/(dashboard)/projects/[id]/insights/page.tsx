@@ -5,19 +5,17 @@ import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { InsightsClient } from "./insights-client";
 
+import type { Tables, Json } from "@/lib/supabase/types";
+import { parseInsightMetadata, type ParsedInsightMetadata } from "@/lib/validation/json-parsers";
+
 export const dynamic = "force-dynamic";
 
-interface Insight {
-  id: string;
-  type: string;
-  title: string;
-  content: string;
-  metadata: {
-    priority: string;
-    confidence: string;
-    suggested_action: string;
-  } | null;
-  created_at: string;
+// DB row — metadata is Json | null
+type InsightRow = Tables<"insights">;
+
+// View-model for UI — narrows metadata to expected shape
+export interface Insight extends Omit<InsightRow, "metadata"> {
+  metadata: ParsedInsightMetadata | null;
 }
 
 export default async function InsightsPage({
@@ -58,7 +56,10 @@ export default async function InsightsPage({
       <InsightsClient
         projectId={project.id}
         projectName={project.name}
-        initialInsights={(insights ?? []) as Insight[]}
+        initialInsights={(insights ?? []).map((row: { id: string; type: string; title: string; content: string; metadata: Json | null; created_at: string }) => ({
+          ...row,
+          metadata: parseInsightMetadata(row.metadata),
+        }))}
       />
     </div>
   );

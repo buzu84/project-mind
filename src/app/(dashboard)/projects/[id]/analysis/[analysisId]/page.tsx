@@ -9,18 +9,7 @@ import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { formatDate, toISOString } from "@/lib/format-date";
 
-interface Decision {
-  id: string;
-  type: string;
-  input: {
-    productName?: string;
-    industry?: string;
-    competitors?: string;
-  } | null;
-  output: { content: string } | null;
-  project_id: string;
-  created_at: string;
-}
+import { parseAnalysisInput, parseAnalysisOutput } from "@/lib/validation/json-parsers";
 
 export default async function AnalysisResultPage({
   params,
@@ -51,10 +40,12 @@ export default async function AnalysisResultPage({
 
   if (!decision) notFound();
 
-  const analysis = decision as unknown as Decision;
-  const content = analysis.output?.content ?? "";
-  const productName = analysis.input?.productName ?? "Competitive Analysis";
-  const competitors = analysis.input?.competitors;
+  const analysisInput = parseAnalysisInput(decision.input);
+  const analysisOutput = parseAnalysisOutput(decision.output);
+  const content = analysisOutput?.content ?? "";
+  const contentUnavailable = decision.output != null && analysisOutput == null;
+  const productName = analysisInput?.productName ?? "Competitive Analysis";
+  const competitors = analysisInput?.competitors;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -78,19 +69,19 @@ export default async function AnalysisResultPage({
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="info">Competitive Analysis</Badge>
-            {analysis.input?.industry && (
-              <Badge variant="default">{analysis.input.industry}</Badge>
+            {analysisInput?.industry && (
+              <Badge variant="default">{analysisInput.industry}</Badge>
             )}
             <span className="text-xs text-gray-400">·</span>
             <p className="text-xs text-gray-400">
-              <time dateTime={toISOString(analysis.created_at)}>
-                {formatDate(analysis.created_at)}
+              <time dateTime={toISOString(decision.created_at)}>
+                {formatDate(decision.created_at)}
               </time>
             </p>
           </div>
         </div>
         <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-          <CopyMarkdownButton getMarkdown={content} />
+          <CopyMarkdownButton getMarkdown={contentUnavailable ? "" : content} />
           <Link
             href={`/projects/${project.id}/analysis`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
@@ -99,14 +90,20 @@ export default async function AnalysisResultPage({
           </Link>
           <DeleteDocumentButton
             projectId={project.id}
-            decisionId={analysis.id}
+            decisionId={decision.id}
             documentLabel="competitive analysis"
             redirectTo={`/projects/${project.id}`}
           />
         </div>
       </div>
 
-      <DocumentRenderer content={content} />
+      {contentUnavailable ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          This document could not be displayed because its saved data is in an unexpected format.
+        </div>
+      ) : (
+        <DocumentRenderer content={content} />
+      )}
     </div>
   );
 }

@@ -12,6 +12,8 @@ import { getFriendlyErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/format-date";
 import { CharacterCounter } from "@/components/ui/character-counter";
+import { parseDecisionInputTitle } from "@/lib/validation/json-parsers";
+import type { Json } from "@/lib/supabase/types";
 
 const MIN_DESCRIPTION_LENGTH = 10;
 const MAX_PRODUCT_NAME = 100;
@@ -21,7 +23,7 @@ const MAX_TARGET_AUDIENCE = 500;
 interface RecentDecision {
   id: string;
   type: string;
-  input: { productName?: string } | null;
+  input: unknown;
   created_at: string;
 }
 
@@ -172,7 +174,7 @@ export default function PrdPage() {
                   <div className="flex items-center gap-2">
                     <Badge variant="info">PRD</Badge>
                     <span className="text-sm font-medium text-gray-700">
-                      {prd.input?.productName ?? "Untitled PRD"}
+                      {parseDecisionInputTitle(prd.input as Json | null) ?? "Untitled PRD"}
                     </span>
                   </div>
                   <span className="text-xs text-gray-400">

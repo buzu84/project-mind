@@ -10,9 +10,12 @@ import { IconSparkles, IconClock } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type {
-  MultiAgentReview,
+  ParsedMultiAgentReview,
+  ParsedAgentResponse,
+} from "@/lib/validation/json-parsers";
+import { parseMultiAgentReviewRow } from "@/lib/validation/json-parsers";
+import type {
   AgentRole,
-  AgentResponse,
   InputType,
 } from "@/lib/ai/multi-agent-types";
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
@@ -28,7 +31,7 @@ const MAX_QUESTION = 3000;
 interface MultiAgentClientProps {
   projectId: string;
   projectName: string;
-  initialReviews: MultiAgentReview[];
+  initialReviews: ParsedMultiAgentReview[];
 }
 
 // ── Sub-components ──────────────────────────────────────────────────
@@ -48,7 +51,7 @@ function ConfidenceBar({ value }: { value: number }) {
   );
 }
 
-function AgentCard({ role, response }: { role: AgentRole; response: AgentResponse }) {
+function AgentCard({ role, response }: { role: AgentRole; response: ParsedAgentResponse }) {
   const config = AGENT_LABELS[role];
   return (
     <Card className={`border ${config.color.split(" ").slice(2).join(" ")} flex flex-col`}>
@@ -108,9 +111,9 @@ function AgentCard({ role, response }: { role: AgentRole; response: AgentRespons
   );
 }
 
-function ConsensusSection({ review }: { review: MultiAgentReview }) {
+function ConsensusSection({ review }: { review: ParsedMultiAgentReview }) {
   const c = review.consensus;
-  const recConfig = RECOMMENDATION_CONFIG[c.recommendation] ?? { label: c.recommendation, variant: "default" as const };
+  const recConfig = RECOMMENDATION_CONFIG[c.recommendation as keyof typeof RECOMMENDATION_CONFIG] ?? { label: c.recommendation, variant: "default" as const };
 
   return (
     <Card className="border-2 border-brand-200">
@@ -164,7 +167,7 @@ function ConsensusSection({ review }: { review: MultiAgentReview }) {
   );
 }
 
-function ReviewDetail({ review, projectName }: { review: MultiAgentReview; projectName?: string }) {
+function ReviewDetail({ review, projectName }: { review: ParsedMultiAgentReview; projectName?: string }) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -210,7 +213,7 @@ export function MultiAgentClient({
 }: MultiAgentClientProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [reviews, setReviews] = useState<MultiAgentReview[]>(initialReviews);
+  const [reviews, setReviews] = useState<ParsedMultiAgentReview[]>(initialReviews);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -250,7 +253,7 @@ export function MultiAgentClient({
       }
 
       const data = await res.json();
-      const newReview = data.review as MultiAgentReview;
+      const newReview = parseMultiAgentReviewRow(data.review as Record<string, unknown>);
       setReviews((prev) => [newReview, ...prev]);
       setExpandedId(newReview.id);
       setQuestion("");
@@ -391,7 +394,7 @@ export function MultiAgentClient({
           <h3 className="text-base font-semibold text-gray-900">Review History</h3>
           {reviews.map((review) => {
             const isExpanded = expandedId === review.id;
-            const recConfig = RECOMMENDATION_CONFIG[review.consensus.recommendation] ?? {
+            const recConfig = RECOMMENDATION_CONFIG[review.consensus.recommendation as keyof typeof RECOMMENDATION_CONFIG] ?? {
               label: review.consensus.recommendation,
               variant: "default" as const,
             };

@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { roadmapToMarkdown } from "@/lib/export/serialize-markdown";
-import type { Roadmap, RoadmapItem } from "@/lib/ai/roadmap-types";
+import { parseRoadmapRow, type ParsedRoadmap, type ParsedRoadmapItem } from "@/lib/validation/json-parsers";
 import { formatDateTime } from "@/lib/format-date";
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -18,7 +18,7 @@ import { formatDateTime } from "@/lib/format-date";
 interface RoadmapClientProps {
   projectId: string;
   projectName: string;
-  initialRoadmap: Roadmap | null;
+  initialRoadmap: ParsedRoadmap | null;
 }
 
 const PRIORITY_VARIANT: Record<
@@ -33,7 +33,7 @@ const PRIORITY_VARIANT: Record<
 
 // ── Sub-components ──────────────────────────────────────────────────
 
-function ItemCard({ item }: { item: RoadmapItem }) {
+function ItemCard({ item }: { item: ParsedRoadmapItem }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
       <div className="flex items-start justify-between gap-2">
@@ -64,7 +64,7 @@ function Section({
 }: {
   title: string;
   icon: string;
-  items: RoadmapItem[];
+  items: ParsedRoadmapItem[];
 }) {
   if (!items || items.length === 0) return null;
   return (
@@ -91,7 +91,7 @@ export function RoadmapClient({
 }: RoadmapClientProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [roadmap, setRoadmap] = useState<Roadmap | null>(initialRoadmap);
+  const [roadmap, setRoadmap] = useState<ParsedRoadmap | null>(initialRoadmap);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +113,7 @@ export function RoadmapClient({
       }
 
       const data = await res.json();
-      setRoadmap(data.roadmap);
+      setRoadmap(parseRoadmapRow(data.roadmap as Record<string, unknown>));
       toast("Roadmap generated successfully!");
       router.refresh();
     } catch (err) {

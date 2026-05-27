@@ -9,18 +9,7 @@ import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { formatDate, toISOString } from "@/lib/format-date";
 
-interface Decision {
-  id: string;
-  type: string;
-  input: {
-    productName?: string;
-    productDescription?: string;
-    targetAudience?: string;
-  } | null;
-  output: { content: string } | null;
-  project_id: string;
-  created_at: string;
-}
+import { parsePrdInput, parsePrdOutput } from "@/lib/validation/json-parsers";
 
 export default async function PrdResultPage({
   params,
@@ -51,10 +40,12 @@ export default async function PrdResultPage({
 
   if (!decision) notFound();
 
-  const prd = decision as unknown as Decision;
-  const content = prd.output?.content ?? "";
-  const productName = prd.input?.productName ?? "PRD";
-  const productDesc = prd.input?.productDescription;
+  const prdInput = parsePrdInput(decision.input);
+  const prdOutput = parsePrdOutput(decision.output);
+  const content = prdOutput?.content ?? "";
+  const contentUnavailable = decision.output != null && prdOutput == null;
+  const productName = prdInput?.productName ?? "PRD";
+  const productDesc = prdInput?.productDescription;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -76,19 +67,19 @@ export default async function PrdResultPage({
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="info">PRD</Badge>
-            {prd.input?.targetAudience && (
-              <Badge variant="default">{prd.input.targetAudience}</Badge>
+            {prdInput?.targetAudience && (
+              <Badge variant="default">{prdInput.targetAudience}</Badge>
             )}
             <span className="text-xs text-gray-400">·</span>
             <p className="text-xs text-gray-400">
-              <time dateTime={toISOString(prd.created_at)}>
-                {formatDate(prd.created_at)}
+              <time dateTime={toISOString(decision.created_at)}>
+                {formatDate(decision.created_at)}
               </time>
             </p>
           </div>
         </div>
         <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-          <CopyMarkdownButton getMarkdown={content} />
+          <CopyMarkdownButton getMarkdown={contentUnavailable ? "" : content} />
           <Link
             href={`/projects/${project.id}/prd`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
@@ -97,14 +88,20 @@ export default async function PrdResultPage({
           </Link>
           <DeleteDocumentButton
             projectId={project.id}
-            decisionId={prd.id}
+            decisionId={decision.id}
             documentLabel="PRD"
             redirectTo={`/projects/${project.id}`}
           />
         </div>
       </div>
 
-      <DocumentRenderer content={content} />
+      {contentUnavailable ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          This document could not be displayed because its saved data is in an unexpected format.
+        </div>
+      ) : (
+        <DocumentRenderer content={content} />
+      )}
     </div>
   );
 }
