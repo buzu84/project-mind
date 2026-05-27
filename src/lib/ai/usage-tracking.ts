@@ -125,13 +125,8 @@ export async function getMonthlyUsageSummary(userId: string, existingClient?: Re
       .order("created_at", { ascending: false });
 
     // Filter success status in JS to avoid missing rows due to case/null mismatch
-    const list = ((rows ?? []) as Array<{
-      feature: string;
-      total_tokens: number;
-      estimated_cost: number;
-      is_mock: boolean;
-      status: string | null;
-    }>).filter((r) => !r.status || r.status === "success");
+    type UsageQueryRow = { feature: string; total_tokens: number; estimated_cost: number; is_mock: boolean; status: string; created_at: string };
+    const list = ((rows ?? []) as UsageQueryRow[]).filter((r) => !r.status || r.status === "success");
 
     if (list.length === 0) {
       return { totalRequests: 0, totalTokens: 0, estimatedCost: 0, topFeature: null, allMock: true };

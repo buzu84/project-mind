@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { IconArrowLeft, IconDocument } from "@/components/icons";
 import { FeedbackForm } from "./feedback-form";
 import { FeedbackDocCard } from "./feedback-doc-card";
+import type { Tables } from "@/lib/supabase/types";
+
+type FeedbackDocumentRow = Pick<Tables<"feedback_documents">, "id" | "title" | "content" | "source" | "created_at">;
 
 export default async function FeedbackPage({
   params,
@@ -32,13 +35,7 @@ export default async function FeedbackPage({
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 
-  const docs = (documents ?? []) as Array<{
-    id: string;
-    title: string;
-    content: string;
-    source: string | null;
-    created_at: string;
-  }>;
+  const docs: FeedbackDocumentRow[] = (documents ?? []) as FeedbackDocumentRow[];
 
   return (
     <div className="mx-auto max-w-4xl">

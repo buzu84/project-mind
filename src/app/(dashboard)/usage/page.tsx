@@ -8,6 +8,23 @@ import type { AIUsageFeature } from "@/lib/ai/usage-types";
 import { formatDate, formatTime } from "@/lib/format-date";
 import { formatNumber } from "@/lib/format-number";
 
+// Supabase SDK doesn't infer nested-select / join types.
+// This named alias replaces an inline anonymous cast.
+interface UsageRowWithProject {
+  id: string;
+  feature: string;
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  estimated_cost: number;
+  status: string;
+  is_mock: boolean;
+  created_at: string;
+  project_id: string | null;
+  projects: { name: string } | null;
+}
+
 // Ensure this page always shows fresh data (no static caching)
 export const dynamic = "force-dynamic";
 
@@ -27,20 +44,7 @@ export default async function UsageHistoryPage() {
     .limit(100);
 
 
-  const usageRows = (rows ?? []) as unknown as Array<{
-    id: string;
-    feature: string;
-    model: string;
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-    estimated_cost: number;
-    status: string;
-    is_mock: boolean;
-    created_at: string;
-    project_id: string | null;
-    projects: { name: string } | null;
-  }>;
+  const usageRows = (rows ?? []) as unknown as UsageRowWithProject[];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

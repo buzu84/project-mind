@@ -1,5 +1,7 @@
 // ── AI Usage & Cost Tracking Types ──────────────────────────────────
 
+import type { Tables } from "@/lib/supabase/types";
+
 export type AIProvider = "openai";
 
 export type AIUsageFeature =
@@ -47,27 +49,8 @@ export interface TrackAIUsageInput {
   metadata?: Record<string, unknown> | null;
 }
 
-export interface AIUsageRecord {
-  id: string;
-  user_id: string;
-  project_id: string | null;
-  provider: AIProvider;
-  model: string;
-  feature: AIUsageFeature;
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-  input_cost: number;
-  output_cost: number;
-  estimated_cost: number;
-  currency: string;
-  is_mock: boolean;
-  status: AIUsageStatus;
-  error_message: string | null;
-  latency_ms: number | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-}
+/** DB row type for `ai_usage` — derived from generated Supabase types. */
+export type AIUsageRecord = Tables<"ai_usage">;
 
 export interface AIUsageSummary {
   totalRequests: number;

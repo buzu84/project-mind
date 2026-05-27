@@ -161,9 +161,13 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
           name,
           description,
           reach: 0, impact: 0, confidence: 0, effort: 0,
+          priority: 0,
           rice_score: 0, ice_score: 0,
           ai_commentary: null, status: "idea",
+          project_id: projectId,
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          scored_at: null,
         };
         setFeatures((prev) => [...prev, created]);
         formRef.current?.reset();
