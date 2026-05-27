@@ -86,8 +86,6 @@ export async function POST() {
       "feature_ideas",
       "roadmaps",
       "multi_agent_reviews",
-      "prds",
-      "competitive_analyses",
       "project_context",
       "decisions",
     ];

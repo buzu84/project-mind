@@ -12,19 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { insightsToMarkdown } from "@/lib/export/serialize-markdown";
-
-interface Insight {
-  id: string;
-  type: string;
-  title: string;
-  content: string;
-  metadata: {
-    priority: string;
-    confidence: string;
-    suggested_action: string;
-  } | null;
-  created_at: string;
-}
+import type { Insight } from "./page";
 
 interface InsightsClientProps {
   projectId: string;

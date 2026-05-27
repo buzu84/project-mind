@@ -4,23 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { FeaturesClient } from "./features-client";
+import type { Tables } from "@/lib/supabase/types";
 
-export interface FeatureIdea {
-  id: string;
-  name: string;
-  description: string | null;
-  reach: number;
-  impact: number;
-  confidence: number;
-  effort: number;
-  rice_score: number;
-  ice_score: number;
-  ai_commentary: string | null;
-  status: string;
-  created_at: string;
-  updated_at?: string;
-  scored_at?: string;
-}
+export type FeatureIdea = Tables<"feature_ideas">;
 
 export default async function FeaturesPage({
   params,
@@ -41,27 +27,14 @@ export default async function FeaturesPage({
 
   if (!project) notFound();
 
-  // Try with scored_at first; fall back without it if the column doesn't exist yet
-  let features: FeatureIdea[] = [];
-  const { data, error: featErr } = await supabase
+  const { data: features, error: featErr } = await supabase
     .from("feature_ideas")
     .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at")
     .eq("project_id", project.id)
     .order("rice_score", { ascending: false });
 
-  if (featErr && featErr.code === "42703") {
-    // Column scored_at does not exist yet — query without it
-    const { data: fallback } = await supabase
-      .from("feature_ideas")
-      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at")
-      .eq("project_id", project.id)
-      .order("rice_score", { ascending: false });
-    features = (fallback ?? []) as FeatureIdea[];
-  } else if (featErr) {
+  if (featErr) {
     console.error("[features] Query failed:", featErr.message, featErr.code, featErr.details);
-    features = [];
-  } else {
-    features = (data ?? []) as FeatureIdea[];
   }
 
 
@@ -78,7 +51,7 @@ export default async function FeaturesPage({
       <FeaturesClient
         projectId={project.id}
         projectName={project.name}
-        initialFeatures={(features ?? []) as FeatureIdea[]}
+        initialFeatures={features ?? []}
       />
     </div>
   );

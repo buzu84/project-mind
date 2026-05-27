@@ -251,7 +251,7 @@ export async function POST(req: Request) {
     const raw = response.choices[0]?.message?.content ?? "{}";
 
     // Track usage
-    const tokens = extractTokenUsage(response as any);
+    const tokens = extractTokenUsage(response);
     void trackAIUsage({
       userId: user.id,
       projectId,

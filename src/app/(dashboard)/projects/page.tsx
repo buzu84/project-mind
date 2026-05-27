@@ -15,6 +15,16 @@ import {
   IconProjects,
 } from "@/components/icons";
 
+// Supabase SDK doesn't infer aggregate / nested-select return types.
+interface ProjectListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  updated_at: string;
+  decisions: { count: number }[];
+  feature_ideas: { count: number }[];
+}
+
 export default async function ProjectsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
@@ -30,14 +40,7 @@ export default async function ProjectsPage() {
     .order("updated_at", { ascending: false });
 
 
-  const list = (projects ?? []) as Array<{
-    id: string;
-    name: string;
-    description: string | null;
-    updated_at: string;
-    decisions: { count: number }[];
-    feature_ideas: { count: number }[];
-  }>;
+  const list = (projects ?? []) as ProjectListItem[];
 
   return (
     <div className="mx-auto max-w-5xl">

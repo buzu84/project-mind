@@ -11,18 +11,9 @@ import { useToast } from "@/components/ui/toast";
 import { IconPlus, IconClock, IconScale, IconSparkles } from "@/components/icons";
 import { DecisionForm } from "./decision-form";
 import { formatDate, toISOString } from "@/lib/format-date";
+import type { Tables } from "@/lib/supabase/types";
 
-export interface ProductDecision {
-  id: string;
-  title: string;
-  category: string;
-  status: string;
-  problem_statement: string | null;
-  context_summary: string | null;
-  confidence_score: number | null;
-  created_at: string;
-  updated_at: string;
-}
+export type ProductDecision = Pick<Tables<"product_decisions">, "id" | "title" | "category" | "status" | "problem_statement" | "context_summary" | "confidence_score" | "created_at" | "updated_at">;
 
 const statusBadgeVariant: Record<string, "default" | "success" | "warning" | "danger" | "info"> = {
   draft: "default",

@@ -1,6 +1,6 @@
-import type { MultiAgentReview, AgentRole, AgentResponse } from "@/lib/ai/multi-agent-types";
+import type { ParsedMultiAgentReview, ParsedAgentResponse, ParsedRoadmap, ParsedRoadmapItem } from "@/lib/validation/json-parsers";
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
-import type { Roadmap, RoadmapItem } from "@/lib/ai/roadmap-types";
+import type { AgentRole } from "@/lib/ai/multi-agent-types";
 import { formatDate } from "@/lib/format-date";
 
 // ── Decision Review ────────────────────────────────────────────────
@@ -152,7 +152,7 @@ export function decisionReviewToMarkdown(data: DecisionExportData): string {
 
 // ── Multi-Agent Review ─────────────────────────────────────────────
 
-function agentSectionToMarkdown(role: AgentRole, response: AgentResponse): string {
+function agentSectionToMarkdown(role: AgentRole, response: ParsedAgentResponse): string {
   const config = AGENT_LABELS[role];
   const lines: string[] = [];
 
@@ -185,8 +185,8 @@ function agentSectionToMarkdown(role: AgentRole, response: AgentResponse): strin
   return lines.join("\n");
 }
 
-export function multiAgentReviewToMarkdown(review: MultiAgentReview, projectName?: string): string {
-  const recConfig = RECOMMENDATION_CONFIG[review.consensus.recommendation];
+export function multiAgentReviewToMarkdown(review: ParsedMultiAgentReview, projectName?: string): string {
+  const recConfig = RECOMMENDATION_CONFIG[review.consensus.recommendation as keyof typeof RECOMMENDATION_CONFIG];
   const lines: string[] = [];
 
   lines.push(`# Multi-Agent Review`);
@@ -209,7 +209,7 @@ export function multiAgentReviewToMarkdown(review: MultiAgentReview, projectName
   lines.push("");
 
   const roles: AgentRole[] = ["pm", "cto", "ux", "growth"];
-  const responseMap: Record<AgentRole, AgentResponse> = {
+  const responseMap: Record<AgentRole, ParsedAgentResponse> = {
     pm: review.pm_response,
     cto: review.cto_response,
     ux: review.ux_response,
@@ -254,7 +254,7 @@ export function multiAgentReviewToMarkdown(review: MultiAgentReview, projectName
 
 // ── Roadmap ────────────────────────────────────────────────────────
 
-function roadmapItemsToMarkdown(items: RoadmapItem[]): string {
+function roadmapItemsToMarkdown(items: ParsedRoadmapItem[]): string {
   return items
     .map((item) => {
       const tags = [item.priority, item.confidence ? `confidence: ${item.confidence}` : null]
@@ -265,7 +265,7 @@ function roadmapItemsToMarkdown(items: RoadmapItem[]): string {
     .join("\n");
 }
 
-export function roadmapToMarkdown(roadmap: Roadmap, projectName?: string): string {
+export function roadmapToMarkdown(roadmap: ParsedRoadmap, projectName?: string): string {
   const lines: string[] = [];
 
   lines.push(`# AI Roadmap${projectName ? ` — ${projectName}` : ""}`);
@@ -276,7 +276,7 @@ export function roadmapToMarkdown(roadmap: Roadmap, projectName?: string): strin
   lines.push("");
 
   // Now / Next / Later
-  const horizons: [string, RoadmapItem[]][] = [
+  const horizons: [string, ParsedRoadmapItem[]][] = [
     ["Now", roadmap.now_items ?? []],
     ["Next", roadmap.next_items ?? []],
     ["Later", roadmap.later_items ?? []],
@@ -295,7 +295,7 @@ export function roadmapToMarkdown(roadmap: Roadmap, projectName?: string): strin
   }
 
   // 30/60/90
-  const plans: [string, RoadmapItem[]][] = [
+  const plans: [string, ParsedRoadmapItem[]][] = [
     ["First 30 Days", roadmap.plan_30_days ?? []],
     ["Days 31–60", roadmap.plan_60_days ?? []],
     ["Days 61–90", roadmap.plan_90_days ?? []],
@@ -314,7 +314,7 @@ export function roadmapToMarkdown(roadmap: Roadmap, projectName?: string): strin
   }
 
   // Risks, Dependencies, Metrics
-  const sections: [string, RoadmapItem[]][] = [
+  const sections: [string, ParsedRoadmapItem[]][] = [
     ["Risks", roadmap.risks ?? []],
     ["Dependencies", roadmap.dependencies ?? []],
     ["Success Metrics", roadmap.success_metrics ?? []],
@@ -340,7 +340,7 @@ interface InsightExportData {
   metadata: {
     priority: string;
     confidence: string;
-    suggested_action: string;
+    suggested_action?: string;
   } | null;
 }
 

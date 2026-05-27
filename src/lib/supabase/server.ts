@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { isMockDb, isDevMode } from "@/lib/auth/constants";
+import type { Database } from "./types";
 
 // ─── Key normalization ──────────────────────────────────────
 // Supabase dashboard may label keys as "publishable" / "secret"
@@ -69,7 +70,7 @@ export function createClient() {
     // Production / real auth: use the publishable key with user cookies
     const cookieStore = cookies();
 
-    return createServerClient(supabaseUrl, publishableKey, {
+    return createServerClient<Database>(supabaseUrl, publishableKey, {
       cookies: {
         getAll() {
           return cookieStore.getAll();

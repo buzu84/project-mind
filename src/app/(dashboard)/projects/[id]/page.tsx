@@ -9,6 +9,8 @@ import { JsonLd } from "@/components/json-ld";
 import { createBreadcrumbJsonLd } from "@/lib/structured-data";
 import { DeleteProjectButton } from "./delete-button";
 import { formatDate, toISOString } from "@/lib/format-date";
+import { parseDecisionInputTitle } from "@/lib/validation/json-parsers";
+import type { Json } from "@/lib/supabase/types";
 import {
   IconDocument,
   IconTarget,
@@ -158,7 +160,7 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
 
   const decisions =
-    (project.decisions as { id: string; type: string; input: Record<string, string> | null; created_at: string }[]) ??
+    (project.decisions as { id: string; type: string; input: unknown; created_at: string }[]) ??
     [];
   const featureCount =
     (project.feature_ideas as { count: number }[])?.[0]?.count ?? 0;
@@ -346,9 +348,9 @@ export default async function ProjectDetailPage({
 
               const title =
                 d.type === "PRD"
-                  ? d.input?.productName ?? "Untitled PRD"
+                  ? parseDecisionInputTitle(d.input as Json | null) ?? "Untitled PRD"
                   : d.type === "COMPETITIVE_ANALYSIS"
-                    ? d.input?.productName ?? "Untitled Analysis"
+                    ? parseDecisionInputTitle(d.input as Json | null) ?? "Untitled Analysis"
                     : decisionTypeLabels[d.type] ?? d.type;
 
               const inner = (

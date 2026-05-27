@@ -9,7 +9,8 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
+    "db:types": "npx supabase gen types typescript --project-id mkrnyuzoruudjbxjasiw --schema public > src/lib/supabase/database.types.ts"
   },
   "keywords": [],
   "author": "",

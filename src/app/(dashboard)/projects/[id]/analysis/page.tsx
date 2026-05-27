@@ -12,6 +12,8 @@ import { getFriendlyErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { formatDate } from "@/lib/format-date";
+import { parseDecisionInputTitle } from "@/lib/validation/json-parsers";
+import type { Json } from "@/lib/supabase/types";
 
 const MAX_PRODUCT_NAME = 100;
 const MAX_INDUSTRY = 200;
@@ -20,7 +22,7 @@ const MAX_COMPETITORS = 1000;
 interface RecentDecision {
   id: string;
   type: string;
-  input: { productName?: string; industry?: string } | null;
+  input: unknown;
   created_at: string;
 }
 
@@ -153,7 +155,7 @@ export default function AnalysisPage() {
                   <div className="flex items-center gap-2">
                     <Badge variant="warning">Analysis</Badge>
                     <span className="text-sm font-medium text-gray-700">
-                      {a.input?.productName ?? "Untitled Analysis"}
+                      {parseDecisionInputTitle(a.input as Json | null) ?? "Untitled Analysis"}
                     </span>
                   </div>
                   <span className="text-xs text-gray-400">

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { MultiAgentClient } from "./multi-agent-client";
-import type { MultiAgentReview } from "@/lib/ai/multi-agent-types";
+import { parseMultiAgentReviewRow } from "@/lib/validation/json-parsers";
 
 export default async function MultiAgentReviewPage({
   params,
@@ -44,7 +44,7 @@ export default async function MultiAgentReviewPage({
       <MultiAgentClient
         projectId={project.id}
         projectName={project.name}
-        initialReviews={(reviews ?? []) as MultiAgentReview[]}
+        initialReviews={(reviews ?? []).map((r: Record<string, unknown>) => parseMultiAgentReviewRow(r))}
       />
     </div>
   );

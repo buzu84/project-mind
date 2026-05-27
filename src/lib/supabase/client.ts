@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "./types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const publishableKey =
@@ -29,5 +30,5 @@ export function createClient() {
     } as any;
   }
 
-  return createBrowserClient(supabaseUrl, publishableKey);
+  return createBrowserClient<Database>(supabaseUrl, publishableKey);
 }
