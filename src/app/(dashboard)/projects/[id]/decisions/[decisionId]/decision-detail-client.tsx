@@ -9,16 +9,21 @@ import { useToast } from "@/components/ui/toast";
 import { IconSparkles } from "@/components/icons";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { decisionReviewToMarkdown } from "@/lib/export/serialize-markdown";
-
-type R = Record<string, any>;
+import type {
+  DecisionViewModel,
+  OptionViewModel,
+  AssumptionViewModel,
+  RecommendationViewModel,
+  EvidenceLinkViewModel,
+} from "./decision-view-models";
 
 interface Props {
   projectId: string;
-  decision: R;
-  options: R[];
-  assumptions: R[];
-  recommendation: R | null;
-  evidenceLinks: R[];
+  decision: DecisionViewModel;
+  options: OptionViewModel[];
+  assumptions: AssumptionViewModel[];
+  recommendation: RecommendationViewModel | null;
+  evidenceLinks: EvidenceLinkViewModel[];
 }
 
 const statusBadgeVariant: Record<string, "default" | "success" | "warning" | "danger" | "info"> = {
@@ -49,7 +54,7 @@ export function DecisionDetailClient({
   const [recommendation] = useState(initialRecommendation);
   const [evidenceLinks] = useState(initialEvidence);
   const [confidenceScore, setConfidenceScore] = useState<number | null>(
-    decision.confidence_score ?? null,
+    decision.confidence_score,
   );
   const { toast } = useToast();
   const router = useRouter();
@@ -84,12 +89,12 @@ export function DecisionDetailClient({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{String(decision.title ?? "")}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{decision.title}</h2>
           <div className="mt-2 flex items-center gap-2">
-            <Badge variant={statusBadgeVariant[String(decision.status ?? "draft")] ?? "default"}>
-              {String(decision.status ?? "draft").replace("_", " ")}
+            <Badge variant={statusBadgeVariant[decision.status] ?? "default"}>
+              {decision.status.replace("_", " ")}
             </Badge>
-            <Badge>{String(decision.category ?? "other")}</Badge>
+            <Badge>{decision.category}</Badge>
             {confidenceScore !== null && (
               <span className="text-sm text-gray-500">
                 Confidence: <strong>{confidenceScore}%</strong>
@@ -103,44 +108,41 @@ export function DecisionDetailClient({
               <CopyMarkdownButton
                 getMarkdown={() =>
                   decisionReviewToMarkdown({
-                    title: String(decision.title ?? ""),
-                    status: String(decision.status ?? "draft"),
-                    category: String(decision.category ?? "other"),
-                    confidenceScore: confidenceScore,
-                    problemStatement: decision.problem_statement ? String(decision.problem_statement) : null,
-                    contextSummary: decision.context_summary ? String(decision.context_summary) : null,
+                    title: decision.title,
+                    status: decision.status,
+                    category: decision.category,
+                    confidenceScore,
+                    problemStatement: decision.problem_statement,
+                    contextSummary: decision.context_summary,
                     recommendation: recommendation
                       ? {
-                          recommendation: String(recommendation.recommendation ?? ""),
-                          confidence_score: recommendation.confidence_score ?? null,
-                          reasoning: recommendation.reasoning ?? [],
-                          next_validation_steps: Array.isArray(recommendation.next_validation_steps) ? recommendation.next_validation_steps : [],
+                          recommendation: recommendation.recommendation,
+                          confidence_score: recommendation.confidence_score,
+                          reasoning: recommendation.reasoning,
+                          next_validation_steps: recommendation.next_validation_steps,
                         }
                       : null,
-                    options: options.map((opt: R) => ({
-                      title: String(opt.title),
-                      description: opt.description ? String(opt.description) : null,
-                      pros: Array.isArray(opt.pros) ? opt.pros : [],
-                      cons: Array.isArray(opt.cons) ? opt.cons : [],
-                      effort_estimate: opt.effort_estimate ? String(opt.effort_estimate) : null,
-                      reversibility: opt.reversibility ? String(opt.reversibility) : null,
-                      confidence_score: opt.confidence_score ?? null,
+                    options: options.map((opt) => ({
+                      title: opt.title,
+                      description: opt.description,
+                      pros: opt.pros,
+                      cons: opt.cons,
+                      effort_estimate: opt.effort_estimate,
+                      reversibility: opt.reversibility,
+                      confidence_score: opt.confidence_score,
                     })),
-                    assumptions: assumptions.map((a: R) => ({
-                      statement: String(a.statement),
-                      assumption_type: a.assumption_type ? String(a.assumption_type) : null,
-                      risk_level: a.risk_level ? String(a.risk_level) : null,
-                      evidence_status: a.evidence_status ? String(a.evidence_status) : null,
-                      validation_method: a.validation_method ? String(a.validation_method) : null,
+                    assumptions: assumptions.map((a) => ({
+                      statement: a.statement,
+                      assumption_type: a.assumption_type,
+                      risk_level: a.risk_level,
+                      evidence_status: a.evidence_status,
+                      validation_method: a.validation_method,
                     })),
-                    evidence: evidenceLinks.map((link: R) => {
-                      const ev = (link.product_evidence ?? {}) as R;
-                      return {
-                        title: ev.title ? String(ev.title) : null,
-                        claim: String(ev.claim ?? ""),
-                        source_type: String(ev.source_type ?? "unknown"),
-                      };
-                    }),
+                    evidence: evidenceLinks.map((link) => ({
+                      title: link.evidence.title,
+                      claim: link.evidence.claim,
+                      source_type: link.evidence.source_type,
+                    })),
                   })
                 }
               />
@@ -176,14 +178,14 @@ export function DecisionDetailClient({
       {decision.problem_statement && (
         <Card>
           <h3 className="text-sm font-semibold text-gray-700 mb-1">Problem Statement</h3>
-          <p className="text-sm text-gray-600">{String(decision.problem_statement)}</p>
+          <p className="text-sm text-gray-600">{decision.problem_statement}</p>
         </Card>
       )}
 
       {decision.context_summary && (
         <Card>
           <h3 className="text-sm font-semibold text-gray-700 mb-1">Context</h3>
-          <p className="text-sm text-gray-600">{String(decision.context_summary)}</p>
+          <p className="text-sm text-gray-600">{decision.context_summary}</p>
         </Card>
       )}
 
@@ -194,34 +196,26 @@ export function DecisionDetailClient({
             💡 Recommendation
             {recommendation.confidence_score != null && (
               <span className="ml-2 text-sm font-normal text-blue-600">
-                ({String(recommendation.confidence_score)}% confidence)
+                ({recommendation.confidence_score}% confidence)
               </span>
             )}
           </h3>
-          <p className="text-sm text-gray-800 mb-3">{String(recommendation.recommendation ?? "")}</p>
+          <p className="text-sm text-gray-800 mb-3">{recommendation.recommendation}</p>
 
-          {(() => {
-            const reasoningRaw = recommendation.reasoning;
-            const reasoningList: string[] = Array.isArray(reasoningRaw)
-              ? reasoningRaw
-              : typeof reasoningRaw === "string" && reasoningRaw.trim()
-                ? reasoningRaw.split("\n").filter(Boolean)
-                : [];
-            return reasoningList.length > 0 ? (
-              <div className="mb-3">
-                <h4 className="text-xs font-semibold text-gray-600 uppercase mb-1">Reasoning</h4>
-                <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
-                  {reasoningList.map((r: string, i: number) => <li key={i}>{r}</li>)}
-                </ul>
-              </div>
-            ) : null;
-          })()}
+          {recommendation.reasoning.length > 0 && (
+            <div className="mb-3">
+              <h4 className="text-xs font-semibold text-gray-600 uppercase mb-1">Reasoning</h4>
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                {recommendation.reasoning.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          )}
 
-          {Array.isArray(recommendation.next_validation_steps) && recommendation.next_validation_steps.length > 0 && (
+          {recommendation.next_validation_steps.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-gray-600 uppercase mb-1">Next Steps</h4>
               <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
-                {(recommendation.next_validation_steps as string[]).map((s: string, i: number) => <li key={i}>{s}</li>)}
+                {recommendation.next_validation_steps.map((s, i) => <li key={i}>{s}</li>)}
               </ul>
             </div>
           )}
@@ -233,43 +227,43 @@ export function DecisionDetailClient({
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-3">Decision Options</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            {options.map((opt: R) => (
-              <Card key={String(opt.id)}>
+            {options.map((opt) => (
+              <Card key={opt.id}>
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-gray-900">{String(opt.title)}</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">{opt.title}</h4>
                   <div className="flex gap-1.5 flex-shrink-0">
                     {opt.effort_estimate && (
                       <Badge variant="default">
-                        {String(opt.effort_estimate)} effort
+                        {opt.effort_estimate} effort
                       </Badge>
                     )}
-                    {opt.reversibility && String(opt.reversibility) !== "unknown" && (
+                    {opt.reversibility && opt.reversibility !== "unknown" && (
                       <Badge variant="default">
-                        {String(opt.reversibility)} reversibility
+                        {opt.reversibility} reversibility
                       </Badge>
                     )}
                     {opt.confidence_score != null && (
-                      <span className="text-xs text-gray-400">{String(opt.confidence_score)}%</span>
+                      <span className="text-xs text-gray-400">{opt.confidence_score}%</span>
                     )}
                   </div>
                 </div>
                 {opt.description && (
-                  <p className="text-xs text-gray-600 mb-2">{String(opt.description)}</p>
+                  <p className="text-xs text-gray-600 mb-2">{opt.description}</p>
                 )}
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  {Array.isArray(opt.pros) && opt.pros.length > 0 && (
+                  {opt.pros.length > 0 && (
                     <div>
                       <span className="font-semibold text-green-700">Pros</span>
                       <ul className="mt-0.5 space-y-0.5 text-gray-600">
-                        {(opt.pros as string[]).map((p: string, i: number) => <li key={i}>+ {p}</li>)}
+                        {opt.pros.map((p, i) => <li key={i}>+ {p}</li>)}
                       </ul>
                     </div>
                   )}
-                  {Array.isArray(opt.cons) && opt.cons.length > 0 && (
+                  {opt.cons.length > 0 && (
                     <div>
                       <span className="font-semibold text-red-700">Cons</span>
                       <ul className="mt-0.5 space-y-0.5 text-gray-600">
-                        {(opt.cons as string[]).map((c: string, i: number) => <li key={i}>− {c}</li>)}
+                        {opt.cons.map((c, i) => <li key={i}>− {c}</li>)}
                       </ul>
                     </div>
                   )}
@@ -285,23 +279,23 @@ export function DecisionDetailClient({
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-3">Assumptions</h3>
           <div className="space-y-2">
-            {assumptions.map((a: R) => (
-              <Card key={String(a.id)} className="py-3">
+            {assumptions.map((a) => (
+              <Card key={a.id} className="py-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm text-gray-800">{String(a.statement)}</p>
+                  <p className="text-sm text-gray-800">{a.statement}</p>
                   <div className="flex gap-1.5 flex-shrink-0">
                     {a.assumption_type && (
-                      <Badge variant="default">{String(a.assumption_type)}</Badge>
+                      <Badge variant="default">{a.assumption_type}</Badge>
                     )}
-                    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${riskColors[String(a.risk_level ?? "medium")]}`}>
-                      {String(a.risk_level ?? "medium")} risk
+                    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${riskColors[a.risk_level] ?? ""}`}>
+                      {a.risk_level} risk
                     </span>
-                    <Badge variant="default">{String(a.evidence_status ?? "unsupported")}</Badge>
+                    <Badge variant="default">{a.evidence_status ?? "unsupported"}</Badge>
                   </div>
                 </div>
                 {a.validation_method && (
                   <p className="mt-1 text-xs text-gray-500">
-                    Validation: {String(a.validation_method)}
+                    Validation: {a.validation_method}
                   </p>
                 )}
               </Card>
@@ -315,27 +309,24 @@ export function DecisionDetailClient({
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-3">Evidence</h3>
           <div className="space-y-2">
-            {evidenceLinks.map((link: R) => {
-              const ev = (link.product_evidence ?? {}) as R;
-              return (
-                <Card key={String(link.id)} className="py-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      {ev.title && <p className="text-xs font-semibold text-gray-700">{String(ev.title)}</p>}
-                      <p className="text-sm text-gray-600 line-clamp-2">{String(ev.claim ?? "")}</p>
-                    </div>
-                    <div className="flex gap-1.5 flex-shrink-0">
-                      <Badge variant="default">{String(ev.source_type ?? "unknown")}</Badge>
-                      {ev.relevance_score != null && (
-                        <span className="text-xs text-gray-400">
-                          {(Number(ev.relevance_score) * 100).toFixed(0)}% relevant
-                        </span>
-                      )}
-                    </div>
+            {evidenceLinks.map((link) => (
+              <Card key={link.id} className="py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    {link.evidence.title && <p className="text-xs font-semibold text-gray-700">{link.evidence.title}</p>}
+                    <p className="text-sm text-gray-600 line-clamp-2">{link.evidence.claim}</p>
                   </div>
-                </Card>
-              );
-            })}
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <Badge variant="default">{link.evidence.source_type}</Badge>
+                    {link.evidence.relevance_score != null && (
+                      <span className="text-xs text-gray-400">
+                        {(link.evidence.relevance_score * 100).toFixed(0)}% relevant
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       )}
@@ -353,5 +344,3 @@ export function DecisionDetailClient({
     </div>
   );
 }
-
-

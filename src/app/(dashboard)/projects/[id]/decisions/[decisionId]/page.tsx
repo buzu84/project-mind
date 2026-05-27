@@ -4,6 +4,20 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { DecisionDetailClient } from "./decision-detail-client";
+import type { Tables } from "@/lib/supabase/types";
+import {
+  toDecisionViewModel,
+  toOptionViewModel,
+  toAssumptionViewModel,
+  toRecommendationViewModel,
+  toEvidenceLinkViewModel,
+} from "./decision-view-models";
+
+// Supabase nested select "*, product_evidence(*)" returns this join shape.
+// SDK cannot infer it precisely, so we define a local alias.
+type EvidenceLinkJoinRow = Tables<"product_decision_evidence_links"> & {
+  product_evidence: Tables<"product_evidence"> | null;
+};
 
 export default async function DecisionDetailPage({
   params,
@@ -76,11 +90,11 @@ export default async function DecisionDetailPage({
 
       <DecisionDetailClient
         projectId={project.id}
-        decision={decision as Record<string, unknown>}
-        options={(optionsRes.data ?? []) as Record<string, unknown>[]}
-        assumptions={(assumptionsRes.data ?? []) as Record<string, unknown>[]}
-        recommendation={(recommendationsRes.data?.[0] ?? null) as Record<string, unknown> | null}
-        evidenceLinks={(linksRes.data ?? []) as Record<string, unknown>[]}
+        decision={toDecisionViewModel(decision)}
+        options={(optionsRes.data ?? []).map(toOptionViewModel)}
+        assumptions={(assumptionsRes.data ?? []).map(toAssumptionViewModel)}
+        recommendation={recommendationsRes.data?.[0] ? toRecommendationViewModel(recommendationsRes.data[0]) : null}
+        evidenceLinks={(linksRes.data ?? []).map((row: EvidenceLinkJoinRow) => toEvidenceLinkViewModel(row))}
       />
     </div>
   );

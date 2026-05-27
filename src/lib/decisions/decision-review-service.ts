@@ -18,6 +18,7 @@ import { isRealAI } from "@/lib/ai/is-real-ai";
 import { trackAIUsage, extractTokenUsage } from "@/lib/ai/usage-tracking";
 import { retrieveEvidence, createEvidenceCitations, formatEvidenceForPrompt } from "@/lib/evidence";
 import type { EvidenceCitation } from "@/lib/evidence";
+import type { Tables } from "@/lib/supabase/types";
 import { decisionReviewOutputSchema, type DecisionReviewOutput } from "./review-schemas";
 import { normalizeDecisionReviewOutput, formatZodIssuesForLog, formatZodIssuesForRetry } from "./review-normalize";
 
@@ -47,15 +48,7 @@ export interface DecisionReviewResult {
   summary: string;
 }
 
-interface DecisionRow {
-  id: string;
-  title: string;
-  category: string;
-  status: string;
-  problem_statement: string | null;
-  context_summary: string | null;
-  confidence_score: number | null;
-}
+type DecisionRow = Pick<Tables<"product_decisions">, "id" | "title" | "category" | "status" | "problem_statement" | "context_summary" | "confidence_score">;
 
 // ── System prompt ───────────────────────────────────────────────────
 
@@ -102,7 +95,7 @@ export async function analyzeDecision(
     log("Phase 1 FAILED", { error: projErr?.message ?? "no data" });
     throw new Error("Project not found or access denied.");
   }
-  log("Phase 2: Project loaded", { name: (project as any).name });
+  log("Phase 2: Project loaded", { name: project.name });
 
   // 2. Load decision (with ownership check)
   const { data: decision, error: decErr } = await supabase
@@ -116,7 +109,7 @@ export async function analyzeDecision(
     log("Phase 3 FAILED: Decision load", { error: decErr?.message ?? "no data", decisionId });
     throw new Error("Decision not found or access denied.");
   }
-  const dec = decision as DecisionRow;
+  const dec = decision;
   log("Phase 3: Decision loaded", { title: dec.title });
 
   // 3. Load structured project context (optional)

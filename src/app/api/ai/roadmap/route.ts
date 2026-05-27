@@ -261,7 +261,7 @@ export async function POST(req: Request) {
       const raw = response.choices[0]?.message?.content ?? "{}";
 
       // Track real AI usage
-      const tokens = extractTokenUsage(response as any);
+      const tokens = extractTokenUsage(response);
       void trackAIUsage({
         userId: user.id,
         projectId,
@@ -294,7 +294,7 @@ export async function POST(req: Request) {
     // Build row for DB
     const row = {
       project_id: projectId,
-      title: roadmap.title || `${(projectRes.data as any).name} Roadmap`,
+      title: roadmap.title || `${projectRes.data.name} Roadmap`,
       now_items: ensureArray(roadmap.now),
       next_items: ensureArray(roadmap.next),
       later_items: ensureArray(roadmap.later),

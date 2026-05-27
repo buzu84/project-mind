@@ -211,15 +211,15 @@ export async function POST(req: Request) {
       : Promise.resolve({ context: "", results: [], qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 } }),
   ]);
 
-  const insightsList = ((insightsRes as any).data ?? []) as Array<{ type: string; title: string; content: string }>;
+  const insightsList = ((insightsRes.data ?? []) as Array<{ type: string; title: string; content: string }>);
   const insightsSummary = insightsList.length > 0
     ? insightsList.map((i) => `[${i.type}] ${i.title}: ${i.content}`).join("\n")
     : null;
 
   const projectContext = buildContext(
     project as Record<string, string | null>,
-    (contextRes as any).data as Record<string, string | null> | null,
-    (ragResult as any).context ?? "",
+    contextRes.data as Record<string, string | null> | null,
+    ragResult.context ?? "",
     insightsSummary,
   );
 
@@ -234,9 +234,9 @@ export async function POST(req: Request) {
       const mock = await generateMockMultiAgentReview({
         question,
         inputType,
-        projectName: (project as any).name ?? "Product",
-        targetUsers: (project as any).target_users,
-        market: (project as any).market,
+        projectName: project.name ?? "Product",
+        targetUsers: project.target_users,
+        market: project.market,
       });
       pm = mock.pm;
       cto = mock.cto;
