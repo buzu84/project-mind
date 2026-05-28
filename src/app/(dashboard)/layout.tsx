@@ -30,7 +30,7 @@ export default async function DashboardLayout({
         <MobileNav user={user} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBar user={user} />
-          <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">{children}</main>
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset">{children}</main>
         </div>
       </div>
     </ToastProvider>

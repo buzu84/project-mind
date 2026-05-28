@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import type { AppUser } from "@/lib/auth/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconSparkles, IconLogOut } from "@/components/icons";
 import { DeleteAccountModal } from "@/components/delete-account-modal";
 import { createClient } from "@/lib/supabase/client";
+import { focusAfterPaint } from "@/lib/focus-utils";
 import Link from "next/link";
 
 interface SettingsContentProps {
@@ -23,6 +24,12 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+  const deleteAccountButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleCloseDeleteModal = useCallback(() => {
+    setShowDeleteModal(false);
+    focusAfterPaint(() => deleteAccountButtonRef.current);
+  }, []);
 
   const displayName = user?.name ?? "User";
   const avatarUrl = user?.avatar_url;
@@ -303,6 +310,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
             </p>
           </div>
           <Button
+            ref={deleteAccountButtonRef}
             variant="danger"
             size="sm"
             onClick={() => setShowDeleteModal(true)}
@@ -313,7 +321,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
       </Card>
 
       {showDeleteModal && (
-        <DeleteAccountModal onClose={() => setShowDeleteModal(false)} />
+        <DeleteAccountModal onClose={handleCloseDeleteModal} />
       )}
     </div>
   );

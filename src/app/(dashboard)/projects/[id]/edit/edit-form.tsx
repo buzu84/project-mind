@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { updateProject } from "../../actions";
 import { ProjectForm } from "../../project-form";
 
@@ -16,6 +17,7 @@ interface EditProjectFormProps {
 }
 
 export function EditProjectForm({ project }: EditProjectFormProps) {
+  const router = useRouter();
   const boundAction = updateProject.bind(null, project.id);
 
   return (
@@ -30,6 +32,7 @@ export function EditProjectForm({ project }: EditProjectFormProps) {
         goals: project.goals,
       }}
       submitLabel="Save Changes"
+      onCancel={() => router.push(`/projects/${project.id}`)}
       resetOnSuccess={false}
     />
   );
