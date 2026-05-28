@@ -38,8 +38,18 @@ export default async function DecisionsPage({
           a.created_at > b.created_at ? a : b
         ).created_at
       : null;
-    const { product_decision_recommendations: _recs, ...rest } = d;
-    return { ...rest, latest_recommendation_at: latest };
+    return {
+      id: d.id,
+      title: d.title,
+      category: d.category,
+      status: d.status,
+      problem_statement: d.problem_statement,
+      context_summary: d.context_summary,
+      confidence_score: d.confidence_score,
+      created_at: d.created_at,
+      updated_at: d.updated_at,
+      latest_recommendation_at: latest,
+    };
   });
 
   return (

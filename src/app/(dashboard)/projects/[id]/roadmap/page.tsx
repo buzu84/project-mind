@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { RoadmapClient } from "./roadmap-client";
-import { parseRoadmapRow, type ParsedRoadmap } from "@/lib/validation/json-parsers";
+import { parseRoadmapRow } from "@/lib/validation/json-parsers";
 
 export default async function RoadmapPage({
   params,

@@ -32,7 +32,7 @@ function SubmitButton({ label, formDisabled }: { label: string; formDisabled?: b
 }
 
 interface ProjectFormProps {
-  action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
+  action: (_prev: ActionResult, _formData: FormData) => Promise<ActionResult>;
   defaultValues?: {
     name?: string;
     description?: string | null;

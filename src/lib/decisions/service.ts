@@ -132,7 +132,7 @@ export async function listDecisionsByProject(
 
     if (error) return fail("Could not list decisions.");
 
-    // Flatten: extract latest recommendation timestamp
+    // Flatten: extract latest recommendation timestamp, omit joined relation
     const enriched = (data ?? []).map((d: any) => {
       const recs = d.product_decision_recommendations as { created_at: string }[] | null;
       const latest = recs && recs.length > 0
@@ -140,8 +140,12 @@ export async function listDecisionsByProject(
             a.created_at > b.created_at ? a : b
           ).created_at
         : null;
-      const { product_decision_recommendations: _recs, ...rest } = d;
-      return { ...rest, latest_recommendation_at: latest };
+      // Explicitly omit product_decision_recommendations from the output
+      const out: Record<string, unknown> = {};
+      for (const key of Object.keys(d)) {
+        if (key !== "product_decision_recommendations") out[key] = d[key];
+      }
+      return { ...out, latest_recommendation_at: latest };
     });
 
     return ok(enriched);
