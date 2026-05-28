@@ -7,8 +7,6 @@
 
 import { z } from "zod";
 import {
-  DECISION_CATEGORIES,
-  DECISION_STATUSES,
   EFFORT_ESTIMATES,
   REVERSIBILITY_LEVELS,
   ASSUMPTION_TYPES,
@@ -18,6 +16,7 @@ import {
   LINK_TYPES,
   AGENT_ROLES,
 } from "./constants";
+import { decisionSchema } from "@/lib/validations/decision";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -28,16 +27,9 @@ const relevanceScore = z.number().min(0).max(1).nullable().optional();
 const stringArray = z.array(z.string()).default([]);
 
 // ── Decision ────────────────────────────────────────────────────────
+// Single source of truth lives in @/lib/validations/decision.ts.
 
-export const createDecisionSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters.").max(200),
-  category: z.enum(DECISION_CATEGORIES).default("other"),
-  status: z.enum(DECISION_STATUSES).default("draft"),
-  problem_statement: z.string().min(10, "Problem statement must be at least 10 characters.").max(5000),
-  context_summary: z.string().max(5000).nullable().optional(),
-  confidence_score: confidenceScore,
-  selected_option_id: optionalUuid,
-});
+export const createDecisionSchema = decisionSchema;
 export type CreateDecisionInput = z.infer<typeof createDecisionSchema>;
 
 export const updateDecisionSchema = createDecisionSchema.partial();

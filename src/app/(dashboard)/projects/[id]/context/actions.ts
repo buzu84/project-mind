@@ -1,22 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import type { ContextSectionKey } from "@/lib/context/types";
 import type { ActionResult } from "@/lib/validations/project";
-
-const contextSchema = z.object({
-  product_overview: z.string().max(3000).optional().transform((v) => v || null),
-  target_personas: z.string().max(3000).optional().transform((v) => v || null),
-  current_metrics: z.string().max(3000).optional().transform((v) => v || null),
-  pain_points: z.string().max(3000).optional().transform((v) => v || null),
-  competitors: z.string().max(3000).optional().transform((v) => v || null),
-  strategic_goals: z.string().max(3000).optional().transform((v) => v || null),
-  constraints: z.string().max(3000).optional().transform((v) => v || null),
-  open_questions: z.string().max(3000).optional().transform((v) => v || null),
-});
+import { contextSchema, CONTEXT_SECTION_MAX } from "@/lib/validations/context";
 
 export async function saveProjectContext(
   projectId: string,
@@ -37,7 +26,7 @@ export async function saveProjectContext(
 
     const parsed = contextSchema.safeParse(raw);
     if (!parsed.success) {
-      return { success: false, error: "Validation failed. Each section must be under 3000 characters." };
+      return { success: false, error: `Validation failed. Each section must be under ${CONTEXT_SECTION_MAX} characters.` };
     }
 
     const supabase = createClient();

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
@@ -9,6 +8,7 @@ import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
 import { isRealAI } from "@/lib/ai/is-real-ai";
 import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
+import { multiAgentSchema } from "@/lib/validations/multi-agent";
 import type { AgentResponse, ConsensusResponse, AgentRole } from "@/lib/ai/multi-agent-types";
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -20,14 +20,7 @@ function hasOpenAIKey(): boolean {
 
 // ── Input ───────────────────────────────────────────────────────────
 
-const schema = z.object({
-  projectId: z.string().min(1),
-  question: z.string().min(10).max(3000),
-  inputType: z.enum(["product_question", "feature_idea"]),
-  includeContext: z.boolean().optional().default(true),
-  includeRag: z.boolean().optional().default(true),
-  includeInsights: z.boolean().optional().default(true),
-});
+// Schema imported from @/lib/validations/multi-agent
 
 // ── Prompts ─────────────────────────────────────────────────────────
 
@@ -171,7 +164,7 @@ export async function POST(req: Request) {
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await req.json();
-  const parsed = schema.safeParse(body);
+  const parsed = multiAgentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 });
   }

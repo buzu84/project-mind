@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { generateCompletionWithUsage } from "@/lib/openai";
@@ -7,13 +6,7 @@ import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
 import { generateMockCompetitiveAnalysis } from "@/lib/ai/mock-competitive-analysis";
 import { isRealAI } from "@/lib/ai/is-real-ai";
 import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
-
-const schema = z.object({
-  projectId: z.string(),
-  productName: z.string().min(1).max(100),
-  industry: z.string().min(1).max(200),
-  competitors: z.string().max(1000).optional(),
-});
+import { analysisSchema } from "@/lib/validations/analysis";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -23,7 +16,7 @@ export async function POST(req: Request) {
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await req.json();
-  const parsed = schema.safeParse(body);
+  const parsed = analysisSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const { projectId, productName, industry, competitors } = parsed.data;

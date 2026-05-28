@@ -1,26 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isDevMode } from "@/lib/auth";
 import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 import type { ActionResult } from "@/lib/validations/project";
+import { feedbackSchema } from "@/lib/validations/feedback";
 import { ingestDocument, removeDocumentChunks } from "@/lib/rag";
 
-const VALID_SOURCES = [
-  "customer_interview",
-  "support_ticket",
-  "app_review",
-  "sales_call",
-  "internal_note",
-] as const;
-
-const feedbackSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200),
-  content: z.string().min(1, "Content is required").max(50000),
-  source: z.enum(VALID_SOURCES).optional().transform((v) => v || null),
-});
 
 
 export async function createFeedbackDocument(
