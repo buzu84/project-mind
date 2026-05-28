@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="mx-auto max-w-7xl animate-pulse space-y-6" role="status" aria-label="Loading dashboard">
+    <div className="mx-auto max-w-6xl animate-pulse space-y-6" role="status" aria-label="Loading dashboard">
       <span className="sr-only">Loading dashboard…</span>
       <div className="h-8 w-48 rounded bg-gray-200" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

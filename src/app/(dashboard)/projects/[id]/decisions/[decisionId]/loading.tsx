@@ -1,6 +1,6 @@
 export default function DecisionDetailLoading() {
   return (
-    <div className="mx-auto max-w-3xl animate-pulse space-y-6" role="status" aria-label="Loading decision">
+    <div className="mx-auto max-w-5xl animate-pulse space-y-6" role="status" aria-label="Loading decision">
       <span className="sr-only">Loading decision…</span>
       <div className="h-4 w-32 rounded bg-gray-200" />
       <div className="flex items-center justify-between">
