@@ -148,16 +148,31 @@ export default async function ProjectDetailPage({
   if (!user) redirect("/sign-in");
 
   const supabase = createClient();
-  const { data: project } = await supabase
-    .from("projects")
-    .select(
-      "*, decisions(id, type, input, created_at), feature_ideas(count), messages(count), insights(count)"
-    )
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .single();
+  const projectId = params.id;
 
+  // Parallelize independent queries using params.id directly
+  const [projectResult, productDecisionsResult] = await Promise.all([
+    supabase
+      .from("projects")
+      .select(
+        "*, decisions(id, type, input, created_at), feature_ideas(count), messages(count), insights(count)"
+      )
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("product_decisions")
+      .select("id, title, category, status, updated_at")
+      .eq("project_id", projectId)
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  const project = projectResult.data;
   if (!project) notFound();
+
+  const productDecisions = productDecisionsResult.data;
 
   const decisions =
     (project.decisions as { id: string; type: string; input: unknown; created_at: string }[]) ??
@@ -167,14 +182,6 @@ export default async function ProjectDetailPage({
   const insightCount =
     (project.insights as { count: number }[])?.[0]?.count ?? 0;
 
-  // Fetch recent product decisions (new Decision Engine)
-  const { data: productDecisions } = await supabase
-    .from("product_decisions")
-    .select("id, title, category, status, updated_at")
-    .eq("project_id", project.id)
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false })
-    .limit(5);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://productmind.app";
   const breadcrumb = createBreadcrumbJsonLd([

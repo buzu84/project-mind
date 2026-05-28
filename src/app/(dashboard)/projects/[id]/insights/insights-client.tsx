@@ -89,8 +89,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
       }
 
       // Refresh server data in background (for next page load)
-      // Use setTimeout to avoid potential race with state update
-      setTimeout(() => router.refresh(), 100);
+      router.refresh();
       focusAfterPaint(() => generateButtonRef.current);
     } catch (err) {
       setError(getFriendlyErrorMessage(err));

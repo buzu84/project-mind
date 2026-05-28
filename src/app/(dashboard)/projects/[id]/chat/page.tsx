@@ -23,13 +23,18 @@ export default async function ProjectChatPage({
 
   if (!project) notFound();
 
+  // Load the latest 100 messages (descending) then reverse for chronological UI order
   const { data: rawMessages } = await supabase
     .from("messages")
     .select("id, role, content, created_at")
     .eq("project_id", project.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
-  const serializedMessages = ((rawMessages ?? []) as Array<{ id: string; role: string; content: string; created_at: string }>).map((m) => ({
+  // Non-mutating reverse so the UI displays oldest-first (chronological)
+  const messages = [...(rawMessages ?? [])].reverse();
+
+  const serializedMessages = (messages as Array<{ id: string; role: string; content: string; created_at: string }>).map((m) => ({
     id: m.id,
     role: m.role as "user" | "assistant" | "system",
     content: m.content,

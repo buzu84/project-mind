@@ -28,7 +28,7 @@ export default async function DashboardPage() {
 
   const supabase = createClient();
 
-  const [projectsRes, activityRes] = await Promise.all([
+  const [projectsRes, activityRes, countRes, usageSummary] = await Promise.all([
     supabase
       .from("projects")
       .select("id, name, description, updated_at")
@@ -51,6 +51,11 @@ export default async function DashboardPage() {
       ])
       .order("created_at", { ascending: false })
       .limit(8),
+    supabase
+      .from("projects")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
+    getMonthlyUsageSummary(user.id, supabase),
   ]);
 
   const recentProjects = (projectsRes.data ?? []) as Array<{
@@ -68,13 +73,7 @@ export default async function DashboardPage() {
     status: string | null;
   }>;
 
-  // Count totals
-  const { count: projectCount } = await supabase
-    .from("projects")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id);
-
-  const usageSummary = await getMonthlyUsageSummary(user.id, supabase);
+  const projectCount = countRes.count;
 
   const displayName = user.name ?? user.email?.split("@")[0] ?? "";
 

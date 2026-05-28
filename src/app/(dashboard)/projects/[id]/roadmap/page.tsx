@@ -27,7 +27,7 @@ export default async function RoadmapPage({
 
   const { data: roadmap } = await supabase
     .from("roadmaps")
-    .select("*")
+    .select("id, project_id, title, now_items, next_items, later_items, plan_30_days, plan_60_days, plan_90_days, risks, dependencies, success_metrics, is_mock, created_at")
     .eq("project_id", project.id)
     .maybeSingle();
 
