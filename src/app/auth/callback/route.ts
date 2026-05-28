@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 
   // Handle PKCE / OAuth code exchange
   if (code) {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }

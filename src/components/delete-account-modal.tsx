@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
@@ -11,15 +12,34 @@ interface DeleteAccountModalProps {
 export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [confirmation, setConfirmation] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Focus input on mount + close on Escape
+  // Focus input on mount + close on Escape + focus trap
   useEffect(() => {
     inputRef.current?.focus();
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && status !== "loading") onClose();
+      if (e.key === "Escape" && status !== "loading") {
+        onClose();
+        return;
+      }
+      if (e.key === "Tab" && panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -50,17 +70,17 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
     }
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && status !== "loading") onClose();
       }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-account-title"
     >
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+      <div ref={panelRef} className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
         <h2
           id="delete-account-title"
           className="text-lg font-semibold text-red-600"
@@ -129,7 +149,7 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
-

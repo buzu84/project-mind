@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { IconSparkles } from "@/components/icons";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { decisionReviewToMarkdown } from "@/lib/export/serialize-markdown";
+import { focusAfterPaint } from "@/lib/focus-utils";
 import type {
   DecisionViewModel,
   OptionViewModel,
@@ -43,21 +44,19 @@ const riskColors: Record<string, string> = {
 export function DecisionDetailClient({
   projectId,
   decision,
-  options: initialOptions,
-  assumptions: initialAssumptions,
-  recommendation: initialRecommendation,
-  evidenceLinks: initialEvidence,
+  options,
+  assumptions,
+  recommendation,
+  evidenceLinks,
 }: Props) {
   const [analyzing, setAnalyzing] = useState(false);
-  const [options] = useState(initialOptions);
-  const [assumptions] = useState(initialAssumptions);
-  const [recommendation] = useState(initialRecommendation);
-  const [evidenceLinks] = useState(initialEvidence);
-  const [confidenceScore, setConfidenceScore] = useState<number | null>(
-    decision.confidence_score,
-  );
+  // Optimistic confidence score: updated immediately from the analyze API
+  // response, then synced with server-provided props after router.refresh().
+  const [optimisticScore, setOptimisticScore] = useState<number | null>(null);
+  const confidenceScore = optimisticScore ?? decision.confidence_score;
   const { toast } = useToast();
   const router = useRouter();
+  const analyzeButtonRef = useRef<HTMLButtonElement>(null);
 
   async function handleAnalyze() {
     setAnalyzing(true);
@@ -72,8 +71,9 @@ export function DecisionDetailClient({
       }
       const result = await res.json();
       toast("Decision analyzed successfully");
-      setConfidenceScore(result.confidenceScore ?? null);
+      setOptimisticScore(result.confidenceScore ?? null);
       router.refresh();
+      focusAfterPaint(() => analyzeButtonRef.current);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not analyze decision.";
       toast(msg, "error");
@@ -84,13 +84,30 @@ export function DecisionDetailClient({
 
   const hasAnalysis = recommendation !== null || options.length > 0;
 
+  // Stale-state: analysis is outdated if the decision was edited after
+  // the most recent recommendation was generated.
+  // The analysis pipeline itself updates decision.updated_at (to persist the
+  // new confidence_score), so we add a small buffer (30 s) to avoid false
+  // positives from the pipeline's own writes.
+  const STALE_BUFFER_MS = 30_000;
+  const isAnalysisStale =
+    hasAnalysis &&
+    recommendation !== null &&
+    new Date(decision.updated_at).getTime() - new Date(recommendation.created_at).getTime() > STALE_BUFFER_MS;
+
+  const analyzeCta = analyzing
+    ? "Analyzing…"
+    : hasAnalysis
+      ? "Re-Analyze"
+      : "Analyze Decision";
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">{decision.title}</h2>
-          <div className="mt-2 flex items-center gap-2">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-bold text-gray-900 break-words">{decision.title}</h2>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant={statusBadgeVariant[decision.status] ?? "default"}>
               {decision.status.replace("_", " ")}
             </Badge>
@@ -102,8 +119,8 @@ export function DecisionDetailClient({
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 flex-col items-start gap-2 sm:items-end">
+          <div className="flex flex-wrap items-center gap-2">
             {hasAnalysis && (
               <CopyMarkdownButton
                 getMarkdown={() =>
@@ -148,13 +165,14 @@ export function DecisionDetailClient({
               />
             )}
             <Button
+              ref={analyzeButtonRef}
               onClick={handleAnalyze}
               disabled={analyzing}
               className="gap-1.5"
             >
-            <IconSparkles className="h-4 w-4" />
-            {analyzing ? "Analyzing…" : hasAnalysis ? "Re-Analyze" : "Analyze Decision"}
-          </Button>
+              <IconSparkles className="h-4 w-4" />
+              {analyzeCta}
+            </Button>
           </div>
           {!hasAnalysis && !analyzing && (
             <p className="text-[11px] text-gray-400 text-right max-w-[220px]">
@@ -163,6 +181,18 @@ export function DecisionDetailClient({
           )}
         </div>
       </div>
+
+      {/* Stale analysis indicator */}
+      {isAnalysisStale && !analyzing && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-amber-700" role="status">
+          <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3l9.66 16.5H2.34L12 3z" />
+          </svg>
+          <span>
+            This decision was edited after the analysis was generated. Consider re-analyzing for up-to-date results.
+          </span>
+        </div>
+      )}
 
       {analyzing && (
         <Card className="border-brand-200 bg-brand-50 text-center py-8">

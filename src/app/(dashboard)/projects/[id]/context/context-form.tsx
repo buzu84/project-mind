@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { CONTEXT_SECTIONS, type ProjectContext, type ContextSectionKey } from "@/lib/context/types";
+import { CONTEXT_SECTION_MAX, CONTEXT_QUALITY_HELPER } from "@/lib/validations/context";
 import { saveProjectContext } from "./actions";
+import { focusAfterPaint } from "@/lib/focus-utils";
 
-const MAX_CONTEXT_LENGTH = 3000;
 
 interface ContextFormProps {
   projectId: string;
@@ -17,6 +18,8 @@ interface ContextFormProps {
 export function ContextForm({ projectId, initialData }: ContextFormProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
   const [sectionValues, setSectionValues] = useState<Record<string, string>>(() => {
     const values: Record<string, string> = {};
     for (const section of CONTEXT_SECTIONS) {
@@ -48,6 +51,8 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
     startTransition(async () => {
       const res = await saveProjectContext(projectId, formData);
       setResult(res);
+      // Focus the status message so screen readers announce it and keyboard users know what happened
+      focusAfterPaint(() => statusRef.current);
       if (res.success) setTimeout(() => setResult(null), 3000);
     });
   }
@@ -112,10 +117,11 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
                     }
                     placeholder={section.placeholder}
                     className="min-h-[120px]"
-                    maxLength={MAX_CONTEXT_LENGTH}
+                    maxLength={CONTEXT_SECTION_MAX}
                   />
-                  <div className="mt-1.5 flex justify-end">
-                    <CharacterCounter current={(sectionValues[section.key] ?? "").length} max={MAX_CONTEXT_LENGTH} />
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <p className="text-xs text-gray-400">{CONTEXT_QUALITY_HELPER}</p>
+                    <CharacterCounter current={(sectionValues[section.key] ?? "").length} max={CONTEXT_SECTION_MAX} />
                   </div>
                 </div>
               )}
@@ -125,13 +131,13 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
       </div>
 
       {result && (
-        <div className={`mt-4 rounded-lg border px-4 py-3 text-sm ${result.success ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`} role="status">
+        <div ref={statusRef} tabIndex={-1} className={`mt-4 rounded-lg border px-4 py-3 text-sm focus:outline-none ${result.success ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`} role="status">
           {result.success ? "Context saved successfully!" : result.error}
         </div>
       )}
 
       <div className="mt-6 flex justify-end">
-        <Button type="submit" isLoading={isPending} disabled={isPending}>Save Context</Button>
+        <Button ref={saveButtonRef} type="submit" isLoading={isPending} disabled={isPending}>Save Context</Button>
       </div>
     </form>
   );

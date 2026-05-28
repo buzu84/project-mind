@@ -125,13 +125,30 @@ export async function listDecisionsByProject(
     const supabase = createClient();
     const { data, error } = await supabase
       .from("product_decisions")
-      .select("*")
+      .select("*, product_decision_recommendations(created_at)")
       .eq("user_id", scope.userId)
       .eq("project_id", scope.projectId)
       .order("updated_at", { ascending: false });
 
     if (error) return fail("Could not list decisions.");
-    return ok(data ?? []);
+
+    // Flatten: extract latest recommendation timestamp, omit joined relation
+    const enriched = (data ?? []).map((d: any) => {
+      const recs = d.product_decision_recommendations as { created_at: string }[] | null;
+      const latest = recs && recs.length > 0
+        ? recs.reduce((a: { created_at: string }, b: { created_at: string }) =>
+            a.created_at > b.created_at ? a : b
+          ).created_at
+        : null;
+      // Explicitly omit product_decision_recommendations from the output
+      const out: Record<string, unknown> = {};
+      for (const key of Object.keys(d)) {
+        if (key !== "product_decision_recommendations") out[key] = d[key];
+      }
+      return { ...out, latest_recommendation_at: latest };
+    });
+
+    return ok(enriched);
   } catch {
     return fail("Could not list decisions.");
   }

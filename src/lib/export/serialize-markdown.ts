@@ -381,3 +381,56 @@ export function insightsToMarkdown(insights: InsightExportData[], projectName: s
   return lines.join("\n").trimEnd() + "\n";
 }
 
+// ── PRD ────────────────────────────────────────────────────────────
+
+interface PrdExportData {
+  productName: string;
+  targetAudience?: string | null;
+  createdAt: string;
+  content: string;
+}
+
+export function prdToMarkdown(data: PrdExportData): string {
+  const lines: string[] = [];
+
+  lines.push(`# PRD: ${data.productName}`);
+  lines.push("");
+  lines.push(`**Type:** PRD  `);
+  if (data.targetAudience) {
+    lines.push(`**Target Audience:** ${data.targetAudience}  `);
+  }
+  lines.push(`**Generated:** ${formatDate(data.createdAt)}  `);
+  lines.push("");
+  lines.push(data.content);
+
+  return lines.join("\n").trimEnd() + "\n";
+}
+
+// ── Competitive Analysis ───────────────────────────────────────────
+
+interface AnalysisExportData {
+  productName: string;
+  competitors?: string | null;
+  industry?: string | null;
+  createdAt: string;
+  content: string;
+}
+
+export function analysisToMarkdown(data: AnalysisExportData): string {
+  const lines: string[] = [];
+
+  lines.push(`# Competitive Analysis: ${data.productName}`);
+  lines.push("");
+  lines.push(`**Type:** Competitive Analysis  `);
+  if (data.competitors) {
+    lines.push(`**Competitors:** ${data.competitors}  `);
+  }
+  if (data.industry) {
+    lines.push(`**Industry:** ${data.industry}  `);
+  }
+  lines.push(`**Generated:** ${formatDate(data.createdAt)}  `);
+  lines.push("");
+  lines.push(data.content);
+
+  return lines.join("\n").trimEnd() + "\n";
+}

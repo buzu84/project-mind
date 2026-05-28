@@ -1,16 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isDevMode } from "@/lib/auth";
 import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 import type { ActionResult } from "@/lib/validations/project";
-
-const featureSchema = z.object({
-  name: z.string().min(3, "Feature name must be at least 3 characters.").max(200, "Feature name must be under 200 characters."),
-  description: z.string().min(20, "Describe the feature in at least one sentence so AI can score it accurately.").max(2000, "Description must be under 2000 characters."),
-});
+import { featureSchema } from "@/lib/validations/feature";
 
 export async function createFeatureIdea(
   projectId: string,

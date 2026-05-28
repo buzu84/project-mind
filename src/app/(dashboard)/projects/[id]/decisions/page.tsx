@@ -26,10 +26,31 @@ export default async function DecisionsPage({
 
   const { data: decisions } = await supabase
     .from("product_decisions")
-    .select("id, title, category, status, problem_statement, context_summary, confidence_score, created_at, updated_at")
+    .select("id, title, category, status, problem_statement, context_summary, confidence_score, created_at, updated_at, product_decision_recommendations(created_at)")
     .eq("project_id", project.id)
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
+
+  const enrichedDecisions: ProductDecision[] = (decisions ?? []).map((d: any) => {
+    const recs = d.product_decision_recommendations as { created_at: string }[] | null;
+    const latest = recs && recs.length > 0
+      ? recs.reduce((a: { created_at: string }, b: { created_at: string }) =>
+          a.created_at > b.created_at ? a : b
+        ).created_at
+      : null;
+    return {
+      id: d.id,
+      title: d.title,
+      category: d.category,
+      status: d.status,
+      problem_statement: d.problem_statement,
+      context_summary: d.context_summary,
+      confidence_score: d.confidence_score,
+      created_at: d.created_at,
+      updated_at: d.updated_at,
+      latest_recommendation_at: latest,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -43,7 +64,7 @@ export default async function DecisionsPage({
 
       <DecisionsClient
         projectId={project.id}
-        initialDecisions={(decisions as ProductDecision[]) ?? []}
+        initialDecisions={enrichedDecisions}
       />
     </div>
   );

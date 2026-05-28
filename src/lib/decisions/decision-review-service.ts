@@ -189,6 +189,10 @@ export async function analyzeDecision(
   });
 
   // 9. Update decision confidence score
+  // NOTE: The DB trigger `trg_product_decisions_updated_at` automatically
+  // bumps updated_at on any row update. This is why the stale-state check
+  // in the UI uses a 30-second buffer — the confidence_score update here
+  // bumps updated_at AFTER the recommendation is created.
   log("Phase 9: DB save completed", {
     recommendationId: result.recommendationId,
     optionsCreated: result.optionsCreated,
@@ -199,7 +203,6 @@ export async function analyzeDecision(
     .from("product_decisions")
     .update({
       confidence_score: Math.round(aiOutput.recommendation.confidenceScore),
-      updated_at: new Date().toISOString(),
     })
     .eq("id", decisionId)
     .eq("user_id", userId);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { insightsToMarkdown } from "@/lib/export/serialize-markdown";
+import { focusAfterPaint } from "@/lib/focus-utils";
 import type { Insight } from "./page";
 
 interface InsightsClientProps {
@@ -51,20 +52,20 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
   const [error, setError] = useState<string | null>(null);
   const [insights, setInsights] = useState<Insight[]>(initialInsights);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const generateButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Keep insights in sync when server re-fetches (e.g. after navigation)
-  // but only when not in a local-state-driven flow (i.e. after generation)
-  const [hasLocalUpdate, setHasLocalUpdate] = useState(false);
-
-  // If server provides new data and we haven't just generated locally, sync
-  if (!hasLocalUpdate && initialInsights.length !== insights.length && initialInsights.length > 0) {
+  // Sync with server props when no local operation is in-flight.
+  // After generate/delete, local state is authoritative until the next
+  // server refresh delivers matching data.
+  const [prevInitial, setPrevInitial] = useState(initialInsights);
+  if (initialInsights !== prevInitial && !isGenerating && !isDeleting) {
+    setPrevInitial(initialInsights);
     setInsights(initialInsights);
   }
 
   async function generateInsights() {
     setIsGenerating(true);
     setError(null);
-    setHasLocalUpdate(false);
 
     try {
       const res = await fetch("/api/ai/insights", {
@@ -83,7 +84,6 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
 
       // Set local state immediately — this is the SOURCE OF TRUTH for this render cycle
       setInsights(newInsights);
-      setHasLocalUpdate(true);
       if (newInsights.length > 0) {
         toast(`Generated ${newInsights.length} insights`);
       }
@@ -91,6 +91,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
       // Refresh server data in background (for next page load)
       // Use setTimeout to avoid potential race with state update
       setTimeout(() => router.refresh(), 100);
+      focusAfterPaint(() => generateButtonRef.current);
     } catch (err) {
       setError(getFriendlyErrorMessage(err));
     } finally {
@@ -112,7 +113,6 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
         throw new Error(data.error || "Failed to delete insights");
       }
       setInsights([]);
-      setHasLocalUpdate(true);
       setActiveFilter(null);
       toast("Insights deleted");
       router.refresh();
@@ -151,6 +151,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
               />
             )}
             <Button
+              ref={generateButtonRef}
               onClick={generateInsights}
               isLoading={isGenerating}
               disabled={isGenerating || isDeleting}
@@ -169,6 +170,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
               confirmLabel="Delete Insights"
               variant="danger"
               onConfirm={deleteInsights}
+              focusFallbackRef={generateButtonRef}
               trigger={
                 <Button
                   variant="ghost"
@@ -186,7 +188,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
 
       {/* Error */}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
       )}

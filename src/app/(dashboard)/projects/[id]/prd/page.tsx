@@ -14,11 +14,13 @@ import { formatDate } from "@/lib/format-date";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { parseDecisionInputTitle } from "@/lib/validation/json-parsers";
 import type { Json } from "@/lib/supabase/types";
-
-const MIN_DESCRIPTION_LENGTH = 10;
-const MAX_PRODUCT_NAME = 100;
-const MAX_DESCRIPTION = 2000;
-const MAX_TARGET_AUDIENCE = 500;
+import {
+  PRD_DESCRIPTION_MIN,
+  PRD_PRODUCT_NAME_MAX,
+  PRD_DESCRIPTION_MAX,
+  PRD_TARGET_AUDIENCE_MAX,
+  PRD_DESCRIPTION_QUALITY_HELPER,
+} from "@/lib/validations/prd";
 
 interface RecentDecision {
   id: string;
@@ -40,13 +42,13 @@ export default function PrdPage() {
   const [targetAudience, setTargetAudience] = useState("");
   const [descriptionTouched, setDescriptionTouched] = useState(false);
 
-  const descriptionTooShort = productDescription.length > 0 && productDescription.length < MIN_DESCRIPTION_LENGTH;
+  const descriptionTooShort = productDescription.length > 0 && productDescription.length < PRD_DESCRIPTION_MIN;
   const descriptionError =
     descriptionTouched && descriptionTooShort
-      ? `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters.`
+      ? `Description must be at least ${PRD_DESCRIPTION_MIN} characters.`
       : undefined;
 
-  const isFormValid = productName.trim().length > 0 && productDescription.length >= MIN_DESCRIPTION_LENGTH;
+  const isFormValid = productName.trim().length > 0 && productDescription.trim().length >= PRD_DESCRIPTION_MIN;
 
   useEffect(() => {
     fetch(`/api/decisions?projectId=${params.id}&type=PRD`)
@@ -108,14 +110,13 @@ export default function PrdPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <Input
           id="productName"
           name="productName"
           label="Product Name"
           placeholder="e.g. TaskFlow"
-          required
-          maxLength={MAX_PRODUCT_NAME}
+          maxLength={PRD_PRODUCT_NAME_MAX}
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
         />
@@ -126,20 +127,17 @@ export default function PrdPage() {
             name="productDescription"
             label="Product Description"
             placeholder="Describe what the product does, the problem it solves..."
-            required
             value={productDescription}
             onChange={(e) => setProductDescription(e.target.value)}
             onBlur={() => setDescriptionTouched(true)}
             error={descriptionError}
-            maxLength={MAX_DESCRIPTION}
+            maxLength={PRD_DESCRIPTION_MAX}
           />
           <div className="mt-1 flex items-center justify-between">
-            <p className={`text-xs ${descriptionTooShort && descriptionTouched ? "text-red-500" : "text-gray-400"}`}>
-              {productDescription.length < MIN_DESCRIPTION_LENGTH
-                ? `At least ${MIN_DESCRIPTION_LENGTH} characters required`
-                : "Add enough detail for a better PRD."}
+            <p className="text-xs text-gray-400">
+              {PRD_DESCRIPTION_QUALITY_HELPER}
             </p>
-            <CharacterCounter current={productDescription.length} max={MAX_DESCRIPTION} />
+            <CharacterCounter current={productDescription.length} max={PRD_DESCRIPTION_MAX} />
           </div>
         </div>
 
@@ -148,7 +146,7 @@ export default function PrdPage() {
           name="targetAudience"
           label="Target Audience (optional)"
           placeholder="e.g. SMB project managers"
-          maxLength={MAX_TARGET_AUDIENCE}
+          maxLength={PRD_TARGET_AUDIENCE_MAX}
           value={targetAudience}
           onChange={(e) => setTargetAudience(e.target.value)}
         />
@@ -159,7 +157,7 @@ export default function PrdPage() {
       </form>
 
       {error && (
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
       )}

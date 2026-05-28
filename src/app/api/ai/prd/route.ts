@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { generateCompletionWithUsage } from "@/lib/openai";
@@ -7,13 +6,7 @@ import { trackAIUsage, trackAIUsageError } from "@/lib/ai/usage-tracking";
 import { generateMockPrd } from "@/lib/ai/mock-prd";
 import { isRealAI } from "@/lib/ai/is-real-ai";
 import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
-
-const schema = z.object({
-  projectId: z.string(),
-  productName: z.string().min(1).max(100),
-  productDescription: z.string().min(10).max(2000),
-  targetAudience: z.string().max(500).optional(),
-});
+import { prdSchema } from "@/lib/validations/prd";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -23,7 +16,7 @@ export async function POST(req: Request) {
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await req.json();
-  const parsed = schema.safeParse(body);
+  const parsed = prdSchema.safeParse(body);
   if (!parsed.success) {
     const fieldErrors = parsed.error.flatten().fieldErrors;
     const msg = Object.entries(fieldErrors)

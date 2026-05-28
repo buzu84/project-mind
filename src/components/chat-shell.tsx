@@ -143,6 +143,7 @@ export function ChatShell({
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [srAnnouncement, setSrAnnouncement] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -165,6 +166,7 @@ export function ChatShell({
     if (!content.trim() || isStreaming) return;
 
     setError(null);
+    setSrAnnouncement("");
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -264,6 +266,7 @@ export function ChatShell({
     } finally {
       setIsStreaming(false);
       abortRef.current = null;
+      setSrAnnouncement("AI response complete.");
       inputRef.current?.focus();
     }
   }
@@ -292,7 +295,9 @@ export function ChatShell({
       {contextBanner}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-1" aria-live="polite" aria-relevant="additions">
+      <div className="flex-1 overflow-y-auto px-1">
+        {/* Visually-hidden live region: announces only completion, not every streamed token */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">{srAnnouncement}</div>
         {visibleMessages.length === 0 && !isStreaming && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
@@ -345,7 +350,7 @@ export function ChatShell({
                       <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{msg.content}</p>
                     )}
                     {msg.id.startsWith("streaming-") && isStreaming && (
-                      <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" />
+                      <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" aria-hidden="true" />
                     )}
                   </div>
                 </div>

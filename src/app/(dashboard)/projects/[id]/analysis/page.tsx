@@ -14,10 +14,14 @@ import { CharacterCounter } from "@/components/ui/character-counter";
 import { formatDate } from "@/lib/format-date";
 import { parseDecisionInputTitle } from "@/lib/validation/json-parsers";
 import type { Json } from "@/lib/supabase/types";
-
-const MAX_PRODUCT_NAME = 100;
-const MAX_INDUSTRY = 200;
-const MAX_COMPETITORS = 1000;
+import {
+  ANALYSIS_PRODUCT_NAME_MIN,
+  ANALYSIS_PRODUCT_NAME_MAX,
+  ANALYSIS_INDUSTRY_MIN,
+  ANALYSIS_INDUSTRY_MAX,
+  ANALYSIS_COMPETITORS_MAX,
+  ANALYSIS_COMPETITORS_HELPER,
+} from "@/lib/validations/analysis";
 
 interface RecentDecision {
   id: string;
@@ -37,8 +41,26 @@ export default function AnalysisPage() {
   const [productName, setProductName] = useState("");
   const [industry, setIndustry] = useState("");
   const [competitors, setCompetitors] = useState("");
+  const [productNameTouched, setProductNameTouched] = useState(false);
+  const [industryTouched, setIndustryTouched] = useState(false);
 
-  const isFormValid = productName.trim().length > 0 && industry.trim().length > 0;
+  const productNameError =
+    productNameTouched && productName.trim().length > 0 && productName.trim().length < ANALYSIS_PRODUCT_NAME_MIN
+      ? `Product name must be at least ${ANALYSIS_PRODUCT_NAME_MIN} characters.`
+      : productNameTouched && productName.trim().length === 0
+        ? "Product name is required."
+        : undefined;
+
+  const industryError =
+    industryTouched && industry.trim().length > 0 && industry.trim().length < ANALYSIS_INDUSTRY_MIN
+      ? `Industry must be at least ${ANALYSIS_INDUSTRY_MIN} characters.`
+      : industryTouched && industry.trim().length === 0
+        ? "Industry is required."
+        : undefined;
+
+  const isFormValid =
+    productName.trim().length >= ANALYSIS_PRODUCT_NAME_MIN &&
+    industry.trim().length >= ANALYSIS_INDUSTRY_MIN;
 
   useEffect(() => {
     fetch(`/api/decisions?projectId=${params.id}&type=COMPETITIVE_ANALYSIS`)
@@ -99,26 +121,28 @@ export default function AnalysisPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <Input
           id="productName"
           name="productName"
           label="Product Name"
           placeholder="e.g. TaskFlow"
-          required
-          maxLength={MAX_PRODUCT_NAME}
+          maxLength={ANALYSIS_PRODUCT_NAME_MAX}
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
+          onBlur={() => setProductNameTouched(true)}
+          error={productNameError}
         />
         <Input
           id="industry"
           name="industry"
           label="Industry / Market"
           placeholder="e.g. Project management SaaS"
-          required
-          maxLength={MAX_INDUSTRY}
+          maxLength={ANALYSIS_INDUSTRY_MAX}
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
+          onBlur={() => setIndustryTouched(true)}
+          error={industryError}
         />
         <div>
           <Textarea
@@ -126,12 +150,13 @@ export default function AnalysisPage() {
             name="competitors"
             label="Known Competitors (optional)"
             placeholder="List competitors, one per line or comma-separated (e.g. Asana, Monday.com, ClickUp)"
-            maxLength={MAX_COMPETITORS}
+            maxLength={ANALYSIS_COMPETITORS_MAX}
             value={competitors}
             onChange={(e) => setCompetitors(e.target.value)}
           />
-          <div className="mt-1 flex justify-end">
-            <CharacterCounter current={competitors.length} max={MAX_COMPETITORS} />
+          <div className="mt-1 flex items-center justify-between">
+            <p className="text-xs text-gray-400">{ANALYSIS_COMPETITORS_HELPER}</p>
+            <CharacterCounter current={competitors.length} max={ANALYSIS_COMPETITORS_MAX} />
           </div>
         </div>
         <Button type="submit" isLoading={loading} disabled={loading || !isFormValid}>
@@ -140,7 +165,7 @@ export default function AnalysisPage() {
       </form>
 
       {error && (
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
       )}

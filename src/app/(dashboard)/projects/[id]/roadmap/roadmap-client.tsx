@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { IconSparkles, IconClock } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { focusAfterPaint } from "@/lib/focus-utils";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { roadmapToMarkdown } from "@/lib/export/serialize-markdown";
 import { parseRoadmapRow, type ParsedRoadmap, type ParsedRoadmapItem } from "@/lib/validation/json-parsers";
@@ -95,6 +96,15 @@ export function RoadmapClient({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const generateButtonRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Sync with server props when no local operation is in-flight.
+  const [prevInitial, setPrevInitial] = useState(initialRoadmap);
+  if (initialRoadmap !== prevInitial && !isGenerating && !isDeleting) {
+    setPrevInitial(initialRoadmap);
+    setRoadmap(initialRoadmap);
+  }
 
   async function generateRoadmap() {
     setIsGenerating(true);
@@ -116,6 +126,7 @@ export function RoadmapClient({
       setRoadmap(parseRoadmapRow(data.roadmap as Record<string, unknown>));
       toast("Roadmap generated successfully!");
       router.refresh();
+      focusAfterPaint(() => headingRef.current);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to generate roadmap",
@@ -158,7 +169,7 @@ export function RoadmapClient({
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">
               Product Roadmap
             </h2>
             <p className="mt-1 text-sm text-gray-500">
@@ -170,6 +181,7 @@ export function RoadmapClient({
               <CopyMarkdownButton getMarkdown={() => roadmapToMarkdown(roadmap, projectName)} />
             )}
             <Button
+              ref={generateButtonRef}
               onClick={generateRoadmap}
               isLoading={isGenerating}
               disabled={isGenerating || isDeleting}
@@ -188,6 +200,7 @@ export function RoadmapClient({
               confirmLabel="Delete Roadmap"
               variant="danger"
               onConfirm={deleteRoadmap}
+              focusFallbackRef={generateButtonRef}
               trigger={
                 <Button
                   variant="ghost"
@@ -205,7 +218,7 @@ export function RoadmapClient({
 
       {/* Error */}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
       )}

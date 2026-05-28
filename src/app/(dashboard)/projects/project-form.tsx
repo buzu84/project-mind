@@ -6,26 +6,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CharacterCounter } from "@/components/ui/character-counter";
+import { focusAfterPaint } from "@/lib/focus-utils";
+import {
+  PROJECT_NAME_MIN,
+  PROJECT_NAME_MAX,
+  PROJECT_DESC_MAX,
+  PROJECT_TARGET_USERS_MAX,
+  PROJECT_MARKET_MAX,
+  PROJECT_BUSINESS_MODEL_MAX,
+  PROJECT_GOALS_MAX,
+  PROJECT_DESC_QUALITY_MIN,
+} from "@/lib/validations/project";
 import type { ActionResult } from "@/lib/validations/project";
 
-const LIMITS = {
-  description: 2000,
-  goals: 1000,
-} as const;
 
 const initialState: ActionResult = { success: false, error: undefined, fieldErrors: {} };
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, formDisabled }: { label: string; formDisabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" isLoading={pending} disabled={pending}>
+    <Button type="submit" isLoading={pending} disabled={pending || formDisabled}>
       {label}
     </Button>
   );
 }
 
 interface ProjectFormProps {
-  action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
+  action: (_prev: ActionResult, _formData: FormData) => Promise<ActionResult>;
   defaultValues?: {
     name?: string;
     description?: string | null;
@@ -36,6 +43,7 @@ interface ProjectFormProps {
   };
   submitLabel?: string;
   onSuccess?: () => void;
+  onCancel?: () => void;
   /** Whether to reset form fields after success. Defaults to true (useful for create). */
   resetOnSuccess?: boolean;
 }
@@ -45,16 +53,21 @@ export function ProjectForm({
   defaultValues,
   submitLabel = "Create Project",
   onSuccess,
+  onCancel,
   resetOnSuccess = true,
 }: ProjectFormProps) {
   const [state, formAction] = useFormState(action, initialState);
   const safeState = state ?? initialState;
   const formRef = useRef<HTMLFormElement>(null);
+  const successRef = useRef<HTMLDivElement>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [descriptionWarning, setDescriptionWarning] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [nameValue, setNameValue] = useState(defaultValues?.name ?? "");
   const [descriptionValue, setDescriptionValue] = useState(defaultValues?.description ?? "");
   const [goalsValue, setGoalsValue] = useState(defaultValues?.goals ?? "");
+
+  const isFormValid = nameValue.trim().length >= PROJECT_NAME_MIN;
 
   // Store onSuccess in a ref so it never re-triggers the useEffect
   const onSuccessRef = useRef(onSuccess);
@@ -70,11 +83,13 @@ export function ProjectForm({
     if (safeState.success) {
       if (resetOnSuccess) {
         formRef.current?.reset();
+        setNameValue("");
         setDescriptionValue("");
         setGoalsValue("");
       }
       setShowSuccess(true);
       onSuccessRef.current?.();
+      focusAfterPaint(() => successRef.current);
 
       // Auto-dismiss after 4 seconds
       const timer = setTimeout(() => setShowSuccess(false), 4000);
@@ -89,8 +104,8 @@ export function ProjectForm({
     const val = e.target.value.trim();
     if (val.length === 0) {
       setNameError("Project name is required.");
-    } else if (val.length < 2) {
-      setNameError("Project name must be at least 2 characters.");
+    } else if (val.length < PROJECT_NAME_MIN) {
+      setNameError(`Project name must be at least ${PROJECT_NAME_MIN} characters.`);
     } else {
       setNameError(null);
     }
@@ -98,7 +113,7 @@ export function ProjectForm({
 
   function handleDescriptionBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
     const val = e.target.value.trim();
-    if (val.length > 0 && val.length < 20) {
+    if (val.length > 0 && val.length < PROJECT_DESC_QUALITY_MIN) {
       setDescriptionWarning("Short descriptions may produce weaker AI results.");
     } else {
       setDescriptionWarning(null);
@@ -106,7 +121,7 @@ export function ProjectForm({
   }
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-5">
+    <form ref={formRef} action={formAction} noValidate className="space-y-5">
       {safeState.error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {safeState.error}
@@ -114,7 +129,7 @@ export function ProjectForm({
       )}
 
       {showSuccess && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 animate-in fade-in duration-300" role="status">
+        <div ref={successRef} tabIndex={-1} className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 animate-in fade-in duration-300 focus:outline-none" role="status">
           ✓ Project saved successfully.
         </div>
       )}
@@ -126,10 +141,11 @@ export function ProjectForm({
             name="name"
             label="Project Name *"
             placeholder="e.g. TaskFlow"
-            defaultValue={defaultValues?.name ?? ""}
+            value={nameValue}
+            onChange={(e) => setNameValue(e.target.value)}
             error={nameError ?? fieldError("name")}
             onBlur={handleNameBlur}
-            required
+            maxLength={PROJECT_NAME_MAX}
           />
         </div>
         <Input
@@ -139,6 +155,7 @@ export function ProjectForm({
           placeholder="e.g. Project Management SaaS"
           defaultValue={defaultValues?.market ?? ""}
           error={fieldError("market")}
+          maxLength={PROJECT_MARKET_MAX}
         />
       </div>
 
@@ -152,11 +169,11 @@ export function ProjectForm({
           onChange={(e) => setDescriptionValue(e.target.value)}
           error={fieldError("description")}
           onBlur={handleDescriptionBlur}
-          maxLength={LIMITS.description}
+          maxLength={PROJECT_DESC_MAX}
         />
         <div className="mt-1 flex items-center justify-between">
           <p className="text-xs text-gray-400">Add enough context for better AI output.</p>
-          <CharacterCounter current={descriptionValue.length} max={LIMITS.description} />
+          <CharacterCounter current={descriptionValue.length} max={PROJECT_DESC_MAX} />
         </div>
         {descriptionWarning && (
           <p className="mt-1 text-xs text-amber-600">{descriptionWarning}</p>
@@ -171,6 +188,7 @@ export function ProjectForm({
           placeholder="e.g. Remote engineering teams (10-100 people)"
           defaultValue={defaultValues?.targetUsers ?? ""}
           error={fieldError("targetUsers")}
+          maxLength={PROJECT_TARGET_USERS_MAX}
         />
         <Input
           id="businessModel"
@@ -179,6 +197,7 @@ export function ProjectForm({
           placeholder="e.g. Freemium with per-seat pricing"
           defaultValue={defaultValues?.businessModel ?? ""}
           error={fieldError("businessModel")}
+          maxLength={PROJECT_BUSINESS_MODEL_MAX}
         />
       </div>
 
@@ -191,15 +210,20 @@ export function ProjectForm({
           value={goalsValue}
           onChange={(e) => setGoalsValue(e.target.value)}
           error={fieldError("goals")}
-          maxLength={LIMITS.goals}
+          maxLength={PROJECT_GOALS_MAX}
         />
         <div className="mt-1 flex justify-end">
-          <CharacterCounter current={goalsValue.length} max={LIMITS.goals} />
+          <CharacterCounter current={goalsValue.length} max={PROJECT_GOALS_MAX} />
         </div>
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-2">
-        <SubmitButton label={submitLabel} />
+        {onCancel && (
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <SubmitButton label={submitLabel} formDisabled={!isFormValid} />
       </div>
     </form>
   );
