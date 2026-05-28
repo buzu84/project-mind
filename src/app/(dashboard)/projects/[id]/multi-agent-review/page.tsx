@@ -27,7 +27,7 @@ export default async function MultiAgentReviewPage({
 
   const { data: reviews } = await supabase
     .from("multi_agent_reviews")
-    .select("*")
+    .select("id, project_id, question, input_type, pm_response, cto_response, ux_response, growth_response, consensus, model, is_mock, created_at")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 

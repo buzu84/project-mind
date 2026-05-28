@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import type { AppUser } from "@/lib/auth/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,9 +67,12 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
 
         <div className="flex items-center gap-5 pb-6 border-b border-gray-100">
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt=""
+              width={64}
+              height={64}
+              unoptimized
               className="h-16 w-16 rounded-full ring-4 ring-gray-100"
             />
           ) : (

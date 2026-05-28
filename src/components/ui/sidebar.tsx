@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { type AppUser } from "@/lib/auth/constants";
 import { cn } from "@/lib/utils";
@@ -132,9 +133,12 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="border-t border-gray-100 p-4">
         <div className="flex items-center gap-3">
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt=""
+              width={36}
+              height={36}
+              unoptimized
               className="h-9 w-9 rounded-full ring-2 ring-gray-100"
             />
           ) : (

@@ -27,7 +27,7 @@ export default async function ProjectContextPage({
 
   const { data: context } = await supabase
     .from("project_context")
-    .select("*")
+    .select("id, project_id, product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions, created_at, updated_at")
     .eq("project_id", project.id)
     .maybeSingle();
 
