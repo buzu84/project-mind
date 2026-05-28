@@ -345,7 +345,7 @@ export function ChatShell({
                       <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{msg.content}</p>
                     )}
                     {msg.id.startsWith("streaming-") && isStreaming && (
-                      <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" />
+                      <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" aria-hidden="true" />
                     )}
                   </div>
                 </div>

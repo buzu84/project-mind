@@ -7,3 +7,4 @@ node_modules/
 # Supabase CLI temp artifacts
 supabase/.temp/
 
+.git_status_check.txt
