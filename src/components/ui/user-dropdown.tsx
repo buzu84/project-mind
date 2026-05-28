@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { AppUser } from "@/lib/auth/constants";
 
 interface UserDropdownProps {
@@ -56,9 +57,12 @@ export function UserDropdown({ user }: UserDropdownProps) {
         aria-haspopup="true"
       >
         {user.avatar_url ? (
-          <img
+          <Image
             src={user.avatar_url}
             alt=""
+            width={36}
+            height={36}
+            unoptimized
             className="h-9 w-9 rounded-full ring-2 ring-gray-200 hover:ring-brand-300 transition"
           />
         ) : (

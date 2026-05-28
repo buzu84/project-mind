@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -536,7 +536,31 @@ function useScrollSpy(tocEntries: { heading: string; index: number }[]) {
 /* ------------------------------------------------------------------ */
 
 export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content: string; maxWidth?: string }) {
-  if (!content || content.trim().length === 0) {
+  const parsed = useMemo(() => {
+    if (!content || content.trim().length === 0) return null;
+
+    const sections = parseSections(content);
+
+    if (sections.length <= 1 && !sections[0]?.heading) {
+      return { sections, tocEntries: [], metaMap: new Map(), hasSidebar: false, fallback: true };
+    }
+
+    let sectionCounter = 0;
+    const tocEntries: { heading: string; index: number }[] = [];
+    const metaMap = new Map<number, { index: number; tier: SectionTier; icon: string }>();
+
+    sections.forEach((s, i) => {
+      if (s.heading) {
+        sectionCounter++;
+        tocEntries.push({ heading: s.heading, index: sectionCounter });
+        metaMap.set(i, { index: sectionCounter, tier: getSectionTier(s.heading), icon: getSectionIcon(s.heading) });
+      }
+    });
+
+    return { sections, tocEntries, metaMap, hasSidebar: tocEntries.length >= 4, fallback: false };
+  }, [content]);
+
+  if (!parsed) {
     return (
       <Card className="text-center py-12">
         <p className="text-sm text-gray-500">No content available.</p>
@@ -544,9 +568,7 @@ export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content:
     );
   }
 
-  const sections = parseSections(content);
-
-  if (sections.length <= 1 && !sections[0]?.heading) {
+  if (parsed.fallback) {
     return (
       <Card>
         <div className="max-w-prose"><RichContent text={content} /></div>
@@ -554,27 +576,12 @@ export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content:
     );
   }
 
-  // Build TOC entries + meta
-  let sectionCounter = 0;
-  const tocEntries: { heading: string; index: number }[] = [];
-  const metaMap = new Map<number, { index: number; tier: SectionTier; icon: string }>();
-
-  sections.forEach((s, i) => {
-    if (s.heading) {
-      sectionCounter++;
-      tocEntries.push({ heading: s.heading, index: sectionCounter });
-      metaMap.set(i, { index: sectionCounter, tier: getSectionTier(s.heading), icon: getSectionIcon(s.heading) });
-    }
-  });
-
-  const hasSidebar = tocEntries.length >= 4;
-
   return (
     <DocumentRendererInner
-      sections={sections}
-      tocEntries={tocEntries}
-      metaMap={metaMap}
-      hasSidebar={hasSidebar}
+      sections={parsed.sections}
+      tocEntries={parsed.tocEntries}
+      metaMap={parsed.metaMap}
+      hasSidebar={parsed.hasSidebar}
       maxWidth={maxWidth}
     />
   );

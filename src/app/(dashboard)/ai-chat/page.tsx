@@ -25,8 +25,7 @@ export default async function AIChatPage() {
 
   return (
     <div className="mx-auto max-w-3xl h-full flex flex-col">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
+      <div className="mb-4 flex items-center justify-end">
         <span className="text-xs text-gray-400">
           {initialMessages.length} messages
         </span>
