@@ -12,10 +12,17 @@ function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  const emailError =
+    emailTouched && email.length > 0 && !email.includes("@")
+      ? "Enter a valid email address."
+      : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
+    setEmailTouched(true);
+    if (!email.trim() || !email.includes("@")) return;
     setIsLoading(true);
     setError(null);
 
@@ -36,7 +43,7 @@ function ForgotPasswordForm() {
 
   if (success) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center" role="status">
         <h3 className="text-base font-semibold text-emerald-800">Check your email</h3>
         <p className="mt-2 text-sm text-emerald-700">
           We sent a password reset link to <strong>{email}</strong>.
@@ -64,17 +71,19 @@ function ForgotPasswordForm() {
         <p className="mb-4 text-sm text-gray-600">
           Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input
             id="email"
             label="Email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setEmailTouched(true)}
             placeholder="you@example.com"
             required
+            error={emailError ?? undefined}
           />
-          <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading}>
+          <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading || !email.includes("@")}>
             Send Reset Link
           </Button>
         </form>
@@ -92,7 +101,7 @@ function ForgotPasswordForm() {
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 shadow-lg shadow-brand-200">
@@ -110,7 +119,7 @@ export default function ForgotPasswordPage() {
           <ForgotPasswordForm />
         </Suspense>
       </div>
-    </div>
+    </main>
   );
 }
 

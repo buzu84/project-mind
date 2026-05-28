@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconSparkles, IconPlus, IconTarget } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
 import { CharacterCounter } from "@/components/ui/character-counter";
+import { MinLengthHint } from "@/components/ui/min-length-hint";
+import { focusAfterPaint, focusFirstAvailable } from "@/lib/focus-utils";
 import { createFeatureIdea, updateFeatureIdea, deleteFeatureIdea } from "./actions";
 import type { FeatureIdea } from "./page";
+import {
+  FEATURE_NAME_MIN,
+  FEATURE_NAME_MAX,
+  FEATURE_DESC_MIN,
+  FEATURE_DESC_MAX,
+  FEATURE_DESC_QUALITY_HELPER,
+} from "@/lib/validations/feature";
 
 interface FeaturesClientProps {
   projectId: string;
@@ -24,8 +33,6 @@ type SortKey = "rice_score" | "ice_score" | "impact" | "effort" | "created_at";
 
 type ScoreState = "not_scored" | "scored" | "outdated";
 
-const MAX_NAME = 200;
-const MAX_DESCRIPTION = 2000;
 
 function getScoreState(f: FeatureIdea): ScoreState {
   const hasScores = f.rice_score > 0 || f.ice_score > 0;
@@ -50,6 +57,13 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
   const [isPending, startTransition] = useTransition();
   const [isScoring, setIsScoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync with server props when no local operation is in-flight.
+  const [prevInitial, setPrevInitial] = useState(initialFeatures);
+  if (initialFeatures !== prevInitial && !isScoring && !isPending) {
+    setPrevInitial(initialFeatures);
+    setFeatures(initialFeatures);
+  }
   const { toast: showToast } = useToast();
   const [sortBy, setSortBy] = useState<SortKey>("rice_score");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -61,6 +75,25 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
   const [editSaving, setEditSaving] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const addNameInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const editTriggerRef = useRef<HTMLElement | null>(null);
+  const addFeatureButtonRef = useRef<HTMLButtonElement>(null);
+  const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const scoreButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the first input when add or edit form opens
+  useEffect(() => {
+    if (editingId) {
+      focusAfterPaint(() => editInputRef.current);
+    }
+  }, [editingId]);
+
+  useEffect(() => {
+    if (isFormOpen) {
+      focusAfterPaint(() => addNameInputRef.current);
+    }
+  }, [isFormOpen]);
 
   // Create form validation
   const [featureName, setFeatureName] = useState("");
@@ -68,22 +101,22 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
   const [nameBlurred, setNameBlurred] = useState(false);
   const [descBlurred, setDescBlurred] = useState(false);
 
-  const nameError = nameBlurred && featureName.trim().length < 3
-    ? "Feature name must be at least 3 characters."
+  const nameError = nameBlurred && featureName.trim().length < FEATURE_NAME_MIN
+    ? `Feature name must be at least ${FEATURE_NAME_MIN} characters.`
     : null;
-  const descError = descBlurred && featureDesc.trim().length < 20
-    ? "Describe the feature in at least one sentence so AI can score it accurately."
+  const descError = descBlurred && featureDesc.trim().length < FEATURE_DESC_MIN
+    ? FEATURE_DESC_QUALITY_HELPER
     : null;
-  const isFormValid = featureName.trim().length >= 3 && featureDesc.trim().length >= 20;
+  const isFormValid = featureName.trim().length >= FEATURE_NAME_MIN && featureDesc.trim().length >= FEATURE_DESC_MIN;
 
   // Edit form validation
-  const editNameError = editNameBlurred && editName.trim().length < 3
-    ? "Feature name must be at least 3 characters."
+  const editNameError = editNameBlurred && editName.trim().length < FEATURE_NAME_MIN
+    ? `Feature name must be at least ${FEATURE_NAME_MIN} characters.`
     : null;
-  const editDescError = editDescBlurred && editDesc.trim().length < 20
-    ? "Describe the feature in at least one sentence so AI can score it accurately."
+  const editDescError = editDescBlurred && editDesc.trim().length < FEATURE_DESC_MIN
+    ? FEATURE_DESC_QUALITY_HELPER
     : null;
-  const isEditValid = editName.trim().length >= 3 && editDesc.trim().length >= 20;
+  const isEditValid = editName.trim().length >= FEATURE_NAME_MIN && editDesc.trim().length >= FEATURE_DESC_MIN;
 
   const sorted = [...features].sort((a, b) => {
     if (sortBy === "created_at") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -91,7 +124,8 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
     return (b[sortBy] ?? 0) - (a[sortBy] ?? 0);
   });
 
-  function startEditing(f: FeatureIdea) {
+  function startEditing(f: FeatureIdea, triggerElement?: HTMLElement) {
+    editTriggerRef.current = triggerElement ?? null;
     setEditingId(f.id);
     setEditName(f.name);
     setEditDesc(f.description ?? "");
@@ -101,11 +135,16 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
   }
 
   function cancelEditing() {
+    const trigger = editTriggerRef.current;
     setEditingId(null);
     setEditName("");
     setEditDesc("");
     setEditNameBlurred(false);
     setEditDescBlurred(false);
+    // Restore focus to the Edit button that opened the form
+    focusAfterPaint(() =>
+      trigger && trigger.isConnected ? trigger : null,
+    );
   }
 
   async function saveEdit(featureId: string) {
@@ -127,11 +166,16 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
             : f,
         ),
       );
+      const trigger = editTriggerRef.current;
       setEditingId(null);
       setHighlightId(featureId);
       setTimeout(() => setHighlightId(null), 1500);
       showToast("Feature updated");
       router.refresh();
+      // Restore focus to the Edit button
+      focusAfterPaint(() =>
+        trigger && trigger.isConnected ? trigger : null,
+      );
     } else {
       setError(res.error ?? "Could not update feature.");
     }
@@ -178,6 +222,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
         setIsFormOpen(false);
         showToast("Feature added");
         router.refresh();
+        focusAfterPaint(() => addFeatureButtonRef.current);
       } else {
         setError(res.error ?? res.fieldErrors?.name?.[0] ?? res.fieldErrors?.description?.[0] ?? "Could not add feature");
       }
@@ -185,7 +230,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
   }
 
   async function handleAIScore() {
-    const underDescribed = features.filter((f) => !f.description || f.description.trim().length < 20);
+    const underDescribed = features.filter((f) => !f.description || f.description.trim().length < FEATURE_DESC_MIN);
     if (underDescribed.length > 0) {
       setError("Add a more detailed description before using AI scoring. Some features have descriptions that are too short.");
       return;
@@ -207,6 +252,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       setFeatures(data.features ?? []);
       showToast("Features scored successfully");
       router.refresh();
+      focusAfterPaint(() => scoreButtonRef.current);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to score features");
     } finally {
@@ -222,6 +268,11 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
         if (editingId === featureId) cancelEditing();
         showToast("Feature deleted");
         router.refresh();
+        // Focus fallback: Add Feature button or section heading
+        focusFirstAvailable(
+          addFeatureButtonRef.current,
+          sectionHeadingRef.current,
+        );
       } else {
         setError(res.error ?? "Could not delete feature.");
       }
@@ -266,7 +317,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-gray-900">Feature Ideas</h2>
+            <h2 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Feature Ideas</h2>
             <p className="mt-1 text-sm text-gray-500">
               Add features and let AI score them using RICE &amp; ICE frameworks for <strong>{projectName}</strong>
             </p>
@@ -274,6 +325,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {features.length > 0 && (
               <Button
+                ref={scoreButtonRef}
                 onClick={handleAIScore}
                 isLoading={isScoring}
                 disabled={isScoring || editingId !== null}
@@ -284,7 +336,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                 {isScoring ? "Scoring..." : "AI Score All"}
               </Button>
             )}
-            <Button onClick={() => setIsFormOpen(true)} className="gap-2 whitespace-nowrap" disabled={isFormOpen}>
+            <Button ref={addFeatureButtonRef} onClick={() => setIsFormOpen(true)} className="gap-2 whitespace-nowrap" disabled={isFormOpen}>
               <IconPlus className="h-4 w-4" />
               Add Feature
             </Button>
@@ -307,14 +359,18 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
           <form ref={formRef} action={handleAddFeature} className="space-y-4">
             <div>
               <Input
+                ref={addNameInputRef}
                 id="name" name="name" label="Feature Name *"
                 placeholder="e.g. Dark mode" required
                 value={featureName}
                 onChange={(e) => setFeatureName(e.target.value)}
                 onBlur={() => setNameBlurred(true)}
                 error={nameError ?? undefined}
-                maxLength={MAX_NAME}
+                maxLength={FEATURE_NAME_MAX}
               />
+              <div className="mt-1 flex justify-end">
+                <CharacterCounter current={featureName.length} max={FEATURE_NAME_MAX} />
+              </div>
             </div>
             <div>
               <Textarea
@@ -324,17 +380,15 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                 onChange={(e) => setFeatureDesc(e.target.value)}
                 onBlur={() => setDescBlurred(true)}
                 error={descError ?? undefined}
-                maxLength={MAX_DESCRIPTION}
+                maxLength={FEATURE_DESC_MAX}
               />
               <div className="mt-1 flex items-center justify-between">
-                <p className={`text-xs ${featureDesc.trim().length >= 20 ? "text-gray-400" : "text-amber-600"}`}>
-                  {featureDesc.trim().length} / 20 characters minimum
-                </p>
-                <CharacterCounter current={featureDesc.length} max={MAX_DESCRIPTION} />
+                <MinLengthHint current={featureDesc.trim().length} min={FEATURE_DESC_MIN} />
+                <CharacterCounter current={featureDesc.length} max={FEATURE_DESC_MAX} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => { setIsFormOpen(false); setNameBlurred(false); setDescBlurred(false); }}>Cancel</Button>
+              <Button type="button" variant="secondary" onClick={() => { setIsFormOpen(false); setFeatureName(""); setFeatureDesc(""); setNameBlurred(false); setDescBlurred(false); focusAfterPaint(() => addFeatureButtonRef.current); }}>Cancel</Button>
               <Button type="submit" isLoading={isPending} disabled={isPending || !isFormValid}>Add Feature</Button>
             </div>
           </form>
@@ -412,14 +466,18 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                         <td colSpan={8} className="px-4 py-4">
                           <div className="space-y-3">
                             <Input
+                              ref={editInputRef}
                               id={`edit-name-${f.id}`}
                               label="Feature Name *"
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
                               onBlur={() => setEditNameBlurred(true)}
                               error={editNameError ?? undefined}
-                              maxLength={MAX_NAME}
+                              maxLength={FEATURE_NAME_MAX}
                             />
+                            <div className="mt-1 flex justify-end">
+                              <CharacterCounter current={editName.length} max={FEATURE_NAME_MAX} />
+                            </div>
                             <div>
                               <Textarea
                                 id={`edit-desc-${f.id}`}
@@ -428,13 +486,11 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                                 onChange={(e) => setEditDesc(e.target.value)}
                                 onBlur={() => setEditDescBlurred(true)}
                                 error={editDescError ?? undefined}
-                                maxLength={MAX_DESCRIPTION}
+                                maxLength={FEATURE_DESC_MAX}
                               />
                               <div className="mt-1 flex items-center justify-between">
-                                <p className={`text-xs ${editDesc.trim().length >= 20 ? "text-gray-400" : "text-amber-600"}`}>
-                                  {editDesc.trim().length} / 20 characters minimum
-                                </p>
-                                <CharacterCounter current={editDesc.length} max={MAX_DESCRIPTION} />
+                                <MinLengthHint current={editDesc.trim().length} min={FEATURE_DESC_MIN} />
+                                <CharacterCounter current={editDesc.length} max={FEATURE_DESC_MAX} />
                               </div>
                             </div>
                             <div className="flex justify-end gap-2">
@@ -497,7 +553,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                         <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
                           <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); startEditing(f); }}
+                            onClick={(e) => { e.stopPropagation(); startEditing(f, e.currentTarget); }}
                             className="text-xs text-gray-500 hover:text-brand-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
                             aria-label={`Edit ${f.name}`}
                           >
@@ -509,6 +565,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                             confirmLabel="Delete"
                             variant="danger"
                             onConfirm={() => handleDelete(f.id)}
+                            focusFallbackRef={addFeatureButtonRef}
                             trigger={
                               <button
                                 type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconSparkles, IconClock } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { focusAfterPaint } from "@/lib/focus-utils";
 import type {
   ParsedMultiAgentReview,
   ParsedAgentResponse,
@@ -23,8 +24,11 @@ import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { multiAgentReviewToMarkdown } from "@/lib/export/serialize-markdown";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { formatDateTime, formatDate, toISOString } from "@/lib/format-date";
-
-const MAX_QUESTION = 3000;
+import {
+  MULTI_AGENT_QUESTION_MIN,
+  MULTI_AGENT_QUESTION_MAX,
+  MULTI_AGENT_QUESTION_QUALITY_HELPER,
+} from "@/lib/validations/multi-agent";
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -171,9 +175,9 @@ function ReviewDetail({ review, projectName }: { review: ParsedMultiAgentReview;
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{review.question}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-900 break-words">{review.question}</p>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="default">
               {review.input_type === "feature_idea" ? "Feature Idea" : "Product Question"}
@@ -187,7 +191,9 @@ function ReviewDetail({ review, projectName }: { review: ParsedMultiAgentReview;
             </time>
           </div>
         </div>
-        <CopyMarkdownButton getMarkdown={() => multiAgentReviewToMarkdown(review, projectName)} />
+        <div className="flex-shrink-0">
+          <CopyMarkdownButton getMarkdown={() => multiAgentReviewToMarkdown(review, projectName)} />
+        </div>
       </div>
 
       {/* Agent cards grid */}
@@ -222,14 +228,22 @@ export function MultiAgentClient({
   const [expandedId, setExpandedId] = useState<string | null>(
     initialReviews[0]?.id ?? null,
   );
+  const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Sync with server props when no local operation is in-flight.
+  const [prevInitial, setPrevInitial] = useState(initialReviews);
+  if (initialReviews !== prevInitial && !isGenerating && isDeleting === null) {
+    setPrevInitial(initialReviews);
+    setReviews(initialReviews);
+  }
 
   const validationError =
-    question.length > 0 && question.length < 10
-      ? "Question must be at least 10 characters"
+    question.length > 0 && question.length < MULTI_AGENT_QUESTION_MIN
+      ? `Question must be at least ${MULTI_AGENT_QUESTION_MIN} characters`
       : null;
 
   async function runReview() {
-    if (question.length < 10) return;
+    if (question.trim().length < MULTI_AGENT_QUESTION_MIN) return;
     setIsGenerating(true);
     setError(null);
 
@@ -259,6 +273,7 @@ export function MultiAgentClient({
       setQuestion("");
       toast("Multi-agent review complete!");
       router.refresh();
+      focusAfterPaint(() => sectionHeadingRef.current);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate review");
     } finally {
@@ -294,7 +309,7 @@ export function MultiAgentClient({
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Multi-Agent Review</h2>
+        <h2 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Multi-Agent Review</h2>
         <p className="mt-1 text-sm text-gray-500">
           Get structured feedback from PM, CTO, UX, and Growth perspectives for{" "}
           <strong>{projectName}</strong>
@@ -340,15 +355,18 @@ export function MultiAgentClient({
           value={question}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
           error={validationError ?? undefined}
-          maxLength={MAX_QUESTION}
+          maxLength={MULTI_AGENT_QUESTION_MAX}
         />
 
+        <div className="mt-1.5 flex justify-end">
+          <p className="flex-1 text-xs text-gray-400">{MULTI_AGENT_QUESTION_QUALITY_HELPER}</p>
+        </div>
         <div className="mt-4 flex items-center justify-between">
-          <CharacterCounter current={question.length} max={MAX_QUESTION} />
+          <CharacterCounter current={question.length} max={MULTI_AGENT_QUESTION_MAX} />
           <Button
             onClick={runReview}
             isLoading={isGenerating}
-            disabled={isGenerating || question.length < 10}
+            disabled={isGenerating || question.trim().length < MULTI_AGENT_QUESTION_MIN}
             className="gap-2"
           >
             <IconSparkles className="h-4 w-4" />
@@ -359,7 +377,7 @@ export function MultiAgentClient({
 
       {/* Error */}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
       )}
@@ -437,6 +455,7 @@ export function MultiAgentClient({
                         confirmLabel="Delete Review"
                         variant="danger"
                         onConfirm={() => deleteReview(review.id)}
+                        focusFallbackRef={sectionHeadingRef}
                         trigger={
                           <button
                             type="button"

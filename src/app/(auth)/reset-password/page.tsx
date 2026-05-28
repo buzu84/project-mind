@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconSparkles } from "@/components/icons";
+import { AUTH_PASSWORD_MIN } from "@/lib/validations/auth";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -19,14 +20,14 @@ export default function ResetPasswordPage() {
   const [confirmTouched, setConfirmTouched] = useState(false);
 
   const passwordError =
-    passwordTouched && password.length > 0 && password.length < 6
-      ? "Password must be at least 6 characters."
+    passwordTouched && password.length > 0 && password.length < AUTH_PASSWORD_MIN
+      ? `Password must be at least ${AUTH_PASSWORD_MIN} characters.`
       : null;
   const confirmError =
     confirmTouched && confirmPassword.length > 0 && confirmPassword !== password
       ? "Passwords do not match."
       : null;
-  const isValid = password.length >= 6 && password === confirmPassword;
+  const isValid = password.length >= AUTH_PASSWORD_MIN && password === confirmPassword;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,21 +58,21 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-sm text-center">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6" role="status">
             <h3 className="text-base font-semibold text-emerald-800">Password updated!</h3>
             <p className="mt-2 text-sm text-emerald-700">
               Your password has been changed. Redirecting to dashboard…
             </p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 shadow-lg shadow-brand-200">
@@ -92,7 +93,7 @@ export default function ResetPasswordPage() {
         )}
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <Input
               id="password"
               label="New Password"
@@ -100,7 +101,7 @@ export default function ResetPasswordPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setPasswordTouched(true)}
-              placeholder="Min 6 characters"
+              placeholder={`Min ${AUTH_PASSWORD_MIN} characters`}
               error={passwordError ?? undefined}
               required
             />
@@ -127,7 +128,7 @@ export default function ResetPasswordPage() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

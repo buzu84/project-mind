@@ -8,6 +8,7 @@ import { DocumentRenderer } from "@/components/document-renderer";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { formatDate, toISOString } from "@/lib/format-date";
+import { analysisToMarkdown } from "@/lib/export/serialize-markdown";
 
 import { parseAnalysisInput, parseAnalysisOutput } from "@/lib/validation/json-parsers";
 
@@ -81,7 +82,13 @@ export default async function AnalysisResultPage({
           </div>
         </div>
         <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-          <CopyMarkdownButton getMarkdown={contentUnavailable ? "" : content} />
+          <CopyMarkdownButton getMarkdown={contentUnavailable ? "" : analysisToMarkdown({
+            productName,
+            competitors,
+            industry: analysisInput?.industry,
+            createdAt: decision.created_at,
+            content,
+          })} />
           <Link
             href={`/projects/${project.id}/analysis`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"

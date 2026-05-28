@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconSparkles } from "@/components/icons";
+import { AUTH_PASSWORD_MIN } from "@/lib/validations/auth";
 
 function SignUpForm() {
   const [name, setName] = useState("");
@@ -16,15 +17,22 @@ function SignUpForm() {
   const [success, setSuccess] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmTouched, setConfirmTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
 
+  const emailError =
+    emailTouched && email.length > 0 && !email.includes("@")
+      ? "Enter a valid email address."
+      : null;
   const passwordError =
-    passwordTouched && password.length > 0 && password.length < 6
-      ? "Password must be at least 6 characters."
+    passwordTouched && password.length > 0 && password.length < AUTH_PASSWORD_MIN
+      ? `Password must be at least ${AUTH_PASSWORD_MIN} characters.`
       : null;
   const confirmError =
     confirmTouched && confirmPassword.length > 0 && confirmPassword !== password
       ? "Passwords do not match."
       : null;
+
+  const isFormValid = name.trim().length > 0 && email.includes("@") && password.length >= AUTH_PASSWORD_MIN && password === confirmPassword;
 
   const supabase = createClient();
 
@@ -32,8 +40,9 @@ function SignUpForm() {
     e.preventDefault();
     setPasswordTouched(true);
     setConfirmTouched(true);
+    setEmailTouched(true);
 
-    if (password.length < 6 || password !== confirmPassword || !name.trim()) return;
+    if (password.length < AUTH_PASSWORD_MIN || password !== confirmPassword || !name.trim()) return;
 
     setIsLoading(true);
     setFormError(null);
@@ -95,7 +104,7 @@ function SignUpForm() {
 
   if (success) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center" role="status">
         <h3 className="text-base font-semibold text-emerald-800">Check your email</h3>
         <p className="mt-2 text-sm text-emerald-700">
           We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
@@ -107,13 +116,13 @@ function SignUpForm() {
   return (
     <>
       {formError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {formError}
         </div>
       )}
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <form onSubmit={handleSignUp} className="space-y-3">
+        <form onSubmit={handleSignUp} noValidate className="space-y-3">
           <Input
             id="name"
             label="Full Name"
@@ -131,9 +140,11 @@ function SignUpForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setEmailTouched(true)}
             placeholder="you@example.com"
             autoComplete="email"
             required
+            error={emailError ?? undefined}
           />
           <Input
             id="signup-password"
@@ -143,7 +154,7 @@ function SignUpForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onBlur={() => setPasswordTouched(true)}
-            placeholder="Min 6 characters"
+            placeholder={`Min ${AUTH_PASSWORD_MIN} characters`}
             autoComplete="new-password"
             error={passwordError ?? undefined}
             required
@@ -161,7 +172,7 @@ function SignUpForm() {
             error={confirmError ?? undefined}
             required
           />
-          <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading}>
+          <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading || !isFormValid}>
             Create Account
           </Button>
         </form>
@@ -181,7 +192,7 @@ function SignUpForm() {
           className="w-full"
           disabled={isLoading}
         >
-          <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+          <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -209,7 +220,7 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 shadow-lg shadow-brand-200">
@@ -227,7 +238,7 @@ export default function SignUpPage() {
           <SignUpForm />
         </Suspense>
       </div>
-    </div>
+    </main>
   );
 }
 

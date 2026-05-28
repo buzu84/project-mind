@@ -34,6 +34,7 @@ export interface DecisionViewModel {
   confidence_score: number | null;
   problem_statement: string | null;
   context_summary: string | null;
+  updated_at: string;
 }
 
 export interface OptionViewModel {
@@ -61,6 +62,7 @@ export interface RecommendationViewModel {
   confidence_score: number | null;
   reasoning: string[];
   next_validation_steps: string[];
+  created_at: string;
 }
 
 export interface EvidenceLinkViewModel {
@@ -84,6 +86,7 @@ export function toDecisionViewModel(row: ProductDecisionRow): DecisionViewModel 
     confidence_score: row.confidence_score,
     problem_statement: row.problem_statement,
     context_summary: row.context_summary,
+    updated_at: row.updated_at,
   };
 }
 
@@ -123,6 +126,7 @@ export function toRecommendationViewModel(row: RecommendationRow): Recommendatio
     confidence_score: row.confidence_score,
     reasoning,
     next_validation_steps: parseJsonStringArray(row.next_validation_steps),
+    created_at: row.created_at,
   };
 }
 
