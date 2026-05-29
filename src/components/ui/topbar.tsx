@@ -21,6 +21,7 @@ const PAGE_TITLES: Record<string, string> = {
   features: "Feature Ideas",
   "multi-agent-review": "Multi-Agent Review",
   context: "Project Context",
+  "getting-started": "Getting Started",
   new: "New Project",
 };
 
