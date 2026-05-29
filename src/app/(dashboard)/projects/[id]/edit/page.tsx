@@ -37,7 +37,7 @@ export default async function EditProjectPage({
       </Link>
 
       <Card>
-        <h2 className="text-lg font-semibold text-gray-900">Edit Project</h2>
+        <h1 className="text-lg font-semibold text-gray-900">Edit Project</h1>
         <p className="mt-1 mb-6 text-sm text-gray-500">
           Update your project details below.
         </p>

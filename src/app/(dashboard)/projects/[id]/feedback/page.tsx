@@ -51,7 +51,7 @@ export default async function FeedbackPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-bold text-gray-900">Feedback & Research</h2>
+              <h1 className="text-2xl font-bold text-gray-900">Feedback & Research</h1>
               <Badge variant="info">{docs.length} document{docs.length !== 1 ? "s" : ""}</Badge>
             </div>
             <p className="mt-1 text-sm text-gray-500">

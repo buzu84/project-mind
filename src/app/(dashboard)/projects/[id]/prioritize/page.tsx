@@ -70,7 +70,7 @@ export default function PrioritizePage() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-2xl font-bold text-gray-900">🎯 Feature Prioritizer</h2>
+      <h1 className="text-2xl font-bold text-gray-900">🎯 Feature Prioritizer</h1>
       <p className="mt-1 text-sm text-gray-500">
         Score and rank features using the RICE framework.
       </p>

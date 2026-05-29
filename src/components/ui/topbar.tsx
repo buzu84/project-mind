@@ -49,7 +49,7 @@ export function TopBar({ user }: TopBarProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-gray-100 bg-white pl-14 pr-4 md:px-6">
       <div>
-        <h1 className="text-lg font-semibold text-gray-900">{pageTitle}</h1>
+        <h2 className="text-lg font-semibold text-gray-900">{pageTitle}</h2>
       </div>
 
       <div className="flex items-center gap-2">
