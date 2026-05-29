@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -59,6 +59,12 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
   const { toast } = useToast();
   const router = useRouter();
   const newDecisionButtonRef = useRef<HTMLButtonElement>(null);
+  const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Focus the section heading on route entry
+  useEffect(() => {
+    focusAfterPaint(() => sectionHeadingRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function refreshDecisions() {
     const res = await fetch(`/api/projects/${projectId}/decisions`);
@@ -133,7 +139,7 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Decisions</h2>
+          <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Decisions</h1>
           <p className="mt-1 text-sm text-gray-500">
             Track product, technical, UX, growth and business decisions.
           </p>

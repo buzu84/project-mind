@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { ChatShell, type ChatMessage } from "@/components/chat-shell";
+import { focusAfterPaint } from "@/lib/focus-utils";
 
 interface ChatClientProps {
   projectId: string;
@@ -16,8 +18,18 @@ const suggestions = [
 ];
 
 export function ChatClient({ projectId, projectName, initialMessages }: ChatClientProps) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    focusAfterPaint(() => headingRef.current);
+  }, []);
+
   return (
-    <ChatShell
+    <>
+      <h1 ref={headingRef} tabIndex={-1} className="sr-only focus:outline-none">
+        AI Chat — {projectName}
+      </h1>
+      <ChatShell
       initialMessages={initialMessages}
       apiEndpoint="/api/ai/chat"
       buildRequestBody={(message) => ({ message, projectId })}
@@ -32,5 +44,6 @@ export function ChatClient({ projectId, projectName, initialMessages }: ChatClie
         </div>
       }
     />
+    </>
   );
 }
