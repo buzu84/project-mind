@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,12 @@ export function DecisionDetailClient({
   const { toast } = useToast();
   const router = useRouter();
   const analyzeButtonRef = useRef<HTMLButtonElement>(null);
+  const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Focus the section heading on route entry
+  useEffect(() => {
+    focusAfterPaint(() => sectionHeadingRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAnalyze() {
     setAnalyzing(true);
@@ -106,7 +112,7 @@ export function DecisionDetailClient({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-2xl font-bold text-gray-900 break-words">{decision.title}</h2>
+          <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 break-words focus:outline-none">{decision.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant={statusBadgeVariant[decision.status] ?? "default"}>
               {decision.status.replace("_", " ")}

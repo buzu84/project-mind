@@ -110,9 +110,9 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-6xl space-y-8">
       {/* Welcome */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900">
           Welcome back{displayName ? `, ${displayName.split(" ")[0]}` : ""}
-        </h2>
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           Here&apos;s what&apos;s happening with your products today.
         </p>

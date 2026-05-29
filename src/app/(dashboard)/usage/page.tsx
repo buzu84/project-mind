@@ -49,7 +49,7 @@ export default async function UsageHistoryPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">AI Usage History</h2>
+        <h1 className="text-2xl font-bold text-gray-900">AI Usage History</h1>
         <p className="mt-1 text-sm text-gray-500">
           Detailed log of all AI operations and their costs.
         </p>

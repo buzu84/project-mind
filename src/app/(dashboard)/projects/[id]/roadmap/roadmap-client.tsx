@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +99,11 @@ export function RoadmapClient({
   const generateButtonRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
+  // Focus the section heading on route entry
+  useEffect(() => {
+    focusAfterPaint(() => headingRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync with server props when no local operation is in-flight.
   const [prevInitial, setPrevInitial] = useState(initialRoadmap);
   if (initialRoadmap !== prevInitial && !isGenerating && !isDeleting) {
@@ -169,9 +174,9 @@ export function RoadmapClient({
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">
+            <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">
               Product Roadmap
-            </h2>
+            </h1>
             <p className="mt-1 text-sm text-gray-500">
               AI-generated roadmap for <strong>{projectName}</strong>
             </p>

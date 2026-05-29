@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -230,6 +230,11 @@ export function MultiAgentClient({
   );
   const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
 
+  // Focus the section heading on route entry
+  useEffect(() => {
+    focusAfterPaint(() => sectionHeadingRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync with server props when no local operation is in-flight.
   const [prevInitial, setPrevInitial] = useState(initialReviews);
   if (initialReviews !== prevInitial && !isGenerating && isDeleting === null) {
@@ -309,7 +314,7 @@ export function MultiAgentClient({
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Multi-Agent Review</h2>
+        <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Multi-Agent Review</h1>
         <p className="mt-1 text-sm text-gray-500">
           Get structured feedback from PM, CTO, UX, and Growth perspectives for{" "}
           <strong>{projectName}</strong>

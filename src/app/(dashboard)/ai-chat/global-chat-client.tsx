@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { ChatShell, type ChatMessage } from "@/components/chat-shell";
+import { focusAfterPaint } from "@/lib/focus-utils";
 
 const suggestions = [
   "What metrics should I track for my SaaS MVP?",
@@ -14,8 +16,18 @@ interface GlobalChatClientProps {
 }
 
 export function GlobalChatClient({ initialMessages }: GlobalChatClientProps) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    focusAfterPaint(() => headingRef.current);
+  }, []);
+
   return (
-    <ChatShell
+    <>
+      <h1 ref={headingRef} tabIndex={-1} className="sr-only focus:outline-none">
+        AI Assistant
+      </h1>
+      <ChatShell
       initialMessages={initialMessages}
       apiEndpoint="/api/ai/global-chat"
       buildRequestBody={(message) => ({ message })}
@@ -24,5 +36,6 @@ export function GlobalChatClient({ initialMessages }: GlobalChatClientProps) {
       emptyDescription="Ask anything about product strategy, features, market analysis, or product decisions. For project-specific advice, open a project's AI Chat."
       placeholder="Ask anything about product management…"
     />
+    </>
   );
 }

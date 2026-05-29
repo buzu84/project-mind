@@ -58,6 +58,8 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
+      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+
       {/* ─── Profile ─── */}
       <Card>
         <div className="mb-6">

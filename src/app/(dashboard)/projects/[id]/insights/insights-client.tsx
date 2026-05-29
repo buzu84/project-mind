@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,12 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
   const [insights, setInsights] = useState<Insight[]>(initialInsights);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const generateButtonRef = useRef<HTMLButtonElement>(null);
+  const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Focus the section heading on route entry
+  useEffect(() => {
+    focusAfterPaint(() => sectionHeadingRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync with server props when no local operation is in-flight.
   // After generate/delete, local state is authoritative until the next
@@ -138,7 +144,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-gray-900">AI Insights</h2>
+            <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">AI Insights</h1>
             <p className="mt-1 text-sm text-gray-500">
               Strategic analysis and recommendations for <strong>{projectName}</strong>
             </p>

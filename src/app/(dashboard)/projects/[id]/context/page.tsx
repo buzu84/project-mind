@@ -42,7 +42,7 @@ export default async function ProjectContextPage({
       </Link>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Project Context</h2>
+        <h1 className="text-2xl font-bold text-gray-900">Project Context</h1>
         <p className="mt-1 text-sm text-gray-500">
           Enrich <strong>{project.name}</strong> with structured context. The AI will use this to give better, more relevant answers.
         </p>

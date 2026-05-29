@@ -47,7 +47,7 @@ export default async function ProjectsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+            <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
             <Badge variant="info">
               {list.length} project
               {list.length !== 1 ? "s" : ""}

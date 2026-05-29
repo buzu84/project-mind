@@ -73,9 +73,9 @@ export default async function LandingPage() {
       <JsonLd data={homeBreadcrumbJsonLd} />
 
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+      <nav className="flex flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6 max-w-7xl mx-auto">
         <span className="text-xl font-bold text-brand-700">ProductMind</span>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           {user ? (
             <>
               <Link
@@ -90,7 +90,7 @@ export default async function LandingPage() {
             <>
               <Link
                 href="/sign-in"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition"
               >
                 Log in
               </Link>
@@ -106,11 +106,11 @@ export default async function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="mx-auto max-w-4xl px-6 pt-24 pb-16 text-center">
+      <section className="mx-auto max-w-4xl px-4 sm:px-6 pt-20 sm:pt-24 pb-16 text-center">
         <p className="mb-4 text-sm font-medium text-brand-600 tracking-wide uppercase">
           AI-Powered Product Management
         </p>
-        <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">
+        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
           From idea to roadmap,{" "}
           <span className="text-brand-600">faster</span>
         </h1>
@@ -119,7 +119,7 @@ export default async function LandingPage() {
           structured PRDs, prioritized roadmaps, and competitive insights —
           grounded in your actual project context, not generic templates.
         </p>
-        <div className="mt-10 flex justify-center gap-4">
+        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
           <Link
             href={ctaHref}
             className="rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-700 transition"

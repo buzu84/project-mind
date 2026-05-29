@@ -115,7 +115,7 @@ export default function AnalysisPage() {
       </Link>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">🔍 Competitive Analysis</h2>
+        <h1 className="text-2xl font-bold text-gray-900">🔍 Competitive Analysis</h1>
         <p className="mt-1 text-sm text-gray-500">
           Get AI-powered competitive landscape insights.
         </p>

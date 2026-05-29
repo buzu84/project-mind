@@ -12,7 +12,7 @@ export default function DecisionDetailLoading() {
       </div>
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+          <div key={i} className="rounded-xl border border-gray-200 bg-white p-6 space-y-3">
             <div className="h-5 w-36 rounded bg-gray-200" />
             <div className="h-3 w-full rounded bg-gray-200" />
             <div className="h-3 w-3/4 rounded bg-gray-200" />
