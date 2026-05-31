@@ -38,10 +38,12 @@ function findPricing(provider: AIProvider, model: string): AIModelPricing {
     MODEL_PRICING.find(
       (p) => p.provider === provider && p.model === model,
     ) ??
-    // Try partial match (e.g. "gpt-4o-2025-01-01" matches "gpt-4o")
-    MODEL_PRICING.find(
-      (p) => p.provider === provider && model.startsWith(p.model),
-    ) ??
+    // Try partial match (e.g. "gpt-4o-2025-01-01" matches "gpt-4o").
+    // Sort candidates by model name length descending so "gpt-4o-mini"
+    // is preferred over "gpt-4o" for "gpt-4o-mini-2025-…" inputs.
+    [...MODEL_PRICING]
+      .filter((p) => p.provider === provider && model.startsWith(p.model))
+      .sort((a, b) => b.model.length - a.model.length)[0] ??
     FALLBACK_PRICING
   );
 }
