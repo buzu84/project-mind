@@ -21,6 +21,7 @@ import type { EvidenceCitation } from "@/lib/evidence";
 import type { Tables } from "@/lib/supabase/types";
 import { decisionReviewOutputSchema, type DecisionReviewOutput } from "./review-schemas";
 import { normalizeDecisionReviewOutput, formatZodIssuesForLog, formatZodIssuesForRetry } from "./review-normalize";
+import { sanitizeCitationIds } from "./citation-utils";
 
 const isDev = process.env.NODE_ENV === "development";
 const MODEL = "gpt-4o";
@@ -331,30 +332,6 @@ async function callOpenAIWithRetry(
   throw new Error("AI analysis failed. Please try again.");
 }
 
-// ── Citation sanitization ───────────────────────────────────────────
-
-function sanitizeCitationIds(
-  output: DecisionReviewOutput,
-  validIds: Set<string>,
-): DecisionReviewOutput {
-  const filter = (ids?: string[]) => ids?.filter((id) => validIds.has(id));
-
-  return {
-    ...output,
-    assumptions: output.assumptions.map((a) => ({
-      ...a,
-      supportingCitationIds: filter(a.supportingCitationIds),
-    })),
-    options: output.options.map((o) => ({
-      ...o,
-      supportingCitationIds: filter(o.supportingCitationIds),
-    })),
-    risks: output.risks.map((r) => ({
-      ...r,
-      supportingCitationIds: filter(r.supportingCitationIds),
-    })),
-  };
-}
 
 // ── Prompt builder ──────────────────────────────────────────────────
 
