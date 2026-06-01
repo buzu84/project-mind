@@ -7,5 +7,21 @@ export default defineConfig({
   test: {
     environment: "node",
     restoreMocks: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "**/__tests__/**",
+        "**/*.test.{ts,tsx}",
+        "**/*.spec.{ts,tsx}",
+        "**/node_modules/**",
+        "**/.next/**",
+        "**/coverage/**",
+        "src/lib/supabase/database.types.ts",
+        "src/middleware.ts",
+      ],
+    },
   },
 });
