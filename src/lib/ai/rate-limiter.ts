@@ -20,7 +20,7 @@ import type { AppUser } from "@/lib/auth/constants";
  * Parse ADMIN_EMAILS env var (server-only, no NEXT_PUBLIC_ prefix).
  * Normalized to lowercase, trimmed.
  */
-function getAdminEmails(): Set<string> {
+function getAdminEmailsFromEnv(): Set<string> {
   const raw = process.env.ADMIN_EMAILS ?? "";
   if (!raw) return new Set();
   return new Set(
@@ -34,7 +34,7 @@ function getAdminEmails(): Set<string> {
  */
 export function isAdminUser(user: AppUser): boolean {
   if (!user.email) return false;
-  return getAdminEmails().has(user.email.trim().toLowerCase());
+  return getAdminEmailsFromEnv().has(user.email.trim().toLowerCase());
 }
 
 // ── Rate limit tiers ──────────────────────────────────────────────
@@ -55,27 +55,13 @@ export function getUserTier(user: AppUser): RateLimitTier {
   return "free";
 }
 
-// ── In-memory sliding window ──────────────────────────────────────
+// ── Rate limiter factory ──────────────────────────────────────────
 
 interface WindowEntry {
   timestamps: number[];
 }
 
-const store = new Map<string, WindowEntry>();
-
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
-let lastCleanup = Date.now();
-
-function cleanup(windowMs: number) {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
-  lastCleanup = now;
-  const cutoff = now - windowMs;
-  for (const [key, entry] of store) {
-    entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
-    if (entry.timestamps.length === 0) store.delete(key);
-  }
-}
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -83,83 +69,136 @@ export interface RateLimitResult {
   resetInSeconds: number;
 }
 
-const ALLOWED_UNLIMITED: RateLimitResult = { allowed: true, remaining: 999, resetInSeconds: 0 };
+export interface RateLimiterOptions {
+  /** Injectable time source for testing. Defaults to Date.now */
+  now?: () => number;
+  /** Injectable admin email provider for testing. Defaults to process.env.ADMIN_EMAILS */
+  getAdminEmails?: () => Set<string>;
+}
 
-function checkRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
-  cleanup(windowMs);
+export interface RateLimiter {
+  checkStandardAILimit(user: AppUser): RateLimitResult;
+  checkHeavyAILimit(user: AppUser): RateLimitResult;
+}
 
-  const now = Date.now();
-  const cutoff = now - windowMs;
+/**
+ * Create a rate limiter instance with isolated state.
+ * Used by tests to create fresh limiters with fake time.
+ */
+export function createRateLimiter(options: RateLimiterOptions = {}): RateLimiter {
+  const now = options.now ?? (() => Date.now());
+  const getAdminEmails = options.getAdminEmails ?? getAdminEmailsFromEnv;
 
-  let entry = store.get(key);
-  if (!entry) {
-    entry = { timestamps: [] };
-    store.set(key, entry);
+  // Instance-level state
+  const store = new Map<string, WindowEntry>();
+  let lastCleanup = now();
+
+  function cleanup(windowMs: number) {
+    const currentTime = now();
+    if (currentTime - lastCleanup < CLEANUP_INTERVAL_MS) return;
+    lastCleanup = currentTime;
+    const cutoff = currentTime - windowMs;
+    for (const [key, entry] of store) {
+      entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
+      if (entry.timestamps.length === 0) store.delete(key);
+    }
   }
 
-  entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
+  function checkRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
+    cleanup(windowMs);
 
-  if (entry.timestamps.length >= limit) {
-    const oldest = entry.timestamps[0];
-    const resetInSeconds = Math.ceil((oldest + windowMs - now) / 1000);
-    return { allowed: false, remaining: 0, resetInSeconds };
+    const currentTime = now();
+    const cutoff = currentTime - windowMs;
+
+    let entry = store.get(key);
+    if (!entry) {
+      entry = { timestamps: [] };
+      store.set(key, entry);
+    }
+
+    entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
+
+    if (entry.timestamps.length >= limit) {
+      const oldest = entry.timestamps[0];
+      const resetInSeconds = Math.ceil((oldest + windowMs - currentTime) / 1000);
+      return { allowed: false, remaining: 0, resetInSeconds };
+    }
+
+    entry.timestamps.push(currentTime);
+    return {
+      allowed: true,
+      remaining: limit - entry.timestamps.length,
+      resetInSeconds: Math.ceil(windowMs / 1000),
+    };
   }
 
-  entry.timestamps.push(now);
+  function isAdmin(user: AppUser): boolean {
+    if (!user.email) return false;
+    return getAdminEmails().has(user.email.trim().toLowerCase());
+  }
+
+  function logRateLimitDecision(
+    feature: "standard" | "heavy",
+    user: AppUser,
+    isAdminBypass: boolean,
+    result: RateLimitResult,
+  ) {
+    // Never log in test; avoid noise in dev unless DEBUG is set
+    if (process.env.NODE_ENV === "test") return;
+    const info = {
+      email: user.email ?? "(no email)",
+      userId: user.id,
+      feature,
+      isAdminBypass,
+      allowed: result.allowed,
+      remaining: result.remaining,
+      resetInSeconds: result.resetInSeconds,
+    };
+    if (!result.allowed) {
+      console.warn("[rate-limit] BLOCKED", info);
+    } else if (process.env.DEBUG) {
+      console.log("[rate-limit] allowed", info);
+    }
+  }
+
   return {
-    allowed: true,
-    remaining: limit - entry.timestamps.length,
-    resetInSeconds: Math.ceil(windowMs / 1000),
+    checkStandardAILimit(user: AppUser): RateLimitResult {
+      const admin = isAdmin(user);
+      // Return fresh object for admin to prevent mutation
+      const result = admin
+        ? { allowed: true, remaining: 999, resetInSeconds: 0 }
+        : checkRateLimit(`ai:${user.id}`, TIER_LIMITS.free.standard.limit, TIER_LIMITS.free.standard.windowMs);
+      logRateLimitDecision("standard", user, admin, result);
+      return result;
+    },
+
+    checkHeavyAILimit(user: AppUser): RateLimitResult {
+      const admin = isAdmin(user);
+      // Return fresh object for admin to prevent mutation
+      const result = admin
+        ? { allowed: true, remaining: 999, resetInSeconds: 0 }
+        : checkRateLimit(`ai-heavy:${user.id}`, TIER_LIMITS.free.heavy.limit, TIER_LIMITS.free.heavy.windowMs);
+      logRateLimitDecision("heavy", user, admin, result);
+      return result;
+    },
   };
 }
 
-// ── Logging helper ────────────────────────────────────────────────
+// ── Default singleton for existing routes ────────────────────────
 
-function logRateLimitDecision(
-  feature: "standard" | "heavy",
-  user: AppUser,
-  isAdminBypass: boolean,
-  result: RateLimitResult,
-) {
-  // Never log in test; avoid noise in dev unless DEBUG is set
-  if (process.env.NODE_ENV === "test") return;
-  const info = {
-    email: user.email ?? "(no email)",
-    userId: user.id,
-    feature,
-    isAdminBypass,
-    allowed: result.allowed,
-    remaining: result.remaining,
-    resetInSeconds: result.resetInSeconds,
-  };
-  if (!result.allowed) {
-    console.warn("[rate-limit] BLOCKED", info);
-  } else if (process.env.DEBUG) {
-    console.log("[rate-limit] allowed", info);
-  }
-}
-
-// ── Public API used by all AI routes ──────────────────────────────
+const defaultRateLimiter = createRateLimiter();
 
 /** Standard AI limit: 20 requests/hour (free), unlimited (admin) */
 export function checkStandardAILimit(user: AppUser): RateLimitResult {
-  const admin = isAdminUser(user);
-  const result = admin
-    ? ALLOWED_UNLIMITED
-    : checkRateLimit(`ai:${user.id}`, TIER_LIMITS.free.standard.limit, TIER_LIMITS.free.standard.windowMs);
-  logRateLimitDecision("standard", user, admin, result);
-  return result;
+  return defaultRateLimiter.checkStandardAILimit(user);
 }
 
 /** Heavy AI limit: 5 requests/15 min (free), unlimited (admin) */
 export function checkHeavyAILimit(user: AppUser): RateLimitResult {
-  const admin = isAdminUser(user);
-  const result = admin
-    ? ALLOWED_UNLIMITED
-    : checkRateLimit(`ai-heavy:${user.id}`, TIER_LIMITS.free.heavy.limit, TIER_LIMITS.free.heavy.windowMs);
-  logRateLimitDecision("heavy", user, admin, result);
-  return result;
+  return defaultRateLimiter.checkHeavyAILimit(user);
 }
+
+// ── Response helpers ──────────────────────────────────────────────
 
 /** Build a 429 JSON response */
 export function rateLimitResponse(result: RateLimitResult) {
@@ -175,3 +214,5 @@ export function rateLimitResponse(result: RateLimitResult) {
     },
   );
 }
+
+
