@@ -18,12 +18,17 @@ export async function verifyProjectOwnership(
   userId: string,
 ): Promise<boolean> {
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .select("id")
     .eq("id", projectId)
     .eq("user_id", userId)
     .single();
+
+  // Fail-closed: any Supabase error means "not owned", even if data is
+  // unexpectedly non-null.  This is the security-critical path — never
+  // grant access on an ambiguous response.
+  if (error) return false;
 
   return !!data;
 }
