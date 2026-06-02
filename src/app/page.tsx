@@ -105,6 +105,8 @@ export default async function LandingPage() {
         </div>
       </nav>
 
+      {/* Main content */}
+      <main>
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-4 sm:px-6 pt-20 sm:pt-24 pb-16 text-center">
         <p className="mb-4 text-sm font-medium text-brand-600 tracking-wide uppercase">
@@ -218,7 +220,7 @@ export default async function LandingPage() {
             >
               <summary className="flex cursor-pointer items-center justify-between px-6 py-5 text-sm font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
                 {item.question}
-                <span className="ml-4 flex-shrink-0 text-gray-400 transition group-open:rotate-45">
+                <span className="ml-4 flex-shrink-0 text-gray-500 transition group-open:rotate-45">
                   +
                 </span>
               </summary>
@@ -230,11 +232,13 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      </main>
+
       {/* Footer */}
       <footer className="border-t border-gray-200">
         {/* Built with strip */}
         <div className="mx-auto max-w-6xl px-6 py-6">
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-gray-500">
             Built with Next.js, TypeScript, Supabase, pgvector, and OpenAI ·
             RAG retrieval for chat, roadmap &amp; reviews · Row-level security · Rate-limited API
           </p>

@@ -90,11 +90,11 @@ export default async function ProjectsPage() {
                       {project.name}
                     </p>
                     {project.description && (
-                      <p className="mt-0.5 text-xs text-gray-400 line-clamp-1 break-words">
+                      <p className="mt-0.5 text-xs text-gray-500 line-clamp-1 break-words">
                         {project.description}
                       </p>
                     )}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <IconDocument className="h-3 w-3" />
                         {project.decisions?.[0]?.count ?? 0} decisions
@@ -117,7 +117,7 @@ export default async function ProjectsPage() {
       )}
 
       {process.env.NODE_ENV === "development" && (
-        <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-xs text-gray-400 font-mono">
+        <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-xs text-gray-500 font-mono">
           <span className="font-semibold text-gray-500">Dev:</span>{" "}
           auth={mockAuth ? "mock" : "real"} |{" "}
           db={mockDb ? "mock (in-memory)" : "real Supabase"} |{" "}

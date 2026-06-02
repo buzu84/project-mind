@@ -62,7 +62,7 @@ export function Sidebar({ user }: SidebarProps) {
 
       {/* Main navigation */}
       <nav className="flex-1 space-y-1 px-3 pt-4" aria-label="Main navigation">
-        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
           Menu
         </p>
         {mainNav.map((item) => {
@@ -87,12 +87,12 @@ export function Sidebar({ user }: SidebarProps) {
                   "h-[18px] w-[18px] flex-shrink-0 transition-colors",
                   active
                     ? "text-brand-600"
-                    : "text-gray-400 group-hover:text-gray-600",
+                    : "text-gray-500 group-hover:text-gray-600",
                 )}
               />
               {item.label}
               {item.href === "/ai-chat" && (
-                <span className="ml-auto rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
+                <span className="ml-auto rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold text-brand-900">
                   AI
                 </span>
               )}
@@ -120,7 +120,7 @@ export function Sidebar({ user }: SidebarProps) {
               <item.icon
                 className={cn(
                   "h-[18px] w-[18px] flex-shrink-0",
-                  active ? "text-brand-600" : "text-gray-400 group-hover:text-gray-600",
+                  active ? "text-brand-600" : "text-gray-500 group-hover:text-gray-600",
                 )}
               />
               {item.label}
@@ -150,11 +150,11 @@ export function Sidebar({ user }: SidebarProps) {
             <p className="truncate text-sm font-medium text-gray-900">
               {displayName}
             </p>
-            <p className="truncate text-xs text-gray-400">{email}</p>
+            <p className="truncate text-xs text-gray-500">{email}</p>
           </div>
           <button
             onClick={handleSignOut}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition"
             title="Sign out"
             aria-label="Sign out"
           >

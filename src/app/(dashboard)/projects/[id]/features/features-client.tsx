@@ -411,7 +411,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       {features.length === 0 && !isFormOpen ? (
         <Card className="flex flex-col items-center justify-center py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-            <IconTarget className="h-7 w-7 text-gray-400" />
+            <IconTarget className="h-7 w-7 text-gray-500" />
           </div>
           <h3 className="mt-4 text-base font-semibold text-gray-900">No feature ideas yet</h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">Add feature ideas, then use AI to score and prioritize them.</p>
@@ -438,7 +438,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
 
           {/* AI scoring note */}
           {sorted.some((f) => getScoreState(f) !== "not_scored") && (
-            <p className="mb-3 text-xs text-gray-400">
+            <p className="mb-3 text-xs text-gray-500">
               Scores are AI-estimated based on your project context. Similar features may receive different scores due to differences in reach, impact, effort, and confidence.
             </p>
           )}
@@ -455,7 +455,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                   <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Effort: How much work is required? Lower is better. (1-10)"><abbr title="Effort">E</abbr></th>
                   <th className="px-3 py-3 text-center font-medium text-gray-500 w-20" title="RICE Score = (Reach × Impact × Confidence) / Effort">RICE</th>
                   <th className="px-3 py-3 text-center font-medium text-gray-500 w-20" title="ICE Score = Impact × Confidence × Ease">ICE</th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-24"></th>
+                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-24"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -527,11 +527,11 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                               <div className="flex items-center gap-2">
                                 <p className="font-medium text-gray-900">{f.name}</p>
                                 {state === "not_scored" && (
-                                  <span className="text-[10px] text-gray-400 font-medium">Not scored</span>
+                                  <span className="text-[10px] text-gray-500 font-medium">Not scored</span>
                                 )}
                               </div>
                               {f.description && !isExpanded && (
-                                <p className="mt-0.5 text-xs text-gray-400 line-clamp-1">{f.description}</p>
+                                <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">{f.description}</p>
                               )}
                             </div>
                           </div>
@@ -574,7 +574,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                             trigger={
                               <button
                                 type="button"
-                                className="text-xs text-gray-400 hover:text-red-500 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+                                className="text-xs text-gray-500 hover:text-red-500 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
                                 aria-label={`Delete ${f.name}`}
                               >
                                 Delete
