@@ -131,7 +131,7 @@ export default async function DashboardPage() {
                 Learn the recommended workflow and how to get the best AI outputs from your project context.
               </p>
             </div>
-            <span className="hidden flex-shrink-0 text-xs font-medium text-brand-600 sm:block">
+            <span className="hidden flex-shrink-0 text-xs font-medium text-brand-700 sm:block">
               5 min overview →
             </span>
           </Card>
@@ -159,9 +159,9 @@ export default async function DashboardPage() {
         {/* Recent projects */}
         <Card className="lg:col-span-3">
           <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-gray-900">
               Recent Projects
-            </h3>
+            </h2>
             <Link
               href="/projects"
               className="text-xs font-medium text-brand-600 hover:text-brand-700"
@@ -173,7 +173,7 @@ export default async function DashboardPage() {
           {recentProjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                <IconProjects className="h-6 w-6 text-gray-400" />
+                <IconProjects className="h-6 w-6 text-gray-500" />
               </div>
               <p className="mt-3 text-sm text-gray-500">No projects yet</p>
               <Link
@@ -193,14 +193,14 @@ export default async function DashboardPage() {
                   className="group flex items-center justify-between rounded-lg px-3 py-3 transition hover:bg-gray-50"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-600">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">
                       {project.name[0]?.toUpperCase()}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
                         {project.name}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-500">
                         Updated{" "}
                         <time dateTime={toISOString(project.updated_at)}>
                           {formatDate(project.updated_at)}
@@ -218,9 +218,9 @@ export default async function DashboardPage() {
         {/* Recent activity — user-facing AI actions from ai_usage, excluding internal infrastructure events */}
         <Card className="lg:col-span-2">
           <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-gray-900">
               Recent AI Activity
-            </h3>
+            </h2>
             <Link
               href="/usage"
               className="text-xs font-medium text-brand-600 hover:text-brand-700"
@@ -232,10 +232,10 @@ export default async function DashboardPage() {
           {recentActivity.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                <IconClock className="h-6 w-6 text-gray-400" />
+                <IconClock className="h-6 w-6 text-gray-500" />
               </div>
               <p className="mt-3 text-sm text-gray-500">No activity yet</p>
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-gray-500">
                 Use any AI tool to see your activity here.
               </p>
             </div>
@@ -250,7 +250,7 @@ export default async function DashboardPage() {
                     <p className="text-sm text-gray-700">
                       {FEATURE_LABELS[entry.feature as AIUsageFeature] ?? entry.feature}
                     </p>
-                    <p className="mt-0.5 text-xs text-gray-400">
+                    <p className="mt-0.5 text-xs text-gray-500">
                       <time dateTime={toISOString(entry.created_at)}>
                         {formatDate(entry.created_at)}
                       </time>
@@ -268,9 +268,9 @@ export default async function DashboardPage() {
         {/* AI Usage This Month */}
         <Card className="mb-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-gray-900">
               AI Usage This Month
-            </h3>
+            </h2>
             {usageSummary.allMock && usageSummary.totalRequests > 0 && (
               <Badge variant="warning">Mock Mode</Badge>
             )}
@@ -322,9 +322,9 @@ export default async function DashboardPage() {
           )}
         </Card>
 
-        <h3 className="mb-4 text-base font-semibold text-gray-900">
+        <h2 className="mb-4 text-base font-semibold text-gray-900">
           Quick Actions
-        </h3>
+        </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             {
@@ -374,4 +374,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-

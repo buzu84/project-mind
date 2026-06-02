@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 /**
  * Minimal E2E smoke tests for ProductMind in full mock mode.
@@ -11,6 +13,25 @@ import { test, expect } from "@playwright/test";
  * Goal: protect core navigation, auth bypass, project CRUD, and AI features.
  * Not a substitute for unit tests — these catch integration regressions.
  */
+
+/**
+ * Run axe-core accessibility scan on the current page state.
+ * Fails the test if any WCAG violations are found.
+ */
+async function expectAccessible(page: Page) {
+  const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+
+  expect(
+    accessibilityScanResults.violations,
+    accessibilityScanResults.violations
+      .map(
+        (v) =>
+          `[${v.id}] ${v.help} (${v.impact})\n` +
+          v.nodes.map((n) => `  → ${n.html}`).join("\n"),
+      )
+      .join("\n\n"),
+  ).toEqual([]);
+}
 
 /**
  * Helper: create a project and navigate to its detail page.
@@ -49,6 +70,8 @@ test.describe("smoke tests", () => {
     // In mock auth mode, the user is already authenticated —
     // so the nav should show "Dashboard" link instead of "Log in"
     await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toBeVisible();
+
+    await expectAccessible(page);
   });
 
   test("dashboard loads without auth redirect", async ({ page }) => {
@@ -59,6 +82,8 @@ test.describe("smoke tests", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       "Welcome back",
     );
+
+    await expectAccessible(page);
   });
 
   test("create a project, verify it in the list, and open its detail page", async ({
@@ -97,6 +122,8 @@ test.describe("smoke tests", () => {
     await expect(
       page.getByRole("heading", { name: projectName, level: 1 }),
     ).toBeVisible();
+
+    await expectAccessible(page);
   });
 
   test("edit a project name and verify the update persists", async ({
@@ -134,6 +161,8 @@ test.describe("smoke tests", () => {
     await expect(
       page.getByRole("heading", { name: updatedName, level: 1 }),
     ).toBeVisible();
+
+    await expectAccessible(page);
   });
 
   test("delete a project via confirm dialog and verify redirect", async ({
@@ -159,6 +188,8 @@ test.describe("smoke tests", () => {
 
     // The deleted project should no longer appear in the list
     await expect(page.getByText(projectName)).not.toBeVisible();
+
+    await expectAccessible(page);
   });
 
   test("add a feature and score it with mock AI", async ({ page }) => {
@@ -210,5 +241,7 @@ test.describe("smoke tests", () => {
     // After scoring, "Not scored" should no longer be visible — this proves
     // the mock AI scored the feature and the UI re-rendered with real scores.
     await expect(page.getByText("Not scored")).not.toBeVisible();
+
+    await expectAccessible(page);
   });
 });

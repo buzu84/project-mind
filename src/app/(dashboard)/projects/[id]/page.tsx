@@ -241,9 +241,9 @@ export default async function ProjectDetailPage({
               key={d.label}
               className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3"
             >
-              <d.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+              <d.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-500" />
               <div>
-                <p className="text-xs font-medium text-gray-400">{d.label}</p>
+                <p className="text-xs font-medium text-gray-500">{d.label}</p>
                 <p className="mt-0.5 text-sm text-gray-700">{d.value}</p>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default async function ProjectDetailPage({
 
       {/* AI Tools */}
       <div className="mt-8">
-        <h3 className="mb-4 text-base font-semibold text-gray-900">AI Tools</h3>
+        <h2 className="mb-4 text-base font-semibold text-gray-900">AI Tools</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {tools.map((tool) => (
             <Link key={tool.href} href={`/projects/${project.id}/${tool.href}`}>
