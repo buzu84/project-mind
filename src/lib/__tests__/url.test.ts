@@ -74,6 +74,41 @@ describe("getSiteUrl", () => {
     });
     expect(getSiteUrl()).toBe("https://preview.vercel.app");
   });
+
+  // ── Vercel URL protocol-safety tests ─────────────────────────────
+
+  it("does not double-prefix when VERCEL_URL already has https://", () => {
+    setEnv({
+      NEXT_PUBLIC_SITE_URL: undefined,
+      NEXT_PUBLIC_VERCEL_URL: "https://my-app.vercel.app",
+    });
+    expect(getSiteUrl()).toBe("https://my-app.vercel.app");
+  });
+
+  it("does not double-prefix when VERCEL_URL already has http://", () => {
+    setEnv({
+      NEXT_PUBLIC_SITE_URL: undefined,
+      NEXT_PUBLIC_VERCEL_URL: "http://my-app.vercel.app",
+    });
+    // Always upgraded to https
+    expect(getSiteUrl()).toBe("https://my-app.vercel.app");
+  });
+
+  it("strips trailing slashes from VERCEL_URL fallback", () => {
+    setEnv({
+      NEXT_PUBLIC_SITE_URL: undefined,
+      NEXT_PUBLIC_VERCEL_URL: "my-app.vercel.app///",
+    });
+    expect(getSiteUrl()).toBe("https://my-app.vercel.app");
+  });
+
+  it("strips trailing slashes from protocol-prefixed VERCEL_URL", () => {
+    setEnv({
+      NEXT_PUBLIC_SITE_URL: undefined,
+      NEXT_PUBLIC_VERCEL_URL: "https://my-app.vercel.app/",
+    });
+    expect(getSiteUrl()).toBe("https://my-app.vercel.app");
+  });
 });
 
 // ── getClientSiteUrl ────────────────────────────────────────────────
