@@ -208,26 +208,60 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
         },
 
         update: (payload: any) => {
-          // Returns chainable with .eq() filter support
-          let eqField: string | null = null;
-          let eqValue: any = null;
+          // Accumulate filters, apply update lazily when chain resolves
+          const updateFilters: Array<{ field: string; value: any }> = [];
+          let applied = false;
+          let updatedRows: any[] = [];
+
+          function applyUpdate() {
+            if (applied) return;
+            applied = true;
+            for (const row of rows) {
+              const matches =
+                updateFilters.length === 0 ||
+                updateFilters.every((f) => row[f.field] === f.value);
+              if (matches) {
+                Object.assign(row, payload, {
+                  updated_at: new Date().toISOString(),
+                });
+                updatedRows.push(row);
+              }
+            }
+          }
+
           const chain: any = new Proxy(
             {},
             {
               get(_t, p) {
                 if (p === "eq") {
                   return (field: string, value: any) => {
-                    eqField = field;
-                    eqValue = value;
-                    // Apply update
-                    for (const row of rows) {
-                      if (row[eqField!] === eqValue) Object.assign(row, payload, { updated_at: new Date().toISOString() });
-                    }
+                    updateFilters.push({ field, value });
                     return chain;
                   };
                 }
-                if (p === "then") return (resolve: any) => resolve({ ...ok, data: null, error: null });
-                if (p === "single" || p === "maybeSingle") return () => Promise.resolve({ ...ok, data: null, error: null });
+                if (p === "select") {
+                  return (..._args: any[]) => {
+                    applyUpdate();
+                    return makeChainable(() => ({
+                      data: [...updatedRows],
+                      error: null,
+                    }));
+                  };
+                }
+                if (p === "then") {
+                  applyUpdate();
+                  return (resolve: any) =>
+                    resolve({ ...ok, data: updatedRows, error: null });
+                }
+                if (p === "single" || p === "maybeSingle") {
+                  applyUpdate();
+                  return () =>
+                    Promise.resolve({
+                      ...ok,
+                      data: updatedRows[0] ?? null,
+                      error: null,
+                    });
+                }
                 return (..._a: any[]) => chain;
               },
             },
@@ -236,21 +270,36 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
         },
 
         delete: () => {
+          // Accumulate filters, apply deletion lazily when chain resolves
+          const deleteFilters: Array<{ field: string; value: any }> = [];
+          let applied = false;
+
+          function applyDelete() {
+            if (applied) return;
+            applied = true;
+            for (let i = rows.length - 1; i >= 0; i--) {
+              const matches =
+                deleteFilters.length === 0 ||
+                deleteFilters.every((f) => rows[i][f.field] === f.value);
+              if (matches) rows.splice(i, 1);
+            }
+          }
+
           const chain: any = new Proxy(
             {},
             {
               get(_t, p) {
                 if (p === "eq") {
                   return (field: string, value: any) => {
-
-                    // Remove ALL matching rows, not just the first
-                    for (let i = rows.length - 1; i >= 0; i--) {
-                      if (rows[i][field] === value) rows.splice(i, 1);
-                    }
+                    deleteFilters.push({ field, value });
                     return chain;
                   };
                 }
-                if (p === "then") return (resolve: any) => resolve({ ...ok, data: null, error: null });
+                if (p === "then") {
+                  applyDelete();
+                  return (resolve: any) =>
+                    resolve({ ...ok, data: null, error: null });
+                }
                 return (..._a: any[]) => chain;
               },
             },
