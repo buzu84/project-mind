@@ -4,21 +4,10 @@
  * Never throws — tracking failures are logged but don't break AI features.
  */
 import { createClient } from "@/lib/supabase/server";
+import { redactSecrets } from "@/lib/redact";
 import { calculateAICost } from "./pricing";
 import type { TrackAIUsageInput, AIUsageFeature, AIUsageSummary } from "./usage-types";
 
-/**
- * Sanitize error messages to avoid leaking API keys or raw provider secrets.
- */
-function sanitizeErrorMessage(err: unknown): string {
-  const raw = err instanceof Error ? err.message : String(err);
-  // Strip anything that looks like an API key (sk-..., key-..., Bearer ...)
-  return raw
-    .replace(/sk-[A-Za-z0-9_-]{10,}/g, "[REDACTED_KEY]")
-    .replace(/key-[A-Za-z0-9_-]{10,}/g, "[REDACTED_KEY]")
-    .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
-    .slice(0, 500);
-}
 
 /**
  * Record an AI usage event. Safe to call fire-and-forget.
@@ -89,7 +78,7 @@ export async function trackAIUsageError(input: {
     completionTokens: 0,
     isMock: input.isMock ?? false,
     status: "error",
-    errorMessage: sanitizeErrorMessage(input.error),
+    errorMessage: redactSecrets(input.error instanceof Error ? input.error.message : String(input.error)),
     latencyMs: input.latencyMs,
     metadata: input.metadata,
   });
