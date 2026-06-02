@@ -3,10 +3,10 @@ export default function RoadmapLoading() {
     <div className="mx-auto max-w-6xl animate-pulse space-y-6" role="status" aria-label="Loading roadmap">
       <span className="sr-only">Loading roadmap…</span>
       <div className="h-4 w-32 rounded bg-gray-200" />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="h-8 w-48 rounded bg-gray-200" />
-          <div className="mt-2 h-4 w-72 rounded bg-gray-200" />
+          <div className="mt-2 h-4 w-72 max-w-full rounded bg-gray-200" />
         </div>
         <div className="h-9 w-40 rounded-lg bg-gray-200" />
       </div>
