@@ -8,9 +8,38 @@ import { test, expect } from "@playwright/test";
  * - Mock DB (in-memory — no real Supabase)
  * - Mock AI (deterministic — no OpenAI calls)
  *
- * Goal: protect core navigation, auth bypass, and project CRUD.
+ * Goal: protect core navigation, auth bypass, project CRUD, and AI features.
  * Not a substitute for unit tests — these catch integration regressions.
  */
+
+/**
+ * Helper: create a project and navigate to its detail page.
+ * Returns the unique project name for downstream assertions.
+ */
+async function createProjectAndOpenDetail(
+  page: import("@playwright/test").Page,
+  prefix: string,
+): Promise<string> {
+  const projectName = `${prefix} ${Date.now()}`;
+
+  await page.goto("/projects");
+  await page.getByRole("button", { name: "New Project" }).click();
+  await page.getByLabel("Project Name *").fill(projectName);
+  await page.getByRole("button", { name: "Create Project" }).click();
+
+  // Wait for form to close
+  await expect(
+    page.getByRole("button", { name: "New Project" }),
+  ).toBeVisible({ timeout: 10_000 });
+
+  // Navigate to the project detail page
+  await page.getByRole("link", { name: projectName }).click();
+  await expect(
+    page.getByRole("heading", { name: projectName, level: 1 }),
+  ).toBeVisible();
+
+  return projectName;
+}
 
 test.describe("smoke tests", () => {
   test("homepage loads and shows app branding", async ({ page }) => {
@@ -69,6 +98,92 @@ test.describe("smoke tests", () => {
       page.getByRole("heading", { name: projectName, level: 1 }),
     ).toBeVisible();
   });
+
+  test("edit a project name and verify the update persists", async ({
+    page,
+  }) => {
+    const originalName = await createProjectAndOpenDetail(
+      page,
+      "E2E Edit Project",
+    );
+    const updatedName = `${originalName} Updated`;
+
+    // Click the edit link on the project detail page
+    await page.getByRole("link", { name: "Edit" }).click();
+
+    // Verify the edit page loaded
+    await expect(
+      page.getByRole("heading", { name: "Edit Project" }),
+    ).toBeVisible();
+
+    // Clear the name field and enter the updated name
+    await page.getByLabel("Project Name *").fill(updatedName);
+
+    // Submit the edit form
+    await page.getByRole("button", { name: "Save Changes" }).click();
+
+    // Wait for the success confirmation (role="status" contains "✓ Project saved successfully.")
+    await expect(page.getByText("Project saved successfully")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Navigate back to the project detail page
+    await page.getByRole("link", { name: /Back to/ }).click();
+
+    // Verify the project detail heading now shows the updated name
+    await expect(
+      page.getByRole("heading", { name: updatedName, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("add a feature and score it with mock AI", async ({ page }) => {
+    await createProjectAndOpenDetail(page, "E2E Feature Project");
+
+    const featureName = `E2E Feature ${Date.now()}`;
+    // Description must exceed FEATURE_DESC_MIN (20 chars)
+    const featureDesc =
+      "This is a detailed feature description for E2E testing of the AI scoring pipeline.";
+
+    // Navigate to the Feature Prioritizer from the project detail page
+    await page.getByRole("link", { name: "Feature Prioritizer" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Feature Ideas", level: 1 }),
+    ).toBeVisible();
+
+    // Open the add feature form.
+    // When no features exist, both the header and the empty-state card show
+    // an "Add Feature" button — both open the same form, so .first() is safe.
+    await page
+      .getByRole("button", { name: "Add Feature" })
+      .first()
+      .click();
+
+    // Fill the feature form
+    await page.getByLabel("Feature Name *").fill(featureName);
+    await page.getByLabel("Description *").fill(featureDesc);
+
+    // Submit via the form-scoped button (distinguishes from header button)
+    await page
+      .locator("form")
+      .getByRole("button", { name: "Add Feature" })
+      .click();
+
+    // Verify the feature appears in the list
+    await expect(page.getByText(featureName)).toBeVisible({ timeout: 10_000 });
+
+    // Before scoring, the feature should show "Not scored"
+    await expect(page.getByText("Not scored")).toBeVisible();
+
+    // Trigger AI scoring
+    await page.getByRole("button", { name: "AI Score All" }).click();
+
+    // Wait for scoring to complete — the button re-enables after the fetch cycle
+    await expect(
+      page.getByRole("button", { name: "AI Score All" }),
+    ).toBeEnabled({ timeout: 15_000 });
+
+    // After scoring, "Not scored" should no longer be visible — this proves
+    // the mock AI scored the feature and the UI re-rendered with real scores.
+    await expect(page.getByText("Not scored")).not.toBeVisible();
+  });
 });
-
-
