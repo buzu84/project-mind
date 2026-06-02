@@ -6,7 +6,7 @@ export default function FeaturesLoading() {
         <div className="h-4 w-24 rounded bg-gray-200" />
         <div className="h-9 w-28 rounded-lg bg-gray-200" />
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="h-8 w-48 rounded bg-gray-200" />
         <div className="flex gap-2">
           <div className="h-9 w-32 rounded-lg bg-gray-200" />

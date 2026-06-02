@@ -10,7 +10,7 @@ export default function ProjectsLoading() {
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-24 rounded-xl border border-gray-200 bg-white p-6">
             <div className="h-4 w-48 rounded bg-gray-200" />
-            <div className="mt-3 h-3 w-80 rounded bg-gray-200" />
+            <div className="mt-3 h-3 w-80 max-w-full rounded bg-gray-200" />
           </div>
         ))}
       </div>

@@ -3,9 +3,9 @@ export default function AnalysisDetailLoading() {
     <div className="mx-auto max-w-5xl animate-pulse space-y-6" role="status" aria-label="Loading analysis">
       <span className="sr-only">Loading analysis…</span>
       <div className="h-4 w-32 rounded bg-gray-200" />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="h-8 w-56 rounded bg-gray-200" />
+          <div className="h-8 w-56 max-w-full rounded bg-gray-200" />
           <div className="mt-2 h-4 w-40 rounded bg-gray-200" />
         </div>
         <div className="flex gap-2">
