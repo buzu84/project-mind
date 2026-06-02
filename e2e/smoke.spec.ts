@@ -136,6 +136,31 @@ test.describe("smoke tests", () => {
     ).toBeVisible();
   });
 
+  test("delete a project via confirm dialog and verify redirect", async ({
+    page,
+  }) => {
+    const projectName = await createProjectAndOpenDetail(
+      page,
+      "E2E Delete Project",
+    );
+
+    // Click the "Delete" button on the project detail page
+    await page.getByRole("button", { name: "Delete" }).click();
+
+    // The ConfirmDialog should open
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Confirm the deletion (scoped to dialog to avoid ambiguity)
+    await dialog.getByRole("button", { name: "Delete Project" }).click();
+
+    // After deletion, the server action redirects to /projects
+    await expect(page).toHaveURL(/\/projects\/?$/, { timeout: 10_000 });
+
+    // The deleted project should no longer appear in the list
+    await expect(page.getByText(projectName)).not.toBeVisible();
+  });
+
   test("add a feature and score it with mock AI", async ({ page }) => {
     await createProjectAndOpenDetail(page, "E2E Feature Project");
 
