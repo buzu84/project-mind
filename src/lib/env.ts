@@ -15,10 +15,12 @@ function requireEnv(name: string): string {
 
 let _validated = false;
 
-/** Validate all required env vars at startup (server-side only). */
+/**
+ * Validate all required env vars at startup (server-side only).
+ * Only caches after successful validation — a failed call can be retried.
+ */
 export function validateEnv() {
   if (_validated) return;
-  _validated = true;
 
   // During `next build`, static pages are generated with NODE_ENV=production
   // but the runtime env vars (SITE_URL etc.) may point to localhost.
@@ -70,4 +72,7 @@ export function validateEnv() {
       throw new Error("[ENV] USE_REAL_AI=false is not allowed in production.");
     }
   }
+
+  // Cache only after all checks pass
+  _validated = true;
 }

@@ -259,19 +259,25 @@ describe("validateEnv — validation cache", () => {
     expect(() => validateEnv()).not.toThrow();
   });
 
-  it("caches even after failure — second call is still a no-op", async () => {
-    // _validated = true is set BEFORE validation logic runs,
-    // so a thrown error still caches the "attempted" state.
+  it("does not cache after failure — retry succeeds once env is fixed", async () => {
+    // validateEnv should only cache successful validation.
+    // A failed call must leave _validated = false so a retry can pass.
     const { validateEnv } = await importValidateEnv({
       ...VALID_DEV_ENV,
       OPENAI_API_KEY: undefined,
     });
 
-    // First call throws — but _validated is already true
+    // First call throws — missing OPENAI_API_KEY
     expect(() => validateEnv()).toThrow(/OPENAI_API_KEY/);
 
-    // Fix the env var — but second call returns early (cached)
+    // Fix the env var in the same module instance
     process.env.OPENAI_API_KEY = "sk-fixed";
+
+    // Second call re-validates and succeeds
+    expect(() => validateEnv()).not.toThrow();
+
+    // Third call is now cached — removing the key again has no effect
+    delete process.env.OPENAI_API_KEY;
     expect(() => validateEnv()).not.toThrow();
   });
 
