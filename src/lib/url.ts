@@ -12,9 +12,13 @@ export function getSiteUrl(): string {
     return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, "");
   }
 
-  // Vercel preview deployments
+  // Vercel preview deployments — strip any accidental protocol prefix and
+  // trailing slashes so the result is always a clean https:// URL.
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    const bare = process.env.NEXT_PUBLIC_VERCEL_URL
+      .replace(/^https?:\/\//, "")
+      .replace(/\/+$/, "");
+    return `https://${bare}`;
   }
 
   // Local development fallback
