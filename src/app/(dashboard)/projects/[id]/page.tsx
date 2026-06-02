@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { JsonLd } from "@/components/json-ld";
 import { createBreadcrumbJsonLd } from "@/lib/structured-data";
 import { DeleteProjectButton } from "./delete-button";
@@ -223,11 +222,12 @@ export default async function ProjectDetailPage({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Link href={`/projects/${project.id}/edit`}>
-            <Button variant="secondary" size="sm" className="gap-1.5">
-              <IconSettings className="h-3.5 w-3.5" />
-              Edit
-            </Button>
+          <Link
+            href={`/projects/${project.id}/edit`}
+            className="inline-flex items-center justify-center gap-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus-visible:ring-gray-400 h-8 px-3 text-xs rounded-md"
+          >
+            <IconSettings className="h-3.5 w-3.5" />
+            Edit
           </Link>
           <DeleteProjectButton projectId={project.id} projectName={project.name} />
         </div>
@@ -277,11 +277,12 @@ export default async function ProjectDetailPage({
       <div className="mt-10">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-gray-900">Recent Decisions</h3>
-          <Link href={`/projects/${project.id}/decisions`}>
-            <Button variant="ghost" size="sm" className="gap-1 text-brand-600">
-              View all
-              <IconChevronRight className="h-3.5 w-3.5" />
-            </Button>
+          <Link
+            href={`/projects/${project.id}/decisions`}
+            className="inline-flex items-center justify-center gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 text-brand-600 hover:bg-gray-100 focus-visible:ring-gray-400 h-8 px-3 text-xs rounded-md"
+          >
+            View all
+            <IconChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         {!productDecisions || productDecisions.length === 0 ? (
