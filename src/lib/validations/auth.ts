@@ -3,4 +3,3 @@
 // Keep simple — auth forms should not be noisy.
 
 export const AUTH_PASSWORD_MIN = 6;
-

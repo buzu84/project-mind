@@ -19,7 +19,6 @@ import {
 } from "@/lib/validations/project";
 import type { ActionResult } from "@/lib/validations/project";
 
-
 const initialState: ActionResult = { success: false, error: undefined, fieldErrors: {} };
 
 function SubmitButton({ label, formDisabled }: { label: string; formDisabled?: boolean }) {
@@ -97,8 +96,7 @@ export function ProjectForm({
     }
   }, [safeState, resetOnSuccess]);
 
-  const fieldError = (field: string) =>
-    safeState.fieldErrors?.[field]?.[0] ?? undefined;
+  const fieldError = (field: string) => safeState.fieldErrors?.[field]?.[0] ?? undefined;
 
   function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
     const val = e.target.value.trim();
@@ -123,13 +121,21 @@ export function ProjectForm({
   return (
     <form ref={formRef} action={formAction} noValidate className="space-y-5">
       {safeState.error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {safeState.error}
         </div>
       )}
 
       {showSuccess && (
-        <div ref={successRef} tabIndex={-1} className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 animate-in fade-in duration-300 focus:outline-none" role="status">
+        <div
+          ref={successRef}
+          tabIndex={-1}
+          className="animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 duration-300 focus:outline-none"
+          role="status"
+        >
           ✓ Project saved successfully.
         </div>
       )}
@@ -175,9 +181,7 @@ export function ProjectForm({
           <p className="text-xs text-gray-400">Add enough context for better AI output.</p>
           <CharacterCounter current={descriptionValue.length} max={PROJECT_DESC_MAX} />
         </div>
-        {descriptionWarning && (
-          <p className="mt-1 text-xs text-amber-600">{descriptionWarning}</p>
-        )}
+        {descriptionWarning && <p className="mt-1 text-xs text-amber-600">{descriptionWarning}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

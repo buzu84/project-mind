@@ -28,7 +28,14 @@ export function MobileNav({ user }: MobileNavProps) {
         className="fixed left-3 top-4 z-40 rounded-lg border border-gray-200 bg-white p-2 shadow-sm"
         aria-label="Open navigation menu"
       >
-        <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+        <svg
+          className="h-5 w-5 text-gray-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -36,7 +43,11 @@ export function MobileNav({ user }: MobileNavProps) {
       {/* Overlay + Sidebar drawer */}
       {open && (
         <div role="dialog" aria-modal="true" aria-label="Navigation menu">
-          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
           <div className="fixed inset-y-0 left-0 z-50 w-64">
             <div onClick={() => setOpen(false)}>
               <Sidebar user={user} />

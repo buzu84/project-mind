@@ -39,4 +39,3 @@ export async function copyMarkdownToClipboard(markdown: string): Promise<boolean
     }
   }
 }
-

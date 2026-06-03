@@ -15,11 +15,7 @@ function makeValidReview(overrides?: Partial<DecisionReviewOutput>): DecisionRev
         evidenceStatus: "moderate",
       },
     ],
-    options: [
-      makeOption("Option A"),
-      makeOption("Option B"),
-      makeOption("Option C"),
-    ],
+    options: [makeOption("Option A"), makeOption("Option B"), makeOption("Option C")],
     risks: [
       {
         title: "Market risk",
@@ -73,33 +69,41 @@ describe("decisionReviewOutputSchema — valid inputs", () => {
   it("accepts minimal valid fixture (only required fields, no optionals)", () => {
     // Explicitly omit all optional fields to confirm the minimal shape passes
     const review = makeValidReview({
-      assumptions: [{
-        statement: "Users will adopt the feature within 3 months",
-        type: "user",
-        riskLevel: "medium",
-        evidenceStatus: "moderate",
-        // validationMethod: omitted
-        // supportingCitationIds: omitted
-      }],
-      options: [{
-        title: "Option AA",
-        description: "Description here.",
-        pros: ["Pro"],
-        cons: ["Con"],
-        risks: [],
-        effortEstimate: "medium",
-        reversibility: "high",
-        confidenceScore: 60,
-        // expectedImpact: omitted
-        // supportingCitationIds: omitted
-      }, makeOption("Option BB"), makeOption("Option CC")],
-      risks: [{
-        title: "Risk AA",
-        description: "Some risk description.",
-        severity: "low",
-        // mitigation: omitted
-        // supportingCitationIds: omitted
-      }],
+      assumptions: [
+        {
+          statement: "Users will adopt the feature within 3 months",
+          type: "user",
+          riskLevel: "medium",
+          evidenceStatus: "moderate",
+          // validationMethod: omitted
+          // supportingCitationIds: omitted
+        },
+      ],
+      options: [
+        {
+          title: "Option AA",
+          description: "Description here.",
+          pros: ["Pro"],
+          cons: ["Con"],
+          risks: [],
+          effortEstimate: "medium",
+          reversibility: "high",
+          confidenceScore: 60,
+          // expectedImpact: omitted
+          // supportingCitationIds: omitted
+        },
+        makeOption("Option BB"),
+        makeOption("Option CC"),
+      ],
+      risks: [
+        {
+          title: "Risk AA",
+          description: "Some risk description.",
+          severity: "low",
+          // mitigation: omitted
+          // supportingCitationIds: omitted
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(review).success).toBe(true);
   });
@@ -123,27 +127,33 @@ describe("decisionReviewOutputSchema — valid inputs", () => {
 
   it("accepts 4 options (max boundary)", () => {
     const review = makeValidReview({
-      options: [
-        makeOption("Op AA"),
-        makeOption("Op BB"),
-        makeOption("Op CC"),
-        makeOption("Op DD"),
-      ],
+      options: [makeOption("Op AA"), makeOption("Op BB"), makeOption("Op CC"), makeOption("Op DD")],
     });
     const result = decisionReviewOutputSchema.safeParse(review);
     expect(result.success).toBe(true);
   });
 
   it("accepts all assumption type enum values", () => {
-    const types = ["market", "user", "technical", "growth", "pricing", "ux", "business", "other"] as const;
+    const types = [
+      "market",
+      "user",
+      "technical",
+      "growth",
+      "pricing",
+      "ux",
+      "business",
+      "other",
+    ] as const;
     for (const type of types) {
       const review = makeValidReview({
-        assumptions: [{
-          statement: "Some assumption statement here",
-          type,
-          riskLevel: "low",
-          evidenceStatus: "weak",
-        }],
+        assumptions: [
+          {
+            statement: "Some assumption statement here",
+            type,
+            riskLevel: "low",
+            evidenceStatus: "weak",
+          },
+        ],
       });
       expect(decisionReviewOutputSchema.safeParse(review).success).toBe(true);
     }
@@ -163,8 +173,12 @@ describe("decisionReviewOutputSchema — valid inputs", () => {
   });
 
   it("accepts confidenceScore at boundaries (0 and 100)", () => {
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: 0 })).success).toBe(true);
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: 100 })).success).toBe(true);
+    expect(
+      decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: 0 })).success,
+    ).toBe(true);
+    expect(
+      decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: 100 })).success,
+    ).toBe(true);
   });
 
   it("accepts empty option description (schema has no min-length)", () => {
@@ -228,36 +242,42 @@ describe("decisionReviewOutputSchema — missing required fields", () => {
 describe("decisionReviewOutputSchema — invalid enums", () => {
   it("rejects invalid assumption type", () => {
     const input = makeUntypedReview({
-      assumptions: [{
-        statement: "Some assumption about the product",
-        type: "legal", // not in enum — normalizer would fix this, schema must reject
-        riskLevel: "low",
-        evidenceStatus: "weak",
-      }],
+      assumptions: [
+        {
+          statement: "Some assumption about the product",
+          type: "legal", // not in enum — normalizer would fix this, schema must reject
+          riskLevel: "low",
+          evidenceStatus: "weak",
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(input).success).toBe(false);
   });
 
   it("rejects invalid riskLevel", () => {
     const input = makeUntypedReview({
-      assumptions: [{
-        statement: "Some assumption about the product",
-        type: "market",
-        riskLevel: "critical",
-        evidenceStatus: "weak",
-      }],
+      assumptions: [
+        {
+          statement: "Some assumption about the product",
+          type: "market",
+          riskLevel: "critical",
+          evidenceStatus: "weak",
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(input).success).toBe(false);
   });
 
   it("rejects invalid evidenceStatus", () => {
     const input = makeUntypedReview({
-      assumptions: [{
-        statement: "Some assumption about the product",
-        type: "market",
-        riskLevel: "low",
-        evidenceStatus: "proven",
-      }],
+      assumptions: [
+        {
+          statement: "Some assumption about the product",
+          type: "market",
+          riskLevel: "low",
+          evidenceStatus: "proven",
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(input).success).toBe(false);
   });
@@ -286,11 +306,13 @@ describe("decisionReviewOutputSchema — invalid enums", () => {
 
   it("rejects invalid risk severity", () => {
     const input = makeUntypedReview({
-      risks: [{
-        title: "Some risk",
-        description: "Risk description goes here.",
-        severity: "catastrophic",
-      }],
+      risks: [
+        {
+          title: "Some risk",
+          description: "Risk description goes here.",
+          severity: "catastrophic",
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(input).success).toBe(false);
   });
@@ -300,11 +322,15 @@ describe("decisionReviewOutputSchema — invalid enums", () => {
 
 describe("decisionReviewOutputSchema — confidence score", () => {
   it("rejects confidenceScore below 0", () => {
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: -1 })).success).toBe(false);
+    expect(
+      decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: -1 })).success,
+    ).toBe(false);
   });
 
   it("rejects confidenceScore above 100", () => {
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: 101 })).success).toBe(false);
+    expect(
+      decisionReviewOutputSchema.safeParse(makeValidReview({ confidenceScore: 101 })).success,
+    ).toBe(false);
   });
 
   it("rejects confidenceScore as string (schema does not coerce)", () => {
@@ -344,25 +370,39 @@ describe("decisionReviewOutputSchema — confidence score", () => {
 
 describe("decisionReviewOutputSchema — array constraints", () => {
   it("rejects empty assumptions array", () => {
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ assumptions: [] })).success).toBe(false);
+    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ assumptions: [] })).success).toBe(
+      false,
+    );
   });
 
   it("rejects fewer than 3 options", () => {
-    expect(decisionReviewOutputSchema.safeParse(
-      makeValidReview({ options: [makeOption("Op AA"), makeOption("Op BB")] }),
-    ).success).toBe(false);
+    expect(
+      decisionReviewOutputSchema.safeParse(
+        makeValidReview({ options: [makeOption("Op AA"), makeOption("Op BB")] }),
+      ).success,
+    ).toBe(false);
   });
 
   it("rejects more than 4 options", () => {
-    expect(decisionReviewOutputSchema.safeParse(
-      makeValidReview({
-        options: [makeOption("Op AA"), makeOption("Op BB"), makeOption("Op CC"), makeOption("Op DD"), makeOption("Op EE")],
-      }),
-    ).success).toBe(false);
+    expect(
+      decisionReviewOutputSchema.safeParse(
+        makeValidReview({
+          options: [
+            makeOption("Op AA"),
+            makeOption("Op BB"),
+            makeOption("Op CC"),
+            makeOption("Op DD"),
+            makeOption("Op EE"),
+          ],
+        }),
+      ).success,
+    ).toBe(false);
   });
 
   it("rejects empty risks array", () => {
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ risks: [] })).success).toBe(false);
+    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ risks: [] })).success).toBe(
+      false,
+    );
   });
 
   it("rejects option with empty pros", () => {
@@ -398,17 +438,21 @@ describe("decisionReviewOutputSchema — array constraints", () => {
 
 describe("decisionReviewOutputSchema — string constraints", () => {
   it("rejects summary shorter than 10 chars", () => {
-    expect(decisionReviewOutputSchema.safeParse(makeValidReview({ summary: "Short" })).success).toBe(false);
+    expect(
+      decisionReviewOutputSchema.safeParse(makeValidReview({ summary: "Short" })).success,
+    ).toBe(false);
   });
 
   it("rejects assumption statement shorter than 5 chars", () => {
     const review = makeValidReview({
-      assumptions: [{
-        statement: "Hi",
-        type: "market",
-        riskLevel: "low",
-        evidenceStatus: "weak",
-      }],
+      assumptions: [
+        {
+          statement: "Hi",
+          type: "market",
+          riskLevel: "low",
+          evidenceStatus: "weak",
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(review).success).toBe(false);
   });
@@ -558,14 +602,15 @@ describe("normalizer → schema boundary", () => {
 
   it("schema rejects non-canonical enum alias (normalizer maps)", () => {
     const input = makeUntypedReview({
-      assumptions: [{
-        statement: "Legal compliance is required for launch",
-        type: "legal", // normalizer maps to "business"
-        riskLevel: "low",
-        evidenceStatus: "weak",
-      }],
+      assumptions: [
+        {
+          statement: "Legal compliance is required for launch",
+          type: "legal", // normalizer maps to "business"
+          riskLevel: "low",
+          evidenceStatus: "weak",
+        },
+      ],
     });
     expect(decisionReviewOutputSchema.safeParse(input).success).toBe(false);
   });
 });
-

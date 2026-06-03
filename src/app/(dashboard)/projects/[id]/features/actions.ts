@@ -24,7 +24,10 @@ export async function createFeatureIdea(
     });
 
     if (!parsed.success) {
-      return { success: false, fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+      return {
+        success: false,
+        fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      };
     }
 
     const supabase = createClient();
@@ -74,7 +77,10 @@ export async function updateFeatureIdea(
 
     const parsed = featureSchema.safeParse(data);
     if (!parsed.success) {
-      return { success: false, fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+      return {
+        success: false,
+        fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      };
     }
 
     const supabase = createClient();

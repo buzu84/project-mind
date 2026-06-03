@@ -6,9 +6,7 @@
  * before React's own rAF-based cleanup, causing focus to target a
  * node that is about to be removed.
  */
-export function focusAfterPaint(
-  getElement: () => HTMLElement | null | undefined,
-): void {
+export function focusAfterPaint(getElement: () => HTMLElement | null | undefined): void {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       const el = getElement();
@@ -23,11 +21,6 @@ export function focusAfterPaint(
  * Try to focus the first element from a priority-ordered list of
  * candidates. Useful for post-delete fallback focus.
  */
-export function focusFirstAvailable(
-  ...candidates: Array<HTMLElement | null | undefined>
-): void {
-  focusAfterPaint(() =>
-    candidates.find((el) => el && el.isConnected) ?? null,
-  );
+export function focusFirstAvailable(...candidates: Array<HTMLElement | null | undefined>): void {
+  focusAfterPaint(() => candidates.find((el) => el && el.isConnected) ?? null);
 }
-

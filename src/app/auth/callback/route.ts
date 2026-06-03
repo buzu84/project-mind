@@ -13,11 +13,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as
-    | "recovery"
-    | "email"
-    | "signup"
-    | null;
+  const type = searchParams.get("type") as "recovery" | "email" | "signup" | null;
   const next = searchParams.get("next") ?? "/dashboard";
   const errorParam = searchParams.get("error");
 
@@ -26,9 +22,7 @@ export async function GET(request: Request) {
 
   // Handle error passed as query param (some Supabase flows)
   if (errorParam) {
-    return NextResponse.redirect(
-      `${origin}/sign-in?error=auth_callback_error`,
-    );
+    return NextResponse.redirect(`${origin}/sign-in?error=auth_callback_error`);
   }
 
   const cookieStore = cookies();
@@ -62,9 +56,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${next}`);
     }
     // Email may still have been confirmed server-side by Supabase
-    return NextResponse.redirect(
-      `${origin}/sign-in?confirmed=true`,
-    );
+    return NextResponse.redirect(`${origin}/sign-in?confirmed=true`);
   }
 
   // Handle email link tokens (password reset, email confirmation)
@@ -87,14 +79,10 @@ export async function GET(request: Request) {
 
     // Token may be expired or already used
     if (type === "signup" || type === "email") {
-      return NextResponse.redirect(
-        `${origin}/sign-in?confirmed=true`,
-      );
+      return NextResponse.redirect(`${origin}/sign-in?confirmed=true`);
     }
     if (type === "recovery") {
-      return NextResponse.redirect(
-        `${origin}/forgot-password?error=expired_link`,
-      );
+      return NextResponse.redirect(`${origin}/forgot-password?error=expired_link`);
     }
   }
 

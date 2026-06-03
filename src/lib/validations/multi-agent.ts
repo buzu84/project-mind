@@ -15,8 +15,14 @@ export const multiAgentSchema = z.object({
   question: z
     .string()
     .trim()
-    .min(MULTI_AGENT_QUESTION_MIN, `Question must be at least ${MULTI_AGENT_QUESTION_MIN} characters.`)
-    .max(MULTI_AGENT_QUESTION_MAX, `Question must be under ${MULTI_AGENT_QUESTION_MAX} characters.`),
+    .min(
+      MULTI_AGENT_QUESTION_MIN,
+      `Question must be at least ${MULTI_AGENT_QUESTION_MIN} characters.`,
+    )
+    .max(
+      MULTI_AGENT_QUESTION_MAX,
+      `Question must be under ${MULTI_AGENT_QUESTION_MAX} characters.`,
+    ),
   inputType: z.enum(["product_question", "feature_idea"]),
   includeContext: z.boolean().optional().default(true),
   includeRag: z.boolean().optional().default(true),
@@ -24,4 +30,3 @@ export const multiAgentSchema = z.object({
 });
 
 export type MultiAgentFormData = z.infer<typeof multiAgentSchema>;
-

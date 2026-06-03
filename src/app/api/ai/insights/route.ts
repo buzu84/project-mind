@@ -118,24 +118,25 @@ async function saveAndRespond(
   const verifyRows = insertedRows;
 
   // Build response — use DB IDs if available, otherwise synthetic
-  const responseInsights = verifyRows && verifyRows.length > 0
-    ? verifyRows.map((v: any, i: number) => {
-        const n = normalized[i] ?? normalized[0];
-        return {
-          id: v.id,
-          project_id: projectId,
-          type: n.type,
-          title: v.title,
-          content: n.content,
-          metadata: n.metadata,
-          created_at: v.created_at ?? new Date().toISOString(),
-        };
-      })
-    : rows.map((r, i) => ({
-        id: `${idPrefix}-${i}`,
-        ...r,
-        created_at: new Date().toISOString(),
-      }));
+  const responseInsights =
+    verifyRows && verifyRows.length > 0
+      ? verifyRows.map((v: any, i: number) => {
+          const n = normalized[i] ?? normalized[0];
+          return {
+            id: v.id,
+            project_id: projectId,
+            type: n.type,
+            title: v.title,
+            content: n.content,
+            metadata: n.metadata,
+            created_at: v.created_at ?? new Date().toISOString(),
+          };
+        })
+      : rows.map((r, i) => ({
+          id: `${idPrefix}-${i}`,
+          ...r,
+          created_at: new Date().toISOString(),
+        }));
 
   return responseInsights;
 }
@@ -164,7 +165,9 @@ export async function POST(req: Request) {
       .single(),
     supabase
       .from("project_context")
-      .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
+      .select(
+        "product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions",
+      )
       .eq("project_id", projectId)
       .maybeSingle(),
     supabase
@@ -178,16 +181,21 @@ export async function POST(req: Request) {
   if (!projectRes.data) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   // Build a brief feedback summary (truncated for prompt efficiency)
-  const feedbackDocs = (feedbackRes.data ?? []) as Array<{ title: string; content: string; source: string | null }>;
-  const feedbackSummary = feedbackDocs.length > 0
-    ? feedbackDocs
-        .map((d) => {
-          const src = d.source ? ` [${d.source.replace(/_/g, " ")}]` : "";
-          const content = d.content.length > 500 ? d.content.slice(0, 500) + "..." : d.content;
-          return d.title + src + ": " + content;
-        })
-        .join("\n\n")
-    : null;
+  const feedbackDocs = (feedbackRes.data ?? []) as Array<{
+    title: string;
+    content: string;
+    source: string | null;
+  }>;
+  const feedbackSummary =
+    feedbackDocs.length > 0
+      ? feedbackDocs
+          .map((d) => {
+            const src = d.source ? ` [${d.source.replace(/_/g, " ")}]` : "";
+            const content = d.content.length > 500 ? d.content.slice(0, 500) + "..." : d.content;
+            return d.title + src + ": " + content;
+          })
+          .join("\n\n")
+      : null;
 
   const projectContext = buildContextForInsights(
     projectRes.data as Record<string, string | null>,
@@ -241,7 +249,10 @@ export async function POST(req: Request) {
       model: "gpt-4o",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: "Analyze this project and generate strategic insights:\n\n" + projectContext },
+        {
+          role: "user",
+          content: "Analyze this project and generate strategic insights:\n\n" + projectContext,
+        },
       ],
       temperature: 0.7,
       max_tokens: 4096,

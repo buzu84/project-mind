@@ -16,11 +16,11 @@ How authentication and session management work in ProductMind.
 
 ## Client Libraries
 
-| File | Purpose | When to use |
-|---|---|---|
-| `src/lib/supabase/server.ts` | Server-side client (reads cookies); also provides service-role client for admin operations | API routes, server components, server actions |
-| `src/lib/supabase/client.ts` | Browser-side client | Client components (auth forms, auth state sync) |
-| `src/lib/auth/server.ts` | `getCurrentUser()` / `requireCurrentUser()` | All API routes and server components |
+| File                         | Purpose                                                                                    | When to use                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `src/lib/supabase/server.ts` | Server-side client (reads cookies); also provides service-role client for admin operations | API routes, server components, server actions   |
+| `src/lib/supabase/client.ts` | Browser-side client                                                                        | Client components (auth forms, auth state sync) |
+| `src/lib/auth/server.ts`     | `getCurrentUser()` / `requireCurrentUser()`                                                | All API routes and server components            |
 
 ---
 
@@ -58,12 +58,12 @@ How authentication and session management work in ProductMind.
 
 Central redirect handler for all Supabase auth flows:
 
-| Parameter | Flow | Action |
-|---|---|---|
-| `code` | PKCE / OAuth | Exchange code for session → redirect to `next` param or `/dashboard` |
-| `token_hash` + `type=signup` | Email confirmation | Verify OTP → redirect to dashboard or sign-in |
-| `token_hash` + `type=recovery` | Password reset | Verify OTP → redirect to `/reset-password` |
-| `error` | Any failed flow | Redirect to `/sign-in?error=auth_callback_error` |
+| Parameter                      | Flow               | Action                                                               |
+| ------------------------------ | ------------------ | -------------------------------------------------------------------- |
+| `code`                         | PKCE / OAuth       | Exchange code for session → redirect to `next` param or `/dashboard` |
+| `token_hash` + `type=signup`   | Email confirmation | Verify OTP → redirect to dashboard or sign-in                        |
+| `token_hash` + `type=recovery` | Password reset     | Verify OTP → redirect to `/reset-password`                           |
+| `error`                        | Any failed flow    | Redirect to `/sign-in?error=auth_callback_error`                     |
 
 All redirects use `getSiteUrl()` from `src/lib/url.ts` to ensure they go to the correct origin (never `localhost` in production).
 
@@ -78,6 +78,7 @@ Client calls `supabase.auth.signOut()` → cookies are cleared → redirect to `
 ## Development Mock Auth
 
 When `USE_MOCK_AUTH=true`:
+
 - `getCurrentUser()` returns `DEV_USER` (hardcoded in `src/lib/auth/constants.ts`) without any Supabase call
 - No session cookie is needed
 - All API routes work without a running Supabase instance
@@ -88,6 +89,7 @@ When `USE_MOCK_AUTH=true`:
 ## Account Deletion
 
 `POST /api/account/delete`:
+
 1. Authenticate via session cookie (server client)
 2. Get all user's project IDs
 3. Delete all child records across ~15 tables in dependency order (using admin/service-role client to bypass RLS)
@@ -106,4 +108,3 @@ Requires `SUPABASE_SERVICE_ROLE_KEY` env var.
 - RLS policies enforce data isolation at the database level as a second layer
 - Application code adds a third layer with explicit `user_id` filters on every query
 - The `ADMIN_EMAILS` env var is server-only and only used for rate limit bypass
-

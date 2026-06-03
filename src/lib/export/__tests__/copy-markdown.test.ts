@@ -59,7 +59,7 @@ describe("stripMarkdownFence — no-fence passthrough", () => {
 
 describe("stripMarkdownFence — unsupported language tags", () => {
   it("does not strip ```json fence", () => {
-    const input = "```json\n{\"key\": \"value\"}\n```";
+    const input = '```json\n{"key": "value"}\n```';
     // The regex only matches markdown/md/bare — json should pass through
     expect(stripMarkdownFence(input)).toBe(input);
   });
@@ -123,4 +123,3 @@ describe("stripMarkdownFence — empty content", () => {
     expect(stripMarkdownFence(input)).toBe("");
   });
 });
-

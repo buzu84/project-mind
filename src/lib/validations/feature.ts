@@ -23,8 +23,10 @@ export const featureSchema = z.object({
     .string()
     .trim()
     .min(FEATURE_DESC_MIN, FEATURE_DESC_QUALITY_HELPER)
-    .max(FEATURE_DESC_MAX, `Description must be under ${FEATURE_DESC_MAX.toLocaleString()} characters.`),
+    .max(
+      FEATURE_DESC_MAX,
+      `Description must be under ${FEATURE_DESC_MAX.toLocaleString()} characters.`,
+    ),
 });
 
 export type FeatureFormData = z.infer<typeof featureSchema>;
-

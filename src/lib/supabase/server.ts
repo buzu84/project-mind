@@ -13,10 +13,7 @@ const publishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   "";
-const secretKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-  process.env.SUPABASE_SECRET_KEY ??
-  "";
+const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY ?? "";
 
 const hasRealCredentials =
   !!supabaseUrl &&
@@ -37,13 +34,10 @@ export function createClient() {
   // Runtime production guard (not at module level — build would fail)
   if (!_productionGuardChecked) {
     _productionGuardChecked = true;
-    if (
-      process.env.NODE_ENV === "production" &&
-      process.env.USE_MOCK_AUTH === "true"
-    ) {
+    if (process.env.NODE_ENV === "production" && process.env.USE_MOCK_AUTH === "true") {
       throw new Error(
         "[FATAL] USE_MOCK_AUTH=true is not allowed in production. " +
-        "Remove it from your environment variables.",
+          "Remove it from your environment variables.",
       );
     }
   }
@@ -61,7 +55,9 @@ export function createClient() {
     // - All user_id filtering is done explicitly in queries
     if (isDevMode() && hasSecretKey) {
       if (!_loggedOnce) {
-        console.log("[supabase] DEV MODE: Using admin client (service role) — RLS bypassed server-side only");
+        console.log(
+          "[supabase] DEV MODE: Using admin client (service role) — RLS bypassed server-side only",
+        );
         _loggedOnce = true;
       }
       return createSupabaseClient(supabaseUrl, secretKey) as any;
@@ -123,9 +119,7 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
 
     function applyFilters(data: any) {
       if (!Array.isArray(data) || filters.length === 0) return data;
-      return data.filter((row: any) =>
-        filters.every((f) => row[f.field] === f.value),
-      );
+      return data.filter((row: any) => filters.every((f) => row[f.field] === f.value));
     }
 
     function applyOrdering(data: any) {
@@ -218,8 +212,7 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
             applied = true;
             for (const row of rows) {
               const matches =
-                updateFilters.length === 0 ||
-                updateFilters.every((f) => row[f.field] === f.value);
+                updateFilters.length === 0 || updateFilters.every((f) => row[f.field] === f.value);
               if (matches) {
                 Object.assign(row, payload, {
                   updated_at: new Date().toISOString(),
@@ -250,8 +243,7 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
                 }
                 if (p === "then") {
                   applyUpdate();
-                  return (resolve: any) =>
-                    resolve({ ...ok, data: updatedRows, error: null });
+                  return (resolve: any) => resolve({ ...ok, data: updatedRows, error: null });
                 }
                 if (p === "single" || p === "maybeSingle") {
                   applyUpdate();
@@ -297,8 +289,7 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
                 }
                 if (p === "then") {
                   applyDelete();
-                  return (resolve: any) =>
-                    resolve({ ...ok, data: null, error: null });
+                  return (resolve: any) => resolve({ ...ok, data: null, error: null });
                 }
                 return (..._a: any[]) => chain;
               },
@@ -339,13 +330,19 @@ function createMockSupabaseClient(): ReturnType<typeof createServerClient> {
     auth: {
       getUser: () => Promise.resolve(emptyUserResult),
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
-      signInWithOAuth: () => Promise.resolve({ data: { provider: "", url: "" }, error: { message: "Supabase not configured" } }),
+      signInWithPassword: () =>
+        Promise.resolve({
+          data: { user: null, session: null },
+          error: { message: "Supabase not configured" },
+        }),
+      signInWithOAuth: () =>
+        Promise.resolve({
+          data: { provider: "", url: "" },
+          error: { message: "Supabase not configured" },
+        }),
       signOut: () => Promise.resolve({ error: null }),
     },
     rpc: () => Promise.resolve({ ...ok, data: null }),
     storage: { from: () => ({}) },
   } as any;
 }
-
-

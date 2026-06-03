@@ -42,11 +42,12 @@ export function generateMockFeatureScores(
 
     const reach = pick(seed, 3, 9);
     const impact = pick(hash(f.name + "i"), 3, 9);
-    const confidence = descLen > 60 ? pick(hash(f.name + "c"), 5, 9) : pick(hash(f.name + "c"), 3, 6);
+    const confidence =
+      descLen > 60 ? pick(hash(f.name + "c"), 5, 9) : pick(hash(f.name + "c"), 3, 6);
     const effort = pick(hash(f.name + "e"), 2, 8);
     const rice_score = Math.round(((reach * impact * confidence) / effort) * 100) / 100;
     const ease = 11 - effort;
-    const ice_score = Math.round((impact * confidence * ease) * 100) / 100;
+    const ice_score = Math.round(impact * confidence * ease * 100) / 100;
 
     const ai_commentary = [
       `Reach (${reach}/10): "${f.name}" could affect a moderate-to-large portion of the user base based on its scope.`,
@@ -56,7 +57,15 @@ export function generateMockFeatureScores(
       `Overall: RICE ${rice_score} | ICE ${ice_score} — ${rice_score > 30 ? "High priority candidate." : rice_score > 15 ? "Worth considering for next cycle." : "Lower priority relative to alternatives."}`,
     ].join("\n");
 
-    return { name: f.name, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary };
+    return {
+      name: f.name,
+      reach,
+      impact,
+      confidence,
+      effort,
+      rice_score,
+      ice_score,
+      ai_commentary,
+    };
   });
 }
-

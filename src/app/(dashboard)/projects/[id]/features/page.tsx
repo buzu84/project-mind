@@ -8,11 +8,7 @@ import type { Tables } from "@/lib/supabase/types";
 
 export type FeatureIdea = Tables<"feature_ideas">;
 
-export default async function FeaturesPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function FeaturesPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -29,7 +25,9 @@ export default async function FeaturesPage({
 
   const { data: features, error: featErr } = await supabase
     .from("feature_ideas")
-    .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at")
+    .select(
+      "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at",
+    )
     .eq("project_id", project.id)
     .order("rice_score", { ascending: false });
 
@@ -37,12 +35,11 @@ export default async function FeaturesPage({
     console.error("[features] Query failed:", featErr.message, featErr.code, featErr.details);
   }
 
-
   return (
     <div className="mx-auto max-w-5xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}

@@ -45,7 +45,9 @@ export default function AnalysisPage() {
   const [industryTouched, setIndustryTouched] = useState(false);
 
   const productNameError =
-    productNameTouched && productName.trim().length > 0 && productName.trim().length < ANALYSIS_PRODUCT_NAME_MIN
+    productNameTouched &&
+    productName.trim().length > 0 &&
+    productName.trim().length < ANALYSIS_PRODUCT_NAME_MIN
       ? `Product name must be at least ${ANALYSIS_PRODUCT_NAME_MIN} characters.`
       : productNameTouched && productName.trim().length === 0
         ? "Product name is required."
@@ -64,7 +66,7 @@ export default function AnalysisPage() {
 
   useEffect(() => {
     fetch(`/api/decisions?projectId=${params.id}&type=COMPETITIVE_ANALYSIS`)
-      .then((r) => r.ok ? r.json() : { decisions: [] })
+      .then((r) => (r.ok ? r.json() : { decisions: [] }))
       .then((d) => setRecentAnalyses(d.decisions ?? []))
       .catch(() => {});
   }, [params.id]);
@@ -90,7 +92,10 @@ export default function AnalysisPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : getFriendlyErrorMessage(data.error));
+      if (!res.ok)
+        throw new Error(
+          typeof data.error === "string" ? data.error : getFriendlyErrorMessage(data.error),
+        );
 
       if (data.id) {
         toast("Competitive analysis generated!");
@@ -109,16 +114,14 @@ export default function AnalysisPage() {
     <div className="mx-auto max-w-3xl">
       <Link
         href={`/projects/${params.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         ← Back to Project
       </Link>
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">🔍 Competitive Analysis</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Get AI-powered competitive landscape insights.
-        </p>
+        <p className="mt-1 text-sm text-gray-500">Get AI-powered competitive landscape insights.</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -165,7 +168,10 @@ export default function AnalysisPage() {
       </form>
 
       {error && (
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -176,16 +182,14 @@ export default function AnalysisPage() {
           <div className="space-y-2">
             {recentAnalyses.map((a) => (
               <Link key={a.id} href={`/projects/${params.id}/analysis/${a.id}`}>
-                <Card className="flex items-center justify-between py-3 cursor-pointer hover:border-gray-300 hover:shadow-sm transition">
+                <Card className="flex cursor-pointer items-center justify-between py-3 transition hover:border-gray-300 hover:shadow-sm">
                   <div className="flex items-center gap-2">
                     <Badge variant="warning">Analysis</Badge>
                     <span className="text-sm font-medium text-gray-700">
                       {parseDecisionInputTitle(a.input as Json | null) ?? "Untitled Analysis"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {formatDate(a.created_at)}
-                  </span>
+                  <span className="text-xs text-gray-400">{formatDate(a.created_at)}</span>
                 </Card>
               </Link>
             ))}

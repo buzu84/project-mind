@@ -120,12 +120,9 @@ describe("isMockDb", () => {
 
 describe("DEV_USER", () => {
   it("has the expected shape with a valid UUID and email", () => {
-    expect(DEV_USER.id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    );
+    expect(DEV_USER.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(DEV_USER.email).toContain("@");
     expect(typeof DEV_USER.name).toBe("string");
     expect(DEV_USER.name.length).toBeGreaterThan(0);
   });
 });
-

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import type { ParsedMultiAgentReview, ParsedAgentResponse, ParsedRoadmap, ParsedRoadmapItem } from "@/lib/validation/json-parsers";
+import type {
+  ParsedMultiAgentReview,
+  ParsedAgentResponse,
+  ParsedRoadmap,
+  ParsedRoadmapItem,
+} from "@/lib/validation/json-parsers";
 import {
   decisionReviewToMarkdown,
   multiAgentReviewToMarkdown,
@@ -652,5 +657,3 @@ describe("analysisToMarkdown", () => {
     expectCleanOutput(analysisToMarkdown(makeAnalysisData()));
   });
 });
-
-

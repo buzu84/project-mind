@@ -24,9 +24,7 @@ const mainNav = [
   { href: "/getting-started", label: "Getting Started", icon: IconBookOpen },
 ];
 
-const bottomNav = [
-  { href: "/settings", label: "Settings", icon: IconSettings },
-];
+const bottomNav = [{ href: "/settings", label: "Settings", icon: IconSettings }];
 
 interface SidebarProps {
   user?: AppUser | null;
@@ -55,9 +53,7 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
           <IconSparkles className="h-4.5 w-4.5 text-white" />
         </div>
-        <span className="text-lg font-bold tracking-tight text-gray-900">
-          ProductMind
-        </span>
+        <span className="text-lg font-bold tracking-tight text-gray-900">ProductMind</span>
       </div>
 
       {/* Main navigation */}
@@ -67,9 +63,7 @@ export function Sidebar({ user }: SidebarProps) {
         </p>
         {mainNav.map((item) => {
           const active =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname.startsWith(item.href);
+            item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -85,9 +79,7 @@ export function Sidebar({ user }: SidebarProps) {
               <item.icon
                 className={cn(
                   "h-[18px] w-[18px] flex-shrink-0 transition-colors",
-                  active
-                    ? "text-brand-600"
-                    : "text-gray-500 group-hover:text-gray-600",
+                  active ? "text-brand-600" : "text-gray-500 group-hover:text-gray-600",
                 )}
               />
               {item.label}
@@ -147,14 +139,12 @@ export function Sidebar({ user }: SidebarProps) {
             </div>
           )}
           <div className="flex-1 truncate">
-            <p className="truncate text-sm font-medium text-gray-900">
-              {displayName}
-            </p>
+            <p className="truncate text-sm font-medium text-gray-900">{displayName}</p>
             <p className="truncate text-xs text-gray-500">{email}</p>
           </div>
           <button
             onClick={handleSignOut}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition"
+            className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-600"
             title="Sign out"
             aria-label="Sign out"
           >

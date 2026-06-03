@@ -17,8 +17,14 @@ export async function saveProjectContext(
 
     const raw: Record<string, string> = {};
     const keys: ContextSectionKey[] = [
-      "product_overview", "target_personas", "current_metrics", "pain_points",
-      "competitors", "strategic_goals", "constraints", "open_questions",
+      "product_overview",
+      "target_personas",
+      "current_metrics",
+      "pain_points",
+      "competitors",
+      "strategic_goals",
+      "constraints",
+      "open_questions",
     ];
     for (const key of keys) {
       raw[key] = (formData.get(key) as string) ?? "";
@@ -26,7 +32,10 @@ export async function saveProjectContext(
 
     const parsed = contextSchema.safeParse(raw);
     if (!parsed.success) {
-      return { success: false, error: `Validation failed. Each section must be under ${CONTEXT_SECTION_MAX} characters.` };
+      return {
+        success: false,
+        error: `Validation failed. Each section must be under ${CONTEXT_SECTION_MAX} characters.`,
+      };
     }
 
     const supabase = createClient();
@@ -42,7 +51,6 @@ export async function saveProjectContext(
     if (!project) {
       return { success: false, error: "Project not found." };
     }
-
 
     const { error } = await supabase
       .from("project_context")

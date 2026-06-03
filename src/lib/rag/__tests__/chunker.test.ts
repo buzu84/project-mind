@@ -25,9 +25,7 @@ function makeParagraph(charCount: number, prefix = "word"): string {
 
 /** Build multiple short paragraphs separated by blank lines. */
 function makeParagraphs(count: number, charsEach: number): string {
-  return Array.from({ length: count }, (_, i) =>
-    makeParagraph(charsEach, `p${i}`),
-  ).join("\n\n");
+  return Array.from({ length: count }, (_, i) => makeParagraph(charsEach, `p${i}`)).join("\n\n");
 }
 
 // ── estimateTokens ──────────────────────────────────────────────────
@@ -241,6 +239,3 @@ describe("chunkDocument — determinism", () => {
     expect(first).toEqual(second);
   });
 });
-
-
-

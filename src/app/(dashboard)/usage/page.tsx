@@ -43,7 +43,6 @@ export default async function UsageHistoryPage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
-
   const usageRows = (rows ?? []) as unknown as UsageRowWithProject[];
 
   return (
@@ -54,9 +53,12 @@ export default async function UsageHistoryPage() {
           Detailed log of all AI operations and their costs.
         </p>
         <details className="mt-2 text-xs text-gray-400">
-          <summary className="cursor-pointer underline decoration-dotted hover:text-gray-600 transition">What are tokens?</summary>
+          <summary className="cursor-pointer underline decoration-dotted transition hover:text-gray-600">
+            What are tokens?
+          </summary>
           <p className="mt-1 text-xs text-gray-500">
-            Tokens are units of text processed by AI models. Roughly 1 token ≈ 4 characters or ¾ of a word. Cost is based on the number of tokens used.
+            Tokens are units of text processed by AI models. Roughly 1 token ≈ 4 characters or ¾ of
+            a word. Cost is based on the number of tokens used.
           </p>
         </details>
       </div>
@@ -71,7 +73,7 @@ export default async function UsageHistoryPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[800px] w-full text-left text-sm">
+            <table className="w-full min-w-[800px] text-left text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500">
                 <tr>
                   <th className="px-4 py-3">Date</th>
@@ -91,31 +93,24 @@ export default async function UsageHistoryPage() {
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                       {formatDate(row.created_at)}{" "}
-                      <span className="text-gray-400">
-                        {formatTime(row.created_at)}
-                      </span>
+                      <span className="text-gray-400">{formatTime(row.created_at)}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {row.projects?.name ?? (
-                        <span className="text-gray-400">—</span>
-                      )}
+                      {row.projects?.name ?? <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="info">
-                        {FEATURE_LABELS[row.feature as AIUsageFeature] ??
-                          row.feature}
+                        {FEATURE_LABELS[row.feature as AIUsageFeature] ?? row.feature}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {row.model}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{row.model}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-600">
                       {formatNumber(row.prompt_tokens)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-600">
                       {formatNumber(row.completion_tokens)}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right font-medium tabular-nums text-gray-900">
                       {formatNumber(row.total_tokens)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-700">
@@ -149,4 +144,3 @@ export default async function UsageHistoryPage() {
     </div>
   );
 }
-

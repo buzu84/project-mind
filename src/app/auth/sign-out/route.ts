@@ -17,9 +17,7 @@ export async function POST(_request: NextRequest) {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          cookieStore.set(name, value, options),
-        );
+        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
       },
     },
   });
@@ -28,4 +26,3 @@ export async function POST(_request: NextRequest) {
 
   return NextResponse.redirect(`${getSiteUrl()}/`, { status: 302 });
 }
-

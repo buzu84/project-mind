@@ -6,10 +6,6 @@ interface JsonLdProps<T extends Thing> {
 
 export function JsonLd<T extends Thing>({ data }: JsonLdProps<T>) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );
 }
-

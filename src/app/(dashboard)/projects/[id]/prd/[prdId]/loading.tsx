@@ -1,6 +1,10 @@
 export default function PrdDetailLoading() {
   return (
-    <div className="mx-auto max-w-5xl animate-pulse space-y-6" role="status" aria-label="Loading PRD">
+    <div
+      className="mx-auto max-w-5xl animate-pulse space-y-6"
+      role="status"
+      aria-label="Loading PRD"
+    >
       <span className="sr-only">Loading PRD…</span>
       <div className="h-4 w-32 rounded bg-gray-200" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -15,7 +19,7 @@ export default function PrdDetailLoading() {
       </div>
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-gray-200 bg-white p-6 space-y-3">
+          <div key={i} className="space-y-3 rounded-xl border border-gray-200 bg-white p-6">
             <div className="h-5 w-40 rounded bg-gray-200" />
             <div className="h-3 w-full rounded bg-gray-200" />
             <div className="h-3 w-full rounded bg-gray-200" />
@@ -26,4 +30,3 @@ export default function PrdDetailLoading() {
     </div>
   );
 }
-

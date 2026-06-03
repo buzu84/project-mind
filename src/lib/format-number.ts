@@ -14,4 +14,3 @@ export function formatNumber(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "0";
   return NUMBER_FMT.format(value);
 }
-

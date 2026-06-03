@@ -120,7 +120,9 @@ export type ParsedRoadmapItem = z.infer<typeof roadmapItemSchema>;
 function parseRoadmapArray(raw: Json | null | undefined, label: string): ParsedRoadmapItem[] {
   if (raw == null) return [];
   if (!Array.isArray(raw)) {
-    logParseFailure(`roadmap.${label}`, [{ message: "expected array", path: [label], code: "invalid_type" } as z.core.$ZodIssue]);
+    logParseFailure(`roadmap.${label}`, [
+      { message: "expected array", path: [label], code: "invalid_type" } as z.core.$ZodIssue,
+    ]);
     return [];
   }
   return raw.flatMap((item, i) => {
@@ -128,8 +130,17 @@ function parseRoadmapArray(raw: Json | null | undefined, label: string): ParsedR
     if (r.success) return [r.data];
     logParseFailure(`roadmap.${label}[${i}]`, r.error.issues);
     // Attempt best-effort recovery: if title exists, use it
-    if (typeof item === "object" && item !== null && typeof (item as Record<string, unknown>).title === "string") {
-      return [{ title: (item as Record<string, unknown>).title as string, description: String((item as Record<string, unknown>).description ?? "") }];
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      typeof (item as Record<string, unknown>).title === "string"
+    ) {
+      return [
+        {
+          title: (item as Record<string, unknown>).title as string,
+          description: String((item as Record<string, unknown>).description ?? ""),
+        },
+      ];
     }
     return [];
   });

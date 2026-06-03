@@ -5,7 +5,6 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-
 export async function generateCompletionWithUsage(
   systemPrompt: string,
   userPrompt: string,
@@ -37,4 +36,3 @@ export async function generateCompletionWithUsage(
     model,
   };
 }
-

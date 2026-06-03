@@ -3,9 +3,11 @@
 ## Authentication
 
 ### Provider
+
 Supabase Auth with email/password only. No social OAuth providers are configured.
 
 Supported flows:
+
 - Email signup with confirmation link
 - Login / logout
 - Password reset via email link
@@ -53,6 +55,7 @@ Two protection mechanisms:
 ### Mock Auth (Development Only)
 
 When `USE_MOCK_AUTH=true` **and** `NODE_ENV !== "production"`:
+
 - `getCurrentUser()` returns a hardcoded `DEV_USER` (defined in `src/lib/auth/constants.ts`)
 - No Supabase session cookie is needed
 - All API routes work without a running Supabase instance
@@ -63,7 +66,9 @@ When `USE_MOCK_AUTH=true` **and** `NODE_ENV !== "production"`:
 ## Authorization
 
 ### Row-Level Security (RLS)
+
 Every table has PostgreSQL RLS policies:
+
 ```sql
 CREATE POLICY "users_select_own" ON projects
   FOR SELECT USING (auth.uid() = user_id);
@@ -72,33 +77,45 @@ CREATE POLICY "users_select_own" ON projects
 This is the **database-level** access control layer. It runs inside PostgreSQL — even if application code has a bug or the wrong query, RLS prevents cross-user data access.
 
 ### Application-Level Ownership Checks
+
 In addition to RLS, every query explicitly filters by `user_id`:
+
 ```typescript
 .eq("user_id", user.id)
 ```
+
 This is defense-in-depth. Both layers must agree. The application-level check exists because:
+
 - It makes ownership semantics explicit in code (reviewable, debuggable)
 - It provides clearer 404 responses (RLS silently returns empty results)
 
 ### Shared Ownership Helper
 
 A shared helper exists for verifying project ownership (`src/lib/auth/verify-project-ownership.ts`):
+
 ```typescript
 import { verifyProjectOwnership } from "@/lib/auth/verify-project-ownership";
 
 const isOwner = await verifyProjectOwnership(projectId, user.id);
 if (!isOwner) return { success: false, error: "Project not found or access denied." };
 ```
+
 Used by: feedback actions (create/delete/update), Decision Engine service layer (via `requireProjectOwnership` wrapper).
 
 ### Project Ownership for AI Routes
+
 AI routes verify ownership inline because they also need the full project row for AI context:
+
 ```typescript
 const { data: project } = await supabase
-  .from("projects").select("name, description, ...")
-  .eq("id", projectId).eq("user_id", user.id).single();
+  .from("projects")
+  .select("name, description, ...")
+  .eq("id", projectId)
+  .eq("user_id", user.id)
+  .single();
 if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 ```
+
 The 404 response is intentionally identical whether the project doesn't exist or belongs to another user — prevents resource enumeration.
 
 ### Child Table Ownership
@@ -108,6 +125,7 @@ Tables without `user_id` (legacy `decisions`, `roadmaps`, `feedback_documents`, 
 Tables with `user_id` (`product_decisions`, `product_decision_options`, `product_assumptions`, `product_evidence`, `ai_usage`, `global_chat_messages`) are filtered directly by `user_id`.
 
 ### Admin Detection
+
 ```typescript
 // src/lib/ai/rate-limiter.ts
 export function isAdminUser(user: AppUser): boolean {
@@ -115,31 +133,33 @@ export function isAdminUser(user: AppUser): boolean {
   return getAdminEmails().has(user.email.trim().toLowerCase());
 }
 ```
+
 - `ADMIN_EMAILS` env var: comma-separated list, server-side only (no `NEXT_PUBLIC_` prefix)
 - Currently used **only** for rate limit bypass — admins skip AI rate limits
 - No admin UI, no admin dashboard, no elevated data access
 
 ## Security Measures
 
-| Layer | Implementation | Source |
-|---|---|---|
-| Auth cookies | HTTP-only, Secure, SameSite=Lax | Managed by `@supabase/ssr` |
-| Session refresh | Edge Middleware on every request | `src/lib/supabase/middleware.ts` |
-| Route protection | Middleware redirects + server component checks | `middleware.ts`, server pages |
-| RLS | Every table, every operation | Supabase PostgreSQL policies |
-| Ownership checks | Explicit `user_id` filter in every query | All route handlers + services |
-| Rate limiting | Per-user, two tiers (standard + heavy) | `src/lib/ai/rate-limiter.ts` |
-| API key protection | `OPENAI_API_KEY` is server-side only | Never in `NEXT_PUBLIC_*` |
-| Input validation | Zod schemas on all mutating endpoints | Route files + `lib/decisions/schemas.ts` |
-| Mock auth blocking | `USE_MOCK_AUTH=true` throws in production | `src/lib/env.ts` |
-| localhost blocking | `NEXT_PUBLIC_SITE_URL=localhost` throws in production | `src/lib/env.ts` |
-| Mock AI blocking | `USE_REAL_AI=false` throws in production | `src/lib/env.ts` |
-| Service role key | Used only for account deletion | `src/app/api/account/delete/route.ts` (via service-role client from `src/lib/supabase/server.ts`) |
-| Error sanitization | API keys stripped from error messages | `src/lib/errors.ts`, `src/lib/ai/usage-tracking.ts` |
+| Layer              | Implementation                                        | Source                                                                                            |
+| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Auth cookies       | HTTP-only, Secure, SameSite=Lax                       | Managed by `@supabase/ssr`                                                                        |
+| Session refresh    | Edge Middleware on every request                      | `src/lib/supabase/middleware.ts`                                                                  |
+| Route protection   | Middleware redirects + server component checks        | `middleware.ts`, server pages                                                                     |
+| RLS                | Every table, every operation                          | Supabase PostgreSQL policies                                                                      |
+| Ownership checks   | Explicit `user_id` filter in every query              | All route handlers + services                                                                     |
+| Rate limiting      | Per-user, two tiers (standard + heavy)                | `src/lib/ai/rate-limiter.ts`                                                                      |
+| API key protection | `OPENAI_API_KEY` is server-side only                  | Never in `NEXT_PUBLIC_*`                                                                          |
+| Input validation   | Zod schemas on all mutating endpoints                 | Route files + `lib/decisions/schemas.ts`                                                          |
+| Mock auth blocking | `USE_MOCK_AUTH=true` throws in production             | `src/lib/env.ts`                                                                                  |
+| localhost blocking | `NEXT_PUBLIC_SITE_URL=localhost` throws in production | `src/lib/env.ts`                                                                                  |
+| Mock AI blocking   | `USE_REAL_AI=false` throws in production              | `src/lib/env.ts`                                                                                  |
+| Service role key   | Used only for account deletion                        | `src/app/api/account/delete/route.ts` (via service-role client from `src/lib/supabase/server.ts`) |
+| Error sanitization | API keys stripped from error messages                 | `src/lib/errors.ts`, `src/lib/ai/usage-tracking.ts`                                               |
 
 ## Account Deletion
 
 `POST /api/account/delete`:
+
 1. Authenticates via session cookie
 2. Deletes all child records across ~15 tables in dependency order using the Supabase service role key (bypasses RLS)
 3. Deletes all projects

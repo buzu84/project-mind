@@ -64,10 +64,10 @@ npm run dev
 
 ### Verify — Dev Logs
 
-| Log | Expected |
-|---|---|
-| `[rag] Vector search OK:` | `rpcResults` ≥ 1 |
-| `[rag] Quality filter:` | `hasRelevantContext: true`, `usedChunks` ≥ 1 |
+| Log                       | Expected                                     |
+| ------------------------- | -------------------------------------------- |
+| `[rag] Vector search OK:` | `rpcResults` ≥ 1                             |
+| `[rag] Quality filter:`   | `hasRelevantContext: true`, `usedChunks` ≥ 1 |
 
 ### Verify — Database (optional)
 
@@ -91,6 +91,7 @@ ORDER BY created_at DESC LIMIT 5;
 ```
 
 Expected rows from this operation:
+
 - `feature = 'query_embedding'` — has token usage (embedding the chat query)
 - `feature = 'rag_search'` — `prompt_tokens = 0, completion_tokens = 0` (DB lookup, not LLM)
 - `feature = 'chat'` — has token usage (the GPT completion)
@@ -117,10 +118,10 @@ The `document_embedding` row was created earlier when the feedback was saved.
 
 ### Verify — Dev Logs
 
-| Log | Expected |
-|---|---|
-| `[rag] Quality filter:` | `hasRelevantContext: false`, `usedChunks: 0` |
-| `[chat] No relevant RAG context` | Should appear (warn level) |
+| Log                              | Expected                                     |
+| -------------------------------- | -------------------------------------------- |
+| `[rag] Quality filter:`          | `hasRelevantContext: false`, `usedChunks: 0` |
+| `[chat] No relevant RAG context` | Should appear (warn level)                   |
 
 ---
 
@@ -196,25 +197,25 @@ SELECT COUNT(*) FROM document_chunks WHERE project_id = '<ZEPHYR_PROJECT_ID>';
 
 ## What Not To Worry About
 
-| Observation | Explanation |
-|---|---|
-| `rag_search` in `ai_usage` has 0 tokens | Expected — it's DB retrieval telemetry, not an LLM call |
-| `query_embedding` has token usage | Expected — this is the embedding API call to generate the search vector |
-| `document_embedding` has token usage | Expected — embedding the document chunks on save |
-| Similarity scores vary between runs | Embedding similarity is approximate; scores depend on the text and model |
-| Chat intent uses `minSimilarity: 0.72` but Decision Review uses `0.25` | Different intents have different thresholds in `lib/evidence/intent-config.ts` |
-| Quality gate threshold (0.2) differs from intent thresholds | The base RAG layer uses 0.2; the Evidence Layer applies intent-specific thresholds on top |
-| AI Chat response doesn't quote feedback verbatim | RAG injects context; the AI paraphrases. It may or may not use exact phrases. |
-| Global AI Assistant (sidebar "AI Assistant") doesn't use RAG | Correct — it has no project context. Only per-project AI Chat uses RAG. |
+| Observation                                                            | Explanation                                                                               |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `rag_search` in `ai_usage` has 0 tokens                                | Expected — it's DB retrieval telemetry, not an LLM call                                   |
+| `query_embedding` has token usage                                      | Expected — this is the embedding API call to generate the search vector                   |
+| `document_embedding` has token usage                                   | Expected — embedding the document chunks on save                                          |
+| Similarity scores vary between runs                                    | Embedding similarity is approximate; scores depend on the text and model                  |
+| Chat intent uses `minSimilarity: 0.72` but Decision Review uses `0.25` | Different intents have different thresholds in `lib/evidence/intent-config.ts`            |
+| Quality gate threshold (0.2) differs from intent thresholds            | The base RAG layer uses 0.2; the Evidence Layer applies intent-specific thresholds on top |
+| AI Chat response doesn't quote feedback verbatim                       | RAG injects context; the AI paraphrases. It may or may not use exact phrases.             |
+| Global AI Assistant (sidebar "AI Assistant") doesn't use RAG           | Correct — it has no project context. Only per-project AI Chat uses RAG.                   |
 
 ---
 
 ## Pass/Fail Checklist
 
-| # | Test | Key Assertion | Pass? |
-|---|---|---|---|
-| 1 | Relevant retrieval | AI response references feedback content | ☐ |
-| 2 | Quality gate | Unrelated question → no evidence injected | ☐ |
-| 3 | Cross-project isolation | No leakage between projects | ☐ |
-| 4 | No feedback | AI works without evidence, doesn't crash | ☐ |
-| 5 | Deletion | Deleted feedback no longer retrievable | ☐ |
+| #   | Test                    | Key Assertion                             | Pass? |
+| --- | ----------------------- | ----------------------------------------- | ----- |
+| 1   | Relevant retrieval      | AI response references feedback content   | ☐     |
+| 2   | Quality gate            | Unrelated question → no evidence injected | ☐     |
+| 3   | Cross-project isolation | No leakage between projects               | ☐     |
+| 4   | No feedback             | AI works without evidence, doesn't crash  | ☐     |
+| 5   | Deletion                | Deleted feedback no longer retrievable    | ☐     |

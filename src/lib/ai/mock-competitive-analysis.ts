@@ -12,7 +12,10 @@ export function generateMockCompetitiveAnalysis({
   competitors?: string;
 }): string {
   const knownCompetitors = competitors
-    ? competitors.split(",").map((c) => c.trim()).filter(Boolean)
+    ? competitors
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean)
     : ["Competitor A", "Competitor B", "Competitor C"];
 
   const comp1 = knownCompetitors[0] ?? "Competitor A";
@@ -130,4 +133,3 @@ Low Price
 *This competitive analysis was generated in mock mode for development purposes.*
 *Generated for: ${productName} in ${industry}*`;
 }
-

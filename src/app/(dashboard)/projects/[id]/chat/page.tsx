@@ -5,11 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { IconArrowLeft } from "@/components/icons";
 import { ChatClient } from "./chat-client";
 
-export default async function ProjectChatPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function ProjectChatPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -34,7 +30,9 @@ export default async function ProjectChatPage({
   // Non-mutating reverse so the UI displays oldest-first (chronological)
   const messages = [...(rawMessages ?? [])].reverse();
 
-  const serializedMessages = (messages as Array<{ id: string; role: string; content: string; created_at: string }>).map((m) => ({
+  const serializedMessages = (
+    messages as Array<{ id: string; role: string; content: string; created_at: string }>
+  ).map((m) => ({
     id: m.id,
     role: m.role as "user" | "assistant" | "system",
     content: m.content,
@@ -42,11 +40,11 @@ export default async function ProjectChatPage({
   }));
 
   return (
-    <div className="mx-auto max-w-3xl h-full flex flex-col">
+    <div className="mx-auto flex h-full max-w-3xl flex-col">
       <div className="mb-4 flex items-center justify-between">
         <Link
           href={`/projects/${project.id}`}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
         >
           <IconArrowLeft className="h-4 w-4" />
           {project.name}
@@ -64,4 +62,3 @@ export default async function ProjectChatPage({
     </div>
   );
 }
-

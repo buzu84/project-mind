@@ -12,11 +12,7 @@ import { prdToMarkdown } from "@/lib/export/serialize-markdown";
 
 import { parsePrdInput, parsePrdOutput } from "@/lib/validation/json-parsers";
 
-export default async function PrdResultPage({
-  params,
-}: {
-  params: { id: string; prdId: string };
-}) {
+export default async function PrdResultPage({ params }: { params: { id: string; prdId: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -52,7 +48,7 @@ export default async function PrdResultPage({
     <div className="mx-auto max-w-5xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -60,17 +56,13 @@ export default async function PrdResultPage({
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 break-words">
-            {productName}
-          </h1>
+          <h1 className="break-words text-2xl font-bold text-gray-900">{productName}</h1>
           {productDesc && (
-            <p className="mt-1 max-w-xl text-sm text-gray-500 leading-relaxed">{productDesc}</p>
+            <p className="mt-1 max-w-xl text-sm leading-relaxed text-gray-500">{productDesc}</p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="info">PRD</Badge>
-            {prdInput?.targetAudience && (
-              <Badge variant="default">{prdInput.targetAudience}</Badge>
-            )}
+            {prdInput?.targetAudience && <Badge variant="default">{prdInput.targetAudience}</Badge>}
             <span className="text-xs text-gray-400">·</span>
             <p className="text-xs text-gray-400">
               <time dateTime={toISOString(decision.created_at)}>
@@ -80,15 +72,21 @@ export default async function PrdResultPage({
           </div>
         </div>
         <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-          <CopyMarkdownButton getMarkdown={contentUnavailable ? "" : prdToMarkdown({
-            productName,
-            targetAudience: prdInput?.targetAudience,
-            createdAt: decision.created_at,
-            content,
-          })} />
+          <CopyMarkdownButton
+            getMarkdown={
+              contentUnavailable
+                ? ""
+                : prdToMarkdown({
+                    productName,
+                    targetAudience: prdInput?.targetAudience,
+                    createdAt: decision.created_at,
+                    content,
+                  })
+            }
+          />
           <Link
             href={`/projects/${project.id}/prd`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
           >
             + Generate another
           </Link>

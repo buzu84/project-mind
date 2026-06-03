@@ -22,12 +22,18 @@ export const projectSchema = z.object({
     .max(PROJECT_NAME_MAX, `Name must be under ${PROJECT_NAME_MAX} characters.`),
   description: z
     .string()
-    .max(PROJECT_DESC_MAX, `Description must be under ${PROJECT_DESC_MAX.toLocaleString()} characters.`)
+    .max(
+      PROJECT_DESC_MAX,
+      `Description must be under ${PROJECT_DESC_MAX.toLocaleString()} characters.`,
+    )
     .optional()
     .transform((v) => v || undefined),
   target_users: z
     .string()
-    .max(PROJECT_TARGET_USERS_MAX, `Target users must be under ${PROJECT_TARGET_USERS_MAX} characters.`)
+    .max(
+      PROJECT_TARGET_USERS_MAX,
+      `Target users must be under ${PROJECT_TARGET_USERS_MAX} characters.`,
+    )
     .optional()
     .transform((v) => v || undefined),
   market: z
@@ -37,7 +43,10 @@ export const projectSchema = z.object({
     .transform((v) => v || undefined),
   business_model: z
     .string()
-    .max(PROJECT_BUSINESS_MODEL_MAX, `Business model must be under ${PROJECT_BUSINESS_MODEL_MAX} characters.`)
+    .max(
+      PROJECT_BUSINESS_MODEL_MAX,
+      `Business model must be under ${PROJECT_BUSINESS_MODEL_MAX} characters.`,
+    )
     .optional()
     .transform((v) => v || undefined),
   goals: z
@@ -56,4 +65,3 @@ export type ActionResult = {
   projectId?: string;
   data?: Record<string, unknown>;
 };
-

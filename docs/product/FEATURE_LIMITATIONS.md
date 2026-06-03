@@ -69,5 +69,4 @@ Current user-facing limitations of ProductMind. Every item verified against code
 
 ---
 
-*Last updated: 2026-05-24*
-
+_Last updated: 2026-05-24_

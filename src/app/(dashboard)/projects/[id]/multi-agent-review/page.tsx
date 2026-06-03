@@ -6,11 +6,7 @@ import { IconArrowLeft } from "@/components/icons";
 import { MultiAgentClient } from "./multi-agent-client";
 import { parseMultiAgentReviewRow } from "@/lib/validation/json-parsers";
 
-export default async function MultiAgentReviewPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function MultiAgentReviewPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -27,7 +23,9 @@ export default async function MultiAgentReviewPage({
 
   const { data: reviews } = await supabase
     .from("multi_agent_reviews")
-    .select("id, project_id, question, input_type, pm_response, cto_response, ux_response, growth_response, consensus, model, is_mock, created_at")
+    .select(
+      "id, project_id, question, input_type, pm_response, cto_response, ux_response, growth_response, consensus, model, is_mock, created_at",
+    )
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 
@@ -35,7 +33,7 @@ export default async function MultiAgentReviewPage({
     <div className="mx-auto max-w-6xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -44,9 +42,10 @@ export default async function MultiAgentReviewPage({
       <MultiAgentClient
         projectId={project.id}
         projectName={project.name}
-        initialReviews={(reviews ?? []).map((r: Record<string, unknown>) => parseMultiAgentReviewRow(r))}
+        initialReviews={(reviews ?? []).map((r: Record<string, unknown>) =>
+          parseMultiAgentReviewRow(r),
+        )}
       />
     </div>
   );
 }
-

@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  DECISION_CATEGORIES,
-  DECISION_STATUSES,
-} from "@/lib/decisions/constants";
+import { DECISION_CATEGORIES, DECISION_STATUSES } from "@/lib/decisions/constants";
 
 // ── Shared constants ────────────────────────────────────────────────
 // Used by both client forms and server schemas to keep validation in sync.
@@ -38,12 +35,21 @@ export const decisionSchema = z.object({
   problem_statement: z
     .string()
     .trim()
-    .min(DECISION_PROBLEM_MIN, `Problem statement must be at least ${DECISION_PROBLEM_MIN} characters.`)
-    .max(DECISION_PROBLEM_MAX, `Problem statement must be under ${DECISION_PROBLEM_MAX.toLocaleString()} characters.`),
+    .min(
+      DECISION_PROBLEM_MIN,
+      `Problem statement must be at least ${DECISION_PROBLEM_MIN} characters.`,
+    )
+    .max(
+      DECISION_PROBLEM_MAX,
+      `Problem statement must be under ${DECISION_PROBLEM_MAX.toLocaleString()} characters.`,
+    ),
   context_summary: z
     .string()
     .trim()
-    .max(DECISION_CONTEXT_MAX, `Context must be under ${DECISION_CONTEXT_MAX.toLocaleString()} characters.`)
+    .max(
+      DECISION_CONTEXT_MAX,
+      `Context must be under ${DECISION_CONTEXT_MAX.toLocaleString()} characters.`,
+    )
     .nullable()
     .optional()
     .transform((v) => v || null),
@@ -52,4 +58,3 @@ export const decisionSchema = z.object({
 });
 
 export type DecisionFormData = z.infer<typeof decisionSchema>;
-

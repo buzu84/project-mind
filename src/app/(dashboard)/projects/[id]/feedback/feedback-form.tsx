@@ -63,12 +63,16 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
       ? `Content must be at least ${FEEDBACK_CONTENT_MIN} characters.`
       : null;
   const isFormValid =
-    title.trim().length >= FEEDBACK_TITLE_MIN &&
-    content.trim().length >= FEEDBACK_CONTENT_MIN;
+    title.trim().length >= FEEDBACK_TITLE_MIN && content.trim().length >= FEEDBACK_CONTENT_MIN;
 
   if (!isOpen) {
     return (
-      <Button ref={addButtonRef} data-feedback-add-btn onClick={() => setIsOpen(true)} className="gap-2">
+      <Button
+        ref={addButtonRef}
+        data-feedback-add-btn
+        onClick={() => setIsOpen(true)}
+        className="gap-2"
+      >
         <IconPlus className="h-4 w-4" />
         Add Feedback
       </Button>
@@ -95,7 +99,12 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
         toast("Feedback document saved!");
         focusAfterPaint(() => addButtonRef.current);
       } else {
-        setServerError(res.error ?? res.fieldErrors?.title?.[0] ?? res.fieldErrors?.content?.[0] ?? "Could not save feedback.");
+        setServerError(
+          res.error ??
+            res.fieldErrors?.title?.[0] ??
+            res.fieldErrors?.content?.[0] ??
+            "Could not save feedback.",
+        );
       }
     });
   }
@@ -118,7 +127,10 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
       </div>
 
       {serverError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {serverError}
         </div>
       )}
@@ -153,7 +165,9 @@ export function FeedbackForm({ projectId }: FeedbackFormProps) {
               className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               {SOURCES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
             </select>
           </div>

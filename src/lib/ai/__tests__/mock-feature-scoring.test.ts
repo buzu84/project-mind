@@ -86,21 +86,17 @@ describe("generateMockFeatureScores", () => {
     });
 
     it("undefined projectName does not throw", () => {
-      expect(() =>
-        generateMockFeatureScores([feature("Y")], undefined),
-      ).not.toThrow();
+      expect(() => generateMockFeatureScores([feature("Y")], undefined)).not.toThrow();
     });
 
     it("projectName feeds into reach seed and changes scores", () => {
       // projectName only affects the reach seed.
       // Search across names to find one where two projectNames diverge.
-      const found = Array.from({ length: 20 }, (_, i) => `feat-${i}`).some(
-        (name) => {
-          const [a] = generateMockFeatureScores([feature(name)], "Alpha");
-          const [b] = generateMockFeatureScores([feature(name)], "Zeta");
-          return a.reach !== b.reach;
-        },
-      );
+      const found = Array.from({ length: 20 }, (_, i) => `feat-${i}`).some((name) => {
+        const [a] = generateMockFeatureScores([feature(name)], "Alpha");
+        const [b] = generateMockFeatureScores([feature(name)], "Zeta");
+        return a.reach !== b.reach;
+      });
       expect(found).toBe(true);
     });
   });
@@ -157,7 +153,9 @@ describe("generateMockFeatureScores", () => {
   describe("range constraints", () => {
     // Use a variety of features to exercise different hash paths
     const results = generateMockFeatureScores(
-      Array.from({ length: 20 }, (_, i) => feature(`Feature-${i}`, i % 2 === 0 ? "A".repeat(80) : null)),
+      Array.from({ length: 20 }, (_, i) =>
+        feature(`Feature-${i}`, i % 2 === 0 ? "A".repeat(80) : null),
+      ),
     );
 
     it("reach is within [3, 9]", () => {
@@ -208,9 +206,7 @@ describe("generateMockFeatureScores", () => {
     });
 
     it('contains "Worth considering" when rice_score is in (15, 30]', () => {
-      const score = findFeatureMatching(
-        (s) => s.rice_score > 15 && s.rice_score <= 30,
-      );
+      const score = findFeatureMatching((s) => s.rice_score > 15 && s.rice_score <= 30);
       expect(score.ai_commentary).toContain("Worth considering");
     });
 
@@ -220,6 +216,3 @@ describe("generateMockFeatureScores", () => {
     });
   });
 });
-
-
-

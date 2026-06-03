@@ -21,9 +21,7 @@ export default function PrioritizePage() {
   const params = useParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const [features, setFeatures] = useState<FeatureInput[]>([
-    { name: "", description: "" },
-  ]);
+  const [features, setFeatures] = useState<FeatureInput[]>([{ name: "", description: "" }]);
   const [criteria, setCriteria] = useState("");
 
   function addFeature() {
@@ -31,9 +29,7 @@ export default function PrioritizePage() {
   }
 
   function updateFeature(index: number, field: keyof FeatureInput, value: string) {
-    setFeatures((prev) =>
-      prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)),
-    );
+    setFeatures((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
   }
 
   function removeFeature(index: number) {
@@ -78,7 +74,7 @@ export default function PrioritizePage() {
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="space-y-3">
           {features.map((feature, i) => (
-            <div key={i} className="flex gap-2 items-end">
+            <div key={i} className="flex items-end gap-2">
               <div className="flex-1">
                 <Input
                   id={`feature-name-${i}`}
@@ -103,7 +99,12 @@ export default function PrioritizePage() {
                 />
               </div>
               {features.length > 1 && (
-                <Button type="button" variant="ghost" onClick={() => removeFeature(i)} aria-label={`Remove feature ${i + 1}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => removeFeature(i)}
+                  aria-label={`Remove feature ${i + 1}`}
+                >
                   ✕
                 </Button>
               )}
@@ -137,9 +138,7 @@ export default function PrioritizePage() {
 
       {result && (
         <Card className="mt-8">
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-            {result}
-          </div>
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap">{result}</div>
         </Card>
       )}
     </div>

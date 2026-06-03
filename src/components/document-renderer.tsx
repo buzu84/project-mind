@@ -49,7 +49,11 @@ function parseSections(markdown: string): Section[] {
 
   function flush() {
     if (currentHeading || currentLines.length > 0) {
-      sections.push({ heading: currentHeading, level: currentLevel, content: currentLines.join("\n").trim() });
+      sections.push({
+        heading: currentHeading,
+        level: currentLevel,
+        content: currentLines.join("\n").trim(),
+      });
     }
   }
 
@@ -107,10 +111,21 @@ function SafeText({ text }: { text: string }) {
     <>
       {parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**")) {
-          return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>;
+          return (
+            <strong key={i} className="font-semibold text-gray-900">
+              {part.slice(2, -2)}
+            </strong>
+          );
         }
         if (part.startsWith("`") && part.endsWith("`")) {
-          return <code key={i} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-brand-700">{part.slice(1, -1)}</code>;
+          return (
+            <code
+              key={i}
+              className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-brand-700"
+            >
+              {part.slice(1, -1)}
+            </code>
+          );
         }
         return <span key={i}>{part}</span>;
       })}
@@ -123,10 +138,16 @@ function SafeText({ text }: { text: string }) {
 /* ------------------------------------------------------------------ */
 
 function MarkdownTable({ text }: { text: string }) {
-  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("|"));
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("|"));
   if (lines.length < 2) return null;
 
-  const headerCells = lines[0].split("|").map((c) => c.trim()).filter(Boolean);
+  const headerCells = lines[0]
+    .split("|")
+    .map((c) => c.trim())
+    .filter(Boolean);
   const dataLines = lines.slice(2);
 
   return (
@@ -135,7 +156,10 @@ function MarkdownTable({ text }: { text: string }) {
         <thead>
           <tr className="bg-gray-50">
             {headerCells.map((cell, i) => (
-              <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th
+                key={i}
+                className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600"
+              >
                 {cell.replace(/\*\*/g, "")}
               </th>
             ))}
@@ -143,7 +167,10 @@ function MarkdownTable({ text }: { text: string }) {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {dataLines.map((line, ri) => {
-            const cells = line.split("|").map((c) => c.trim()).filter(Boolean);
+            const cells = line
+              .split("|")
+              .map((c) => c.trim())
+              .filter(Boolean);
             return (
               <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
                 {cells.map((cell, ci) => (
@@ -182,15 +209,25 @@ function parseContentBlocks(text: string): ContentBlock[] {
     const line = lines[i];
     const trimmed = line.trim();
 
-    if (!trimmed) { i++; continue; }
+    if (!trimmed) {
+      i++;
+      continue;
+    }
 
     // HR — skip
-    if (/^-{3,}$/.test(trimmed) || /^\*{3,}$/.test(trimmed)) { i++; continue; }
+    if (/^-{3,}$/.test(trimmed) || /^\*{3,}$/.test(trimmed)) {
+      i++;
+      continue;
+    }
 
     // ### / #### subheading
     const subMatch = trimmed.match(/^(#{3,4})\s+(.+)$/);
     if (subMatch) {
-      blocks.push({ type: "subheading", content: subMatch[2].replace(/\*\*/g, ""), level: subMatch[1].length });
+      blocks.push({
+        type: "subheading",
+        content: subMatch[2].replace(/\*\*/g, ""),
+        level: subMatch[1].length,
+      });
       i++;
       continue;
     }
@@ -198,7 +235,10 @@ function parseContentBlocks(text: string): ContentBlock[] {
     // Table
     if (trimmed.startsWith("|")) {
       const tableLines: string[] = [];
-      while (i < lines.length && lines[i].trim().startsWith("|")) { tableLines.push(lines[i]); i++; }
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        tableLines.push(lines[i]);
+        i++;
+      }
       if (tableLines.length >= 2) blocks.push({ type: "table", content: tableLines.join("\n") });
       continue;
     }
@@ -276,7 +316,10 @@ function RichContent({ text }: { text: string }) {
         switch (block.type) {
           case "subheading":
             return (
-              <h3 key={i} className={`font-semibold text-gray-800 pt-3 pb-1 ${block.level === 4 ? "text-xs uppercase tracking-wider text-gray-500" : "text-sm"}`}>
+              <h3
+                key={i}
+                className={`pb-1 pt-3 font-semibold text-gray-800 ${block.level === 4 ? "text-xs uppercase tracking-wider text-gray-500" : "text-sm"}`}
+              >
                 {block.content}
               </h3>
             );
@@ -287,38 +330,54 @@ function RichContent({ text }: { text: string }) {
               <ul key={i} className="space-y-1.5 pl-1" role="list">
                 {block.items!.map((item, j) => (
                   <li key={j} className="flex gap-2.5 text-sm leading-relaxed text-gray-700">
-                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400" />
-                    <span><SafeText text={item} /></span>
+                    <span
+                      aria-hidden="true"
+                      className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400"
+                    />
+                    <span>
+                      <SafeText text={item} />
+                    </span>
                   </li>
                 ))}
               </ul>
             );
           case "numbered":
             return (
-              <ol key={i} className="space-y-1.5 pl-1 list-none">
+              <ol key={i} className="list-none space-y-1.5 pl-1">
                 {block.items!.map((item, j) => (
                   <li key={j} className="flex gap-2.5 text-sm leading-relaxed text-gray-700">
-                    <span className="flex-shrink-0 font-semibold text-brand-600 w-5 text-right">{j + 1}.</span>
-                    <span><SafeText text={item} /></span>
+                    <span className="w-5 flex-shrink-0 text-right font-semibold text-brand-600">
+                      {j + 1}.
+                    </span>
+                    <span>
+                      <SafeText text={item} />
+                    </span>
                   </li>
                 ))}
               </ol>
             );
           case "user-story":
             return (
-              <div key={i} className="rounded-lg border border-indigo-100 bg-indigo-50/40 px-4 py-3">
-                <p className="text-sm italic text-indigo-800 leading-relaxed">
+              <div
+                key={i}
+                className="rounded-lg border border-indigo-100 bg-indigo-50/40 px-4 py-3"
+              >
+                <p className="text-sm italic leading-relaxed text-indigo-800">
                   <SafeText text={block.content} />
                 </p>
               </div>
             );
           case "footnote":
-            return <p key={i} className="text-xs italic text-gray-400 leading-relaxed">{block.content}</p>;
+            return (
+              <p key={i} className="text-xs italic leading-relaxed text-gray-400">
+                {block.content}
+              </p>
+            );
           case "paragraph":
           default: {
             const pLines = block.content.split("\n");
             return (
-              <p key={i} className="text-sm text-gray-700 leading-[1.8]">
+              <p key={i} className="text-sm leading-[1.8] text-gray-700">
                 {pLines.map((line, li) => (
                   <span key={li}>
                     {li > 0 && <br />}
@@ -341,51 +400,51 @@ function RichContent({ text }: { text: string }) {
 const SECTION_ICONS: Record<string, string> = {
   "executive summary": "📋",
   "problem statement": "🎯",
-  "goals": "🏆",
-  "objectives": "🏆",
+  goals: "🏆",
+  objectives: "🏆",
   "goals & success metrics": "🏆",
   "success metrics": "📊",
-  "kpis": "📊",
+  kpis: "📊",
   "user stories": "👤",
   "user personas": "👤",
   "functional requirements": "⚙️",
-  "requirements": "⚙️",
+  requirements: "⚙️",
   "non-functional requirements": "🔧",
   "technical requirements": "🔧",
   "technical considerations": "🔧",
-  "priorities": "📌",
+  priorities: "📌",
   "mvp scope": "🚀",
-  "scope": "🚀",
-  "risks": "⚠️",
+  scope: "🚀",
+  risks: "⚠️",
   "risk assessment": "⚠️",
   "open questions": "❓",
-  "assumptions": "💡",
-  "constraints": "🔒",
-  "timeline": "📅",
-  "milestones": "📅",
+  assumptions: "💡",
+  constraints: "🔒",
+  timeline: "📅",
+  milestones: "📅",
   "release plan": "📅",
   "market overview": "🌍",
   "competitor profiles": "🏢",
-  "competitors": "🏢",
+  competitors: "🏢",
   "competitor analysis": "🏢",
-  "positioning": "📍",
-  "strengths": "💪",
-  "weaknesses": "📉",
-  "opportunities": "🌟",
-  "threats": "⚡",
-  "swot": "📊",
+  positioning: "📍",
+  strengths: "💪",
+  weaknesses: "📉",
+  opportunities: "🌟",
+  threats: "⚡",
+  swot: "📊",
   "swot analysis": "📊",
-  "differentiation": "✨",
+  differentiation: "✨",
   "feature comparison": "📋",
   "feature matrix": "📋",
   "recommended next moves": "🎯",
-  "recommendations": "🎯",
+  recommendations: "🎯",
   "next steps": "➡️",
-  "conclusion": "✅",
-  "summary": "📝",
-  "appendix": "📎",
-  "glossary": "📖",
-  "dependencies": "🔗",
+  conclusion: "✅",
+  summary: "📝",
+  appendix: "📎",
+  glossary: "📖",
+  dependencies: "🔗",
   "acceptance criteria": "✔️",
   "out of scope": "🚫",
 };
@@ -414,10 +473,21 @@ function getSectionTier(heading: string): SectionTier {
 /*  Sticky sidebar TOC                                                 */
 /* ------------------------------------------------------------------ */
 
-function TableOfContents({ sections, activeIndex }: { sections: { heading: string; index: number }[]; activeIndex: number }) {
+function TableOfContents({
+  sections,
+  activeIndex,
+}: {
+  sections: { heading: string; index: number }[];
+  activeIndex: number;
+}) {
   return (
-    <nav className="hidden xl:block sticky top-24 w-52 flex-shrink-0 self-start" aria-label="Document outline">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-400">Contents</p>
+    <nav
+      className="sticky top-24 hidden w-52 flex-shrink-0 self-start xl:block"
+      aria-label="Document outline"
+    >
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+        Contents
+      </p>
       <ol className="space-y-0.5 border-l border-gray-200">
         {sections.map((s) => (
           <li key={s.index}>
@@ -426,7 +496,7 @@ function TableOfContents({ sections, activeIndex }: { sections: { heading: strin
               className={`block border-l-2 py-1 pl-3 text-xs leading-snug transition-colors ${
                 s.index === activeIndex
                   ? "border-brand-500 font-medium text-brand-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
               }`}
             >
               {s.heading}
@@ -443,7 +513,7 @@ function InlineTOC({ sections }: { sections: { heading: string; index: number }[
   if (sections.length < 3) return null;
 
   return (
-    <nav className="xl:hidden rounded-lg border border-gray-200 bg-gray-50/60 px-4 py-3">
+    <nav className="rounded-lg border border-gray-200 bg-gray-50/60 px-4 py-3 xl:hidden">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wider text-gray-500"
@@ -458,7 +528,7 @@ function InlineTOC({ sections }: { sections: { heading: string; index: number }[
             <li key={s.index}>
               <a
                 href={`#doc-section-${s.index}`}
-                className="text-gray-600 hover:text-brand-600 transition"
+                className="text-gray-600 transition hover:text-brand-600"
                 onClick={() => setOpen(false)}
               >
                 <span className="mr-1.5 text-gray-300">{s.index}.</span>
@@ -476,20 +546,49 @@ function InlineTOC({ sections }: { sections: { heading: string; index: number }[
 /*  Section card                                                       */
 /* ------------------------------------------------------------------ */
 
-function SectionCard({ section, index, tier, icon }: { section: Section; index: number; tier: SectionTier; icon: string }) {
+function SectionCard({
+  section,
+  index,
+  tier,
+  icon,
+}: {
+  section: Section;
+  index: number;
+  tier: SectionTier;
+  icon: string;
+}) {
   const styles = {
-    hero:    { card: "border-brand-200 bg-brand-50/20", border: "border-brand-100", iconBg: "bg-brand-100" },
-    warning: { card: "border-amber-200 bg-amber-50/20", border: "border-amber-100", iconBg: "bg-amber-100" },
-    default: { card: "",                                 border: "border-gray-100",  iconBg: "bg-gray-100" },
+    hero: {
+      card: "border-brand-200 bg-brand-50/20",
+      border: "border-brand-100",
+      iconBg: "bg-brand-100",
+    },
+    warning: {
+      card: "border-amber-200 bg-amber-50/20",
+      border: "border-amber-100",
+      iconBg: "bg-amber-100",
+    },
+    default: { card: "", border: "border-gray-100", iconBg: "bg-gray-100" },
   }[tier];
 
   return (
     <section id={`doc-section-${index}`} aria-labelledby={`section-heading-${index}`}>
       <Card className={styles.card}>
         <div className={`mb-4 flex items-center gap-2.5 border-b ${styles.border} pb-3`}>
-          <span className={`flex h-7 w-7 items-center justify-center rounded-md ${styles.iconBg} text-sm`} aria-hidden="true">{icon}</span>
-          <h2 id={`section-heading-${index}`} className="text-base font-semibold text-gray-900">{section.heading}</h2>
-          {tier === "default" && <span className="ml-auto text-xs font-medium text-gray-300" aria-hidden="true">{index}</span>}
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-md ${styles.iconBg} text-sm`}
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+          <h2 id={`section-heading-${index}`} className="text-base font-semibold text-gray-900">
+            {section.heading}
+          </h2>
+          {tier === "default" && (
+            <span className="ml-auto text-xs font-medium text-gray-300" aria-hidden="true">
+              {index}
+            </span>
+          )}
         </div>
         <div className="max-w-prose">
           <RichContent text={section.content} />
@@ -535,7 +634,13 @@ function useScrollSpy(tocEntries: { heading: string; index: number }[]) {
 /*  Main renderer                                                      */
 /* ------------------------------------------------------------------ */
 
-export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content: string; maxWidth?: string }) {
+export function DocumentRenderer({
+  content,
+  maxWidth = "max-w-3xl",
+}: {
+  content: string;
+  maxWidth?: string;
+}) {
   const parsed = useMemo(() => {
     if (!content || content.trim().length === 0) return null;
 
@@ -553,7 +658,11 @@ export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content:
       if (s.heading) {
         sectionCounter++;
         tocEntries.push({ heading: s.heading, index: sectionCounter });
-        metaMap.set(i, { index: sectionCounter, tier: getSectionTier(s.heading), icon: getSectionIcon(s.heading) });
+        metaMap.set(i, {
+          index: sectionCounter,
+          tier: getSectionTier(s.heading),
+          icon: getSectionIcon(s.heading),
+        });
       }
     });
 
@@ -562,7 +671,7 @@ export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content:
 
   if (!parsed) {
     return (
-      <Card className="text-center py-12">
+      <Card className="py-12 text-center">
         <p className="text-sm text-gray-500">No content available.</p>
       </Card>
     );
@@ -571,7 +680,9 @@ export function DocumentRenderer({ content, maxWidth = "max-w-3xl" }: { content:
   if (parsed.fallback) {
     return (
       <Card>
-        <div className="max-w-prose"><RichContent text={content} /></div>
+        <div className="max-w-prose">
+          <RichContent text={content} />
+        </div>
       </Card>
     );
   }
@@ -604,7 +715,7 @@ function DocumentRendererInner({
   const activeIndex = useScrollSpy(tocEntries);
 
   return (
-    <div className={hasSidebar ? "flex gap-8 items-start" : ""}>
+    <div className={hasSidebar ? "flex items-start gap-8" : ""}>
       {hasSidebar && <TableOfContents sections={tocEntries} activeIndex={activeIndex} />}
 
       <div className={`${maxWidth} min-w-0 flex-1 space-y-4`}>
@@ -616,7 +727,9 @@ function DocumentRendererInner({
           if (!section.heading && section.content) {
             return (
               <Card key={i} className="border-brand-200 bg-brand-50/30">
-                <div className="max-w-prose"><RichContent text={section.content} /></div>
+                <div className="max-w-prose">
+                  <RichContent text={section.content} />
+                </div>
               </Card>
             );
           }
@@ -625,7 +738,13 @@ function DocumentRendererInner({
           if (!meta) return null;
 
           return (
-            <SectionCard key={i} section={section} index={meta.index} tier={meta.tier} icon={meta.icon} />
+            <SectionCard
+              key={i}
+              section={section}
+              index={meta.index}
+              tier={meta.tier}
+              icon={meta.icon}
+            />
           );
         })}
       </div>

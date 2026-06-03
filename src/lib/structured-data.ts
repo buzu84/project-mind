@@ -1,4 +1,10 @@
-import type { WithContext, SoftwareApplication, Organization, FAQPage, BreadcrumbList } from "schema-dts";
+import type {
+  WithContext,
+  SoftwareApplication,
+  Organization,
+  FAQPage,
+  BreadcrumbList,
+} from "schema-dts";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://productmind.app";
 
@@ -8,8 +14,7 @@ export const organizationJsonLd: WithContext<Organization> = {
   name: "ProductMind",
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
-  description:
-    "AI-powered product management workspace for PMs, founders, and product leads.",
+  description: "AI-powered product management workspace for PMs, founders, and product leads.",
   foundingDate: "2026",
   sameAs: [],
 };
@@ -27,7 +32,8 @@ export const softwareApplicationJsonLd: WithContext<SoftwareApplication> = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD",
-    description: "Free early-access plan with rate-limited AI operations (20 standard/hour, 5 heavy/15 min)",
+    description:
+      "Free early-access plan with rate-limited AI operations (20 standard/hour, 5 heavy/15 min)",
   },
   featureList: [
     "AI-powered PRD generation",
@@ -122,7 +128,4 @@ export function createBreadcrumbJsonLd(
   };
 }
 
-export const homeBreadcrumbJsonLd = createBreadcrumbJsonLd([
-  { name: "Home", url: SITE_URL },
-]);
-
+export const homeBreadcrumbJsonLd = createBreadcrumbJsonLd([{ name: "Home", url: SITE_URL }]);

@@ -11,6 +11,7 @@ Next.js Route Handlers are server-side functions that receive HTTP requests and 
 **Location**: `src/app/api/[...path]/route.ts`
 
 **Convention**: Each file exports named functions matching HTTP methods:
+
 ```typescript
 export async function GET(req: Request) { ... }
 export async function POST(req: Request) { ... }
@@ -61,14 +62,14 @@ The service layer contains reusable backend logic separated from HTTP concerns. 
 
 ### Module Boundaries
 
-| Module | Responsibility | Key Files |
-|---|---|---|
-| `lib/ai/` | Rate limiting, usage tracking, pricing config, mock detection | `rate-limiter.ts`, `usage-tracking.ts`, `pricing.ts` |
-| `lib/auth/` | User session management, admin detection, mock auth | `server.ts`, `constants.ts`, `client.ts` |
-| `lib/decisions/` | Decision CRUD, AI review orchestration, schema validation | `service.ts`, `decision-review-service.ts`, `review-schemas.ts`, `review-normalize.ts` |
-| `lib/evidence/` | Evidence retrieval abstraction, citation generation | `retrieval-service.ts`, `citations.ts`, `types.ts` |
-| `lib/rag/` | Document chunking, embedding, vector search, context building | `chunker.ts`, `embeddings.ts`, `vector-search.ts`, `context-builder.ts` |
-| `lib/supabase/` | Database client creation (server/client/middleware) | `server.ts`, `client.ts`, `middleware.ts` |
+| Module           | Responsibility                                                | Key Files                                                                              |
+| ---------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `lib/ai/`        | Rate limiting, usage tracking, pricing config, mock detection | `rate-limiter.ts`, `usage-tracking.ts`, `pricing.ts`                                   |
+| `lib/auth/`      | User session management, admin detection, mock auth           | `server.ts`, `constants.ts`, `client.ts`                                               |
+| `lib/decisions/` | Decision CRUD, AI review orchestration, schema validation     | `service.ts`, `decision-review-service.ts`, `review-schemas.ts`, `review-normalize.ts` |
+| `lib/evidence/`  | Evidence retrieval abstraction, citation generation           | `retrieval-service.ts`, `citations.ts`, `types.ts`                                     |
+| `lib/rag/`       | Document chunking, embedding, vector search, context building | `chunker.ts`, `embeddings.ts`, `vector-search.ts`, `context-builder.ts`                |
+| `lib/supabase/`  | Database client creation (server/client/middleware)           | `server.ts`, `client.ts`, `middleware.ts`                                              |
 
 ### Why Not Express/Fastify?
 
@@ -128,4 +129,3 @@ This is necessary because LLMs don't reliably produce valid JSON matching a spec
 - `lib/ai/is-real-ai.ts`: Checks `USE_REAL_AI` flag to toggle mock/real AI.
 - `lib/auth/constants.ts`: Guards mock auth flags so they can never activate in production.
 - `lib/url.ts`: `getSiteUrl()` resolves the correct URL for Vercel preview, production, or local dev.
-

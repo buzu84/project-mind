@@ -28,8 +28,12 @@ function createFakeTime(startMs: number = 0) {
   let currentTime = startMs;
   return {
     now: () => currentTime,
-    advance: (ms: number) => { currentTime += ms; },
-    set: (ms: number) => { currentTime = ms; },
+    advance: (ms: number) => {
+      currentTime += ms;
+    },
+    set: (ms: number) => {
+      currentTime = ms;
+    },
   };
 }
 
@@ -539,6 +543,3 @@ describe("default singleton (checkStandardAILimit, checkHeavyAILimit)", () => {
     expect(result.remaining).toBeGreaterThanOrEqual(0);
   });
 });
-
-
-

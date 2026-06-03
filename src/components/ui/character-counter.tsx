@@ -12,21 +12,13 @@ interface CharacterCounterProps {
  * Shows "X / Y" and changes color near the limit.
  * Only announces to screen readers when nearing or at the limit.
  */
-export function CharacterCounter({
-  current,
-  max,
-  warningThreshold = 0.9,
-}: CharacterCounterProps) {
+export function CharacterCounter({ current, max, warningThreshold = 0.9 }: CharacterCounterProps) {
   const ratio = max > 0 ? current / max : 0;
   const isWarning = ratio >= warningThreshold && ratio < 1;
   const isOver = ratio >= 1;
   const isNearLimit = isWarning || isOver;
 
-  const color = isOver
-    ? "text-red-500"
-    : isWarning
-      ? "text-amber-500"
-      : "text-gray-400";
+  const color = isOver ? "text-red-500" : isWarning ? "text-amber-500" : "text-gray-400";
 
   return (
     <span
@@ -39,4 +31,3 @@ export function CharacterCounter({
     </span>
   );
 }
-

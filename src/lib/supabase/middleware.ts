@@ -4,8 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 /** True when mock auth is explicitly enabled in development */
 const useMockAuth =
   process.env.NODE_ENV === "development" &&
-  (process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true" ||
-    process.env.USE_MOCK_AUTH === "true");
+  (process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true" || process.env.USE_MOCK_AUTH === "true");
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const publishableKey =
@@ -22,32 +21,34 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, publishableKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
-        },
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options),
+        );
       },
     },
-  );
+  });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   // Protected routes: redirect to sign-in if not authenticated
-  const protectedPaths = ["/dashboard", "/projects", "/ai-chat", "/settings", "/usage", "/getting-started"];
-  const isProtected = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path),
-  );
+  const protectedPaths = [
+    "/dashboard",
+    "/projects",
+    "/ai-chat",
+    "/settings",
+    "/usage",
+    "/getting-started",
+  ];
+  const isProtected = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
@@ -58,9 +59,7 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages
   const authPaths = ["/sign-in", "/sign-up", "/forgot-password"];
-  const isAuthPage = authPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path),
-  );
+  const isAuthPage = authPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (isAuthPage && user) {
     const url = request.nextUrl.clone();

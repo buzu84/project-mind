@@ -18,8 +18,14 @@ export const analysisSchema = z.object({
   productName: z
     .string()
     .trim()
-    .min(ANALYSIS_PRODUCT_NAME_MIN, `Product name must be at least ${ANALYSIS_PRODUCT_NAME_MIN} characters.`)
-    .max(ANALYSIS_PRODUCT_NAME_MAX, `Product name must be under ${ANALYSIS_PRODUCT_NAME_MAX} characters.`),
+    .min(
+      ANALYSIS_PRODUCT_NAME_MIN,
+      `Product name must be at least ${ANALYSIS_PRODUCT_NAME_MIN} characters.`,
+    )
+    .max(
+      ANALYSIS_PRODUCT_NAME_MAX,
+      `Product name must be under ${ANALYSIS_PRODUCT_NAME_MAX} characters.`,
+    ),
   industry: z
     .string()
     .trim()
@@ -28,9 +34,11 @@ export const analysisSchema = z.object({
   competitors: z
     .string()
     .trim()
-    .max(ANALYSIS_COMPETITORS_MAX, `Competitors must be under ${ANALYSIS_COMPETITORS_MAX} characters.`)
+    .max(
+      ANALYSIS_COMPETITORS_MAX,
+      `Competitors must be under ${ANALYSIS_COMPETITORS_MAX} characters.`,
+    )
     .optional(),
 });
 
 export type AnalysisFormData = z.infer<typeof analysisSchema>;
-

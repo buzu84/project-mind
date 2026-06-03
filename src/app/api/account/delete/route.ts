@@ -8,10 +8,7 @@ const publishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   "";
-const secretKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-  process.env.SUPABASE_SECRET_KEY ??
-  "";
+const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY ?? "";
 
 export async function POST() {
   // 1. Get the authenticated user from cookies
@@ -21,7 +18,9 @@ export async function POST() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
+      setAll(
+        cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>,
+      ) {
         cookiesToSet.forEach(({ name, value, options }) =>
           cookieStore.set(name, value, options as any),
         );
@@ -35,10 +34,7 @@ export async function POST() {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const userId = user.id;
@@ -46,10 +42,7 @@ export async function POST() {
   // 2. Require service role key for admin operations
   if (!secretKey) {
     console.error("[DELETE_ACCOUNT] Missing SUPABASE_SERVICE_ROLE_KEY");
-    return NextResponse.json(
-      { error: "Server configuration error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
   }
 
   const adminClient = createSupabaseClient(supabaseUrl, secretKey);
@@ -91,10 +84,7 @@ export async function POST() {
     ];
 
     for (const table of projectChildTables) {
-      const { error } = await adminClient
-        .from(table)
-        .delete()
-        .in("project_id", projectIds);
+      const { error } = await adminClient.from(table).delete().in("project_id", projectIds);
 
       if (error) {
         console.error(`[DELETE_ACCOUNT] Failed to delete ${table}:`, error.message);
@@ -105,10 +95,7 @@ export async function POST() {
 
   // Delete user-level tables
   for (const { table, filter } of tables) {
-    const { error } = await adminClient
-      .from(table)
-      .delete()
-      .eq(filter.field, filter.value);
+    const { error } = await adminClient.from(table).delete().eq(filter.field, filter.value);
 
     if (error) {
       console.error(`[DELETE_ACCOUNT] Failed to delete ${table}:`, error.message);
@@ -117,10 +104,7 @@ export async function POST() {
 
   // Delete projects themselves
   if (projectIds.length > 0) {
-    const { error } = await adminClient
-      .from("projects")
-      .delete()
-      .eq("user_id", userId);
+    const { error } = await adminClient.from("projects").delete().eq("user_id", userId);
 
     if (error) {
       console.error("[DELETE_ACCOUNT] Failed to delete projects:", error.message);
@@ -128,10 +112,7 @@ export async function POST() {
   }
 
   // Delete profile
-  const { error: profileError } = await adminClient
-    .from("profiles")
-    .delete()
-    .eq("id", userId);
+  const { error: profileError } = await adminClient.from("profiles").delete().eq("id", userId);
 
   if (profileError) {
     console.error("[DELETE_ACCOUNT] Failed to delete profile:", profileError.message);
@@ -151,8 +132,5 @@ export async function POST() {
     );
   }
 
-
   return NextResponse.json({ success: true });
 }
-
-

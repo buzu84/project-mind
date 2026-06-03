@@ -21,7 +21,11 @@ interface SettingsContentProps {
   isAdmin?: boolean;
 }
 
-export function SettingsContent({ user, authProvider = "email", isAdmin = false }: SettingsContentProps) {
+export function SettingsContent({
+  user,
+  authProvider = "email",
+  isAdmin = false,
+}: SettingsContentProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
@@ -67,7 +71,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
           <p className="mt-1 text-sm text-gray-500">Your account information</p>
         </div>
 
-        <div className="flex items-center gap-5 pb-6 border-b border-gray-100">
+        <div className="flex items-center gap-5 border-b border-gray-100 pb-6">
           {avatarUrl ? (
             <Image
               src={avatarUrl}
@@ -102,7 +106,8 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
         </div>
 
         <p className="mt-3 text-xs text-gray-400">
-          Profile information is managed through your authentication provider and cannot be edited here.
+          Profile information is managed through your authentication provider and cannot be edited
+          here.
         </p>
       </Card>
 
@@ -119,16 +124,15 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
             <p className="text-sm font-medium text-gray-900">Password</p>
             {isOAuth ? (
               <p className="text-xs text-gray-500">
-                Managed by {authProvider.charAt(0).toUpperCase()}{authProvider.slice(1)}. Sign in with your provider to change it.
+                Managed by {authProvider.charAt(0).toUpperCase()}
+                {authProvider.slice(1)}. Sign in with your provider to change it.
               </p>
             ) : passwordResetSent ? (
               <p className="text-xs text-emerald-600">
                 Reset link sent to {email}. Check your inbox.
               </p>
             ) : (
-              <p className="text-xs text-gray-500">
-                Send a password reset link to your email
-              </p>
+              <p className="text-xs text-gray-500">Send a password reset link to your email</p>
             )}
           </div>
           {!isOAuth && !passwordResetSent && (
@@ -148,15 +152,9 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
         <div className="mt-3 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4">
           <div>
             <p className="text-sm font-medium text-gray-900">Session</p>
-            <p className="text-xs text-gray-500">
-              Sign out of your current session on this device
-            </p>
+            <p className="text-xs text-gray-500">Sign out of your current session on this device</p>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleSignOut}
-          >
+          <Button variant="secondary" size="sm" onClick={handleSignOut}>
             <IconLogOut className="mr-1.5 h-3.5 w-3.5" />
             Sign out
           </Button>
@@ -180,9 +178,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
                 <p className="text-sm font-semibold text-gray-900">
                   {isAdmin ? "Admin Plan" : "Free Plan"}
                 </p>
-                {isAdmin && (
-                  <Badge variant="success">Admin</Badge>
-                )}
+                {isAdmin && <Badge variant="success">Admin</Badge>}
               </div>
               <p className="text-xs text-gray-500">
                 {isAdmin
@@ -203,7 +199,10 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
             <p className="text-xs font-medium text-gray-700">Current limits</p>
             <ul className="mt-1.5 space-y-1 text-xs text-gray-500">
               <li>• Standard AI requests (chat, insights, scoring): 20 per hour</li>
-              <li>• Heavy AI generations (PRD, roadmap, competitive analysis, multi-agent review): 5 per 15 minutes</li>
+              <li>
+                • Heavy AI generations (PRD, roadmap, competitive analysis, multi-agent review): 5
+                per 15 minutes
+              </li>
             </ul>
           </div>
         )}
@@ -292,10 +291,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
             >
               Cookie Policy
             </Link>
-            <Link
-              href="/terms"
-              className="text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
+            <Link href="/terms" className="text-sm font-medium text-brand-600 hover:text-brand-700">
               Terms of Service
             </Link>
           </div>
@@ -305,15 +301,11 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
       {/* ─── Danger Zone ─── */}
       <Card className="border-red-200">
         <h3 className="text-base font-semibold text-red-600">Danger Zone</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Irreversible and destructive actions
-        </p>
+        <p className="mt-1 text-sm text-gray-500">Irreversible and destructive actions</p>
         <div className="mt-5 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4">
           <div>
             <p className="text-sm font-medium text-gray-900">Delete account</p>
-            <p className="text-xs text-gray-500">
-              Permanently delete your account and all data
-            </p>
+            <p className="text-xs text-gray-500">Permanently delete your account and all data</p>
           </div>
           <Button
             ref={deleteAccountButtonRef}
@@ -326,9 +318,7 @@ export function SettingsContent({ user, authProvider = "email", isAdmin = false 
         </div>
       </Card>
 
-      {showDeleteModal && (
-        <DeleteAccountModal onClose={handleCloseDeleteModal} />
-      )}
+      {showDeleteModal && <DeleteAccountModal onClose={handleCloseDeleteModal} />}
     </div>
   );
 }

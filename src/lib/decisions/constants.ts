@@ -52,12 +52,7 @@ export type AssumptionType = (typeof ASSUMPTION_TYPES)[number];
 export const RISK_LEVELS = ["low", "medium", "high"] as const;
 export type RiskLevel = (typeof RISK_LEVELS)[number];
 
-export const EVIDENCE_STATUSES = [
-  "unsupported",
-  "weak",
-  "moderate",
-  "strong",
-] as const;
+export const EVIDENCE_STATUSES = ["unsupported", "weak", "moderate", "strong"] as const;
 export type EvidenceStatus = (typeof EVIDENCE_STATUSES)[number];
 
 // ── Evidence ────────────────────────────────────────────────────────
@@ -97,4 +92,3 @@ export const AGENT_ROLES = [
   "synthesizer",
 ] as const;
 export type AgentRole = (typeof AGENT_ROLES)[number];
-

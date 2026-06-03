@@ -13,10 +13,7 @@ import { createClient } from "@/lib/supabase/server";
  * Does not expose whether the project exists for another user (prevents
  * resource enumeration).
  */
-export async function verifyProjectOwnership(
-  projectId: string,
-  userId: string,
-): Promise<boolean> {
+export async function verifyProjectOwnership(projectId: string, userId: string): Promise<boolean> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("projects")
@@ -32,4 +29,3 @@ export async function verifyProjectOwnership(
 
   return !!data;
 }
-

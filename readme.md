@@ -22,40 +22,40 @@ All AI outputs are project-scoped, validated with Zod schemas, and persisted to 
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 (App Router), React 18, TypeScript (strict) |
-| Styling | Tailwind CSS 3 |
-| Backend / API | Next.js Route Handlers (14 routes, serverless on Vercel) |
-| Database | Supabase PostgreSQL with Row-Level Security |
-| Vector Search | pgvector (cosine similarity, 1536-dim embeddings) |
-| AI Generation | OpenAI GPT-4o |
-| AI Embeddings | OpenAI text-embedding-3-small |
-| Validation | Zod (request input + AI output validation) |
-| Auth | Supabase Auth (email/password, email confirmation, password reset) |
-| Deployment | Vercel (serverless) |
+| Layer         | Technology                                                         |
+| ------------- | ------------------------------------------------------------------ |
+| Frontend      | Next.js 14 (App Router), React 18, TypeScript (strict)             |
+| Styling       | Tailwind CSS 3                                                     |
+| Backend / API | Next.js Route Handlers (14 routes, serverless on Vercel)           |
+| Database      | Supabase PostgreSQL with Row-Level Security                        |
+| Vector Search | pgvector (cosine similarity, 1536-dim embeddings)                  |
+| AI Generation | OpenAI GPT-4o                                                      |
+| AI Embeddings | OpenAI text-embedding-3-small                                      |
+| Validation    | Zod (request input + AI output validation)                         |
+| Auth          | Supabase Auth (email/password, email confirmation, password reset) |
+| Deployment    | Vercel (serverless)                                                |
 
 ---
 
 ## Features
 
-| Feature | What it does |
-|---|---|
-| **Project Workspace** | Create projects with structured metadata (name, description, target users, market, business model, goals) |
-| **Context Builder** | Add structured context across 8 sections (personas, metrics, pain points, competitors, goals, constraints, open questions) |
-| **Feedback & Research** | Upload documents that get chunked, embedded via pgvector, and indexed for semantic retrieval |
-| **AI Chat** (per project) | Streaming conversational assistant scoped to one project — uses RAG to retrieve from uploaded feedback |
-| **Global AI Assistant** | General product strategy chat — no project context, no RAG |
-| **PRD Generator** | Generates a structured Product Requirements Document from project metadata |
-| **Feature Prioritizer** | RICE and ICE scoring for feature ideas with AI commentary |
-| **Competitive Analysis** | Market positioning, competitor comparison, gap analysis from project metadata |
-| **AI Insights** | Strategic risks, opportunities, assumptions, and recommended actions |
-| **AI Roadmap** | Now/Next/Later roadmap + 30/60/90-day plan — uses RAG |
-| **Multi-Agent Review** | 4 AI personas (PM, CTO, UX Researcher, Growth Marketer) independently evaluate, then produce a consensus with disagreements and blind spots |
-| **Decision Review** | Structured decision analysis: options, assumptions, evidence retrieval, confidence-scored recommendation |
-| **Generated Documents** | Stored PRDs, competitive analyses, and prioritization results viewable per project |
-| **AI Usage Tracking** | Per-call telemetry: model, tokens, cost, latency, feature, status (mock/real) |
-| **Rate Limiting** | In-memory sliding window: 20 standard/hour, 5 heavy/15min, admin bypass |
+| Feature                   | What it does                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Project Workspace**     | Create projects with structured metadata (name, description, target users, market, business model, goals)                                   |
+| **Context Builder**       | Add structured context across 8 sections (personas, metrics, pain points, competitors, goals, constraints, open questions)                  |
+| **Feedback & Research**   | Upload documents that get chunked, embedded via pgvector, and indexed for semantic retrieval                                                |
+| **AI Chat** (per project) | Streaming conversational assistant scoped to one project — uses RAG to retrieve from uploaded feedback                                      |
+| **Global AI Assistant**   | General product strategy chat — no project context, no RAG                                                                                  |
+| **PRD Generator**         | Generates a structured Product Requirements Document from project metadata                                                                  |
+| **Feature Prioritizer**   | RICE and ICE scoring for feature ideas with AI commentary                                                                                   |
+| **Competitive Analysis**  | Market positioning, competitor comparison, gap analysis from project metadata                                                               |
+| **AI Insights**           | Strategic risks, opportunities, assumptions, and recommended actions                                                                        |
+| **AI Roadmap**            | Now/Next/Later roadmap + 30/60/90-day plan — uses RAG                                                                                       |
+| **Multi-Agent Review**    | 4 AI personas (PM, CTO, UX Researcher, Growth Marketer) independently evaluate, then produce a consensus with disagreements and blind spots |
+| **Decision Review**       | Structured decision analysis: options, assumptions, evidence retrieval, confidence-scored recommendation                                    |
+| **Generated Documents**   | Stored PRDs, competitive analyses, and prioritization results viewable per project                                                          |
+| **AI Usage Tracking**     | Per-call telemetry: model, tokens, cost, latency, feature, status (mock/real)                                                               |
+| **Rate Limiting**         | In-memory sliding window: 20 standard/hour, 5 heavy/15min, admin bypass                                                                     |
 
 ---
 
@@ -63,18 +63,18 @@ All AI outputs are project-scoped, validated with Zod schemas, and persisted to 
 
 Not all features use retrieval. This table shows exactly what each AI feature does:
 
-| Feature | Context Source | Uses RAG? | Streaming? | Validation |
-|---|---|---|---|---|
-| AI Chat (per project) | Project metadata + RAG from feedback | ✅ Yes | ✅ SSE | — |
-| AI Roadmap | Project metadata + RAG from feedback | ✅ Yes | No | Zod |
-| Multi-Agent Review | Project metadata + RAG (optional) | ✅ Yes | No | Zod (per persona) |
-| Decision Review | Project metadata + Evidence Layer (RAG + citations) | ✅ Yes | No | Zod + normalization |
-| PRD Generator | Project metadata from DB | ❌ No | No | Zod |
-| Competitive Analysis | Project metadata from DB | ❌ No | No | Zod |
-| AI Insights | Project metadata from DB | ❌ No | No | Zod + normalization |
-| Feature Prioritizer | Feature list + project metadata | ❌ No | No | Zod |
-| Feature Scoring | Feature descriptions | ❌ No | No | Zod |
-| Global AI Assistant | None (general knowledge only) | ❌ No | ✅ SSE | — |
+| Feature               | Context Source                                      | Uses RAG? | Streaming? | Validation          |
+| --------------------- | --------------------------------------------------- | --------- | ---------- | ------------------- |
+| AI Chat (per project) | Project metadata + RAG from feedback                | ✅ Yes    | ✅ SSE     | —                   |
+| AI Roadmap            | Project metadata + RAG from feedback                | ✅ Yes    | No         | Zod                 |
+| Multi-Agent Review    | Project metadata + RAG (optional)                   | ✅ Yes    | No         | Zod (per persona)   |
+| Decision Review       | Project metadata + Evidence Layer (RAG + citations) | ✅ Yes    | No         | Zod + normalization |
+| PRD Generator         | Project metadata from DB                            | ❌ No     | No         | Zod                 |
+| Competitive Analysis  | Project metadata from DB                            | ❌ No     | No         | Zod                 |
+| AI Insights           | Project metadata from DB                            | ❌ No     | No         | Zod + normalization |
+| Feature Prioritizer   | Feature list + project metadata                     | ❌ No     | No         | Zod                 |
+| Feature Scoring       | Feature descriptions                                | ❌ No     | No         | Zod                 |
+| Global AI Assistant   | None (general knowledge only)                       | ❌ No     | ✅ SSE     | —                   |
 
 **4 of 10 AI features** use retrieval-augmented generation at runtime. The others generate from project metadata stored in Supabase. Intent configs exist for PRD and competitive analysis but are not yet wired into their route handlers.
 
@@ -155,14 +155,14 @@ Project chat and global chat use Server-Sent Events for real-time token delivery
 
 ### Security & Data Isolation
 
-| Layer | Mechanism |
-|---|---|
-| Database | Row-Level Security (RLS) on every table — `auth.uid() = user_id` |
-| Application | Explicit `.eq("user_id", user.id)` on every query |
-| API | `getCurrentUser()` check in every route handler |
-| RAG | `project_id` filter in vector search |
-| Prompt | Project context scoped per request |
-| Admin | `ADMIN_EMAILS` checked server-side only, never exposed to client |
+| Layer       | Mechanism                                                        |
+| ----------- | ---------------------------------------------------------------- |
+| Database    | Row-Level Security (RLS) on every table — `auth.uid() = user_id` |
+| Application | Explicit `.eq("user_id", user.id)` on every query                |
+| API         | `getCurrentUser()` check in every route handler                  |
+| RAG         | `project_id` filter in vector search                             |
+| Prompt      | Project context scoped per request                               |
+| Admin       | `ADMIN_EMAILS` checked server-side only, never exposed to client |
 
 ### Usage Telemetry
 
@@ -279,24 +279,24 @@ Run 14 SQL migrations in order via **Supabase Dashboard → SQL Editor**. See `s
 
 ### Development Modes
 
-| Mode | Config | Use Case |
-|---|---|---|
-| Full mock | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=false` | No external services needed |
-| Mock auth + real AI | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=true` | Test AI with mock data |
-| Full production | All real credentials | End-to-end testing |
+| Mode                | Config                                                        | Use Case                    |
+| ------------------- | ------------------------------------------------------------- | --------------------------- |
+| Full mock           | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=false` | No external services needed |
+| Mock auth + real AI | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=true`  | Test AI with mock data      |
+| Full production     | All real credentials                                          | End-to-end testing          |
 
 Production enforces real services — mock flags throw fatal errors at startup.
 
 ### Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Development server |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint |
-| `npm run lint:fix` | ESLint autofix |
-| `npm run format` | Prettier format |
-| `npm run format:check` | Prettier check |
+| Command                | Description        |
+| ---------------------- | ------------------ |
+| `npm run dev`          | Development server |
+| `npm run build`        | Production build   |
+| `npm run lint`         | ESLint             |
+| `npm run lint:fix`     | ESLint autofix     |
+| `npm run format`       | Prettier format    |
+| `npm run format:check` | Prettier check     |
 
 ---
 
@@ -321,19 +321,18 @@ This is a portfolio/MVP project. These limitations are intentional or known:
 
 Comprehensive engineering documentation in [`docs/`](./docs/README.md):
 
-| Area | Docs |
-|---|---|
+| Area                                 | Docs                                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | [Architecture](./docs/architecture/) | System overview, backend patterns, data model, RAG architecture, decision review flow, auth, error handling |
-| [API Reference](./docs/api/) | Route inventory, AI workflows, decision engine API, auth flow, rate limiting |
-| [Operations](./docs/operations/) | Deployment, environment variables, observability, incident response |
-| [Product](./docs/product/) | Product positioning, feature limitations, AI copy guidelines, landing page truthfulness audit |
-| [QA](./docs/qa/) | Manual testing checklist, decision review test plan, RAG smoke tests, data lifecycle audit |
-| [Roadmap](./docs/roadmap/) | Technical debt, future architecture directions |
-| [Glossary](./docs/GLOSSARY.md) | 28 codebase-specific term definitions |
+| [API Reference](./docs/api/)         | Route inventory, AI workflows, decision engine API, auth flow, rate limiting                                |
+| [Operations](./docs/operations/)     | Deployment, environment variables, observability, incident response                                         |
+| [Product](./docs/product/)           | Product positioning, feature limitations, AI copy guidelines, landing page truthfulness audit               |
+| [QA](./docs/qa/)                     | Manual testing checklist, decision review test plan, RAG smoke tests, data lifecycle audit                  |
+| [Roadmap](./docs/roadmap/)           | Technical debt, future architecture directions                                                              |
+| [Glossary](./docs/GLOSSARY.md)       | 28 codebase-specific term definitions                                                                       |
 
 ---
 
 ## License
 
 Private — not open source.
-

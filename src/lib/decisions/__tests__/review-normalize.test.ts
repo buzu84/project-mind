@@ -270,15 +270,9 @@ describe("normalizeDecisionReviewOutput", () => {
 
   it("handles non-string enum values with safe defaults", () => {
     const result = normalizeDecisionReviewOutput({
-      assumptions: [
-        { statement: "A", type: 42 },
-      ],
-      risks: [
-        { title: "R", description: "d", severity: null },
-      ],
-      options: [
-        { title: "O", effort_estimate: true },
-      ],
+      assumptions: [{ statement: "A", type: 42 }],
+      risks: [{ title: "R", description: "d", severity: null }],
+      options: [{ title: "O", effort_estimate: true }],
     });
     expect((result.assumptions as Record<string, unknown>[])[0].type).toBe("other");
     expect((result.risks as Record<string, unknown>[])[0].severity).toBe("medium");
@@ -293,12 +287,8 @@ describe("normalizeDecisionReviewOutput", () => {
       assumptions: [
         { statement: "Legal risk", type: "legal", risk_level: "high", evidence_status: "partial" },
       ],
-      options: [
-        { title: "A", effort_estimate: "complex", confidence_score: "90" },
-      ],
-      risks: [
-        { title: "R", description: "d", severity: "critical" },
-      ],
+      options: [{ title: "A", effort_estimate: "complex", confidence_score: "90" }],
+      risks: [{ title: "R", description: "d", severity: "critical" }],
       recommendation: {
         recommendation: "Go",
         reasoning: ["r"],
@@ -359,4 +349,3 @@ describe("formatZodIssuesForRetry", () => {
     expect(parts.length).toBeLessThanOrEqual(10);
   });
 });
-

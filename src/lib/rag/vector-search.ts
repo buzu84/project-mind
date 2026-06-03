@@ -145,9 +145,10 @@ function logDiagnostics(diag: VectorSearchDiagnostics): void {
     rpcResults: diag.rpcResultCount,
     rpcError: diag.rpcError,
     fallback: diag.fallbackUsed,
-    similarityRange: diag.rpcResultCount > 0
-      ? `${diag.minSimilarity?.toFixed(3)}–${diag.maxSimilarity?.toFixed(3)}`
-      : null,
+    similarityRange:
+      diag.rpcResultCount > 0
+        ? `${diag.minSimilarity?.toFixed(3)}–${diag.maxSimilarity?.toFixed(3)}`
+        : null,
   };
   if (diag.rpcError) {
     // eslint-disable-next-line no-console

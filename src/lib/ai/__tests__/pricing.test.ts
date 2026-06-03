@@ -159,5 +159,3 @@ describe("calculateAICost", () => {
     expect(result.inputCost).toBe(2.5);
   });
 });
-
-

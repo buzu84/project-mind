@@ -13,7 +13,6 @@ import type { AgentResponse, ConsensusResponse, AgentRole } from "@/lib/ai/multi
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-
 function hasOpenAIKey(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
@@ -119,7 +118,8 @@ async function generateAgentResponse(
     key_points: Array.isArray(parsed.key_points) ? parsed.key_points : [],
     concerns: Array.isArray(parsed.concerns) ? parsed.concerns : [],
     recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
-    confidence: typeof parsed.confidence === "number" ? Math.min(1, Math.max(0, parsed.confidence)) : 0.5,
+    confidence:
+      typeof parsed.confidence === "number" ? Math.min(1, Math.max(0, parsed.confidence)) : 0.5,
   };
 }
 
@@ -128,7 +128,10 @@ async function generateConsensus(
   responses: Record<AgentRole, AgentResponse>,
 ): Promise<ConsensusResponse> {
   const agentSummary = Object.entries(responses)
-    .map(([role, r]) => `${role.toUpperCase()}:\nSummary: ${r.summary}\nConcerns: ${r.concerns.join("; ")}\nConfidence: ${r.confidence}`)
+    .map(
+      ([role, r]) =>
+        `${role.toUpperCase()}:\nSummary: ${r.summary}\nConcerns: ${r.concerns.join("; ")}\nConfidence: ${r.confidence}`,
+    )
     .join("\n\n");
 
   const response = await openai.chat.completions.create({
@@ -150,7 +153,10 @@ async function generateConsensus(
     disagreements: Array.isArray(parsed.disagreements) ? parsed.disagreements : [],
     risks: Array.isArray(parsed.risks) ? parsed.risks : [],
     next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
-    overall_confidence: typeof parsed.overall_confidence === "number" ? Math.min(1, Math.max(0, parsed.overall_confidence)) : 0.5,
+    overall_confidence:
+      typeof parsed.overall_confidence === "number"
+        ? Math.min(1, Math.max(0, parsed.overall_confidence))
+        : 0.5,
   };
 }
 
@@ -166,10 +172,14 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = multiAgentSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid input", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    );
   }
 
-  const { projectId, question, inputType, includeContext, includeRag, includeInsights } = parsed.data;
+  const { projectId, question, inputType, includeContext, includeRag, includeInsights } =
+    parsed.data;
   const supabase = createClient();
   const isReal = isRealAI();
   const isMock = !isReal;
@@ -187,27 +197,64 @@ export async function POST(req: Request) {
   // Fetch context data in parallel
   const [contextRes, insightsRes, ragResult] = await Promise.all([
     includeContext
-      ? supabase.from("project_context")
-          .select("product_overview, target_personas, current_metrics, pain_points, strategic_goals")
+      ? supabase
+          .from("project_context")
+          .select(
+            "product_overview, target_personas, current_metrics, pain_points, strategic_goals",
+          )
           .eq("project_id", projectId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
     includeInsights
-      ? supabase.from("insights")
+      ? supabase
+          .from("insights")
           .select("type, title, content")
           .eq("project_id", projectId)
           .order("created_at", { ascending: false })
           .limit(10)
       : Promise.resolve({ data: [] }),
     includeRag
-      ? retrieveRelevantContext(question, projectId, user.id).catch(() => ({ context: "", results: [], qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 } }))
-      : Promise.resolve({ context: "", results: [], qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 } }),
+      ? retrieveRelevantContext(question, projectId, user.id).catch(() => ({
+          context: "",
+          results: [],
+          qualityStats: {
+            retrievedChunks: 0,
+            usedChunks: 0,
+            discardedChunks: 0,
+            minSimilarityUsed: null,
+            maxSimilarityUsed: null,
+            hasRelevantContext: false,
+            lexicalGuardApplied: false,
+            lexicalMatched: false,
+            discardedByLexicalGuard: 0,
+          },
+        }))
+      : Promise.resolve({
+          context: "",
+          results: [],
+          qualityStats: {
+            retrievedChunks: 0,
+            usedChunks: 0,
+            discardedChunks: 0,
+            minSimilarityUsed: null,
+            maxSimilarityUsed: null,
+            hasRelevantContext: false,
+            lexicalGuardApplied: false,
+            lexicalMatched: false,
+            discardedByLexicalGuard: 0,
+          },
+        }),
   ]);
 
-  const insightsList = ((insightsRes.data ?? []) as Array<{ type: string; title: string; content: string }>);
-  const insightsSummary = insightsList.length > 0
-    ? insightsList.map((i) => `[${i.type}] ${i.title}: ${i.content}`).join("\n")
-    : null;
+  const insightsList = (insightsRes.data ?? []) as Array<{
+    type: string;
+    title: string;
+    content: string;
+  }>;
+  const insightsSummary =
+    insightsList.length > 0
+      ? insightsList.map((i) => `[${i.type}] ${i.title}: ${i.content}`).join("\n")
+      : null;
 
   const projectContext = buildContext(
     project as Record<string, string | null>,
@@ -215,7 +262,6 @@ export async function POST(req: Request) {
     ragResult.context ?? "",
     insightsSummary,
   );
-
 
   const startTime = Date.now();
 
@@ -250,7 +296,10 @@ export async function POST(req: Request) {
     } else {
       if (!hasOpenAIKey()) {
         return NextResponse.json(
-          { error: "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode." },
+          {
+            error:
+              "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode.",
+          },
           { status: 503 },
         );
       }

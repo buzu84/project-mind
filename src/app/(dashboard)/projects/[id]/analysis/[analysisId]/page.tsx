@@ -52,7 +52,7 @@ export default async function AnalysisResultPage({
     <div className="mx-auto max-w-5xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -60,19 +60,15 @@ export default async function AnalysisResultPage({
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 break-words">
-            {productName}
-          </h1>
+          <h1 className="break-words text-2xl font-bold text-gray-900">{productName}</h1>
           {competitors && (
-            <p className="mt-1 max-w-xl text-sm text-gray-500 leading-relaxed">
+            <p className="mt-1 max-w-xl text-sm leading-relaxed text-gray-500">
               Competitors: {competitors}
             </p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="info">Competitive Analysis</Badge>
-            {analysisInput?.industry && (
-              <Badge variant="default">{analysisInput.industry}</Badge>
-            )}
+            {analysisInput?.industry && <Badge variant="default">{analysisInput.industry}</Badge>}
             <span className="text-xs text-gray-400">·</span>
             <p className="text-xs text-gray-400">
               <time dateTime={toISOString(decision.created_at)}>
@@ -82,16 +78,22 @@ export default async function AnalysisResultPage({
           </div>
         </div>
         <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-          <CopyMarkdownButton getMarkdown={contentUnavailable ? "" : analysisToMarkdown({
-            productName,
-            competitors,
-            industry: analysisInput?.industry,
-            createdAt: decision.created_at,
-            content,
-          })} />
+          <CopyMarkdownButton
+            getMarkdown={
+              contentUnavailable
+                ? ""
+                : analysisToMarkdown({
+                    productName,
+                    competitors,
+                    industry: analysisInput?.industry,
+                    createdAt: decision.created_at,
+                    content,
+                  })
+            }
+          />
           <Link
             href={`/projects/${project.id}/analysis`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
           >
             + New Analysis
           </Link>

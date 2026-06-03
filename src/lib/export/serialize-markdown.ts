@@ -1,4 +1,9 @@
-import type { ParsedMultiAgentReview, ParsedAgentResponse, ParsedRoadmap, ParsedRoadmapItem } from "@/lib/validation/json-parsers";
+import type {
+  ParsedMultiAgentReview,
+  ParsedAgentResponse,
+  ParsedRoadmap,
+  ParsedRoadmapItem,
+} from "@/lib/validation/json-parsers";
 import { AGENT_LABELS, RECOMMENDATION_CONFIG } from "@/lib/ai/multi-agent-types";
 import type { AgentRole } from "@/lib/ai/multi-agent-types";
 import { formatDate } from "@/lib/format-date";
@@ -106,7 +111,8 @@ export function decisionReviewToMarkdown(data: DecisionExportData): string {
       lines.push("");
       if (opt.description) lines.push(opt.description);
       if (opt.effort_estimate) lines.push(`**Effort:** ${opt.effort_estimate}`);
-      if (opt.reversibility && opt.reversibility !== "unknown") lines.push(`**Reversibility:** ${opt.reversibility}`);
+      if (opt.reversibility && opt.reversibility !== "unknown")
+        lines.push(`**Reversibility:** ${opt.reversibility}`);
       if (opt.confidence_score != null) lines.push(`**Confidence:** ${opt.confidence_score}%`);
       lines.push("");
       if (opt.pros.length > 0) {
@@ -130,7 +136,9 @@ export function decisionReviewToMarkdown(data: DecisionExportData): string {
         a.assumption_type,
         a.risk_level ? `${a.risk_level} risk` : null,
         a.evidence_status,
-      ].filter(Boolean).join(" · ");
+      ]
+        .filter(Boolean)
+        .join(" · ");
       lines.push(`- ${a.statement}${tags ? ` *(${tags})*` : ""}`);
       if (a.validation_method) lines.push(`  - Validation: ${a.validation_method}`);
     });
@@ -185,8 +193,12 @@ function agentSectionToMarkdown(role: AgentRole, response: ParsedAgentResponse):
   return lines.join("\n");
 }
 
-export function multiAgentReviewToMarkdown(review: ParsedMultiAgentReview, projectName?: string): string {
-  const recConfig = RECOMMENDATION_CONFIG[review.consensus.recommendation as keyof typeof RECOMMENDATION_CONFIG];
+export function multiAgentReviewToMarkdown(
+  review: ParsedMultiAgentReview,
+  projectName?: string,
+): string {
+  const recConfig =
+    RECOMMENDATION_CONFIG[review.consensus.recommendation as keyof typeof RECOMMENDATION_CONFIG];
   const lines: string[] = [];
 
   lines.push(`# Multi-Agent Review`);
@@ -201,7 +213,9 @@ export function multiAgentReviewToMarkdown(review: ParsedMultiAgentReview, proje
   lines.push("");
   lines.push(review.question);
   lines.push("");
-  lines.push(`**Type:** ${review.input_type === "feature_idea" ? "Feature Idea" : "Product Question"}  `);
+  lines.push(
+    `**Type:** ${review.input_type === "feature_idea" ? "Feature Idea" : "Product Question"}  `,
+  );
   lines.push(`**Generated:** ${formatDate(review.created_at)}  `);
   lines.push("");
 
@@ -368,7 +382,9 @@ export function insightsToMarkdown(insights: InsightExportData[], projectName: s
     const confidence = insight.metadata?.confidence;
     lines.push(`## ${insight.title}`);
     lines.push("");
-    lines.push(`**Type:** ${typeLabel} · **Priority:** ${priority}${confidence ? ` · **Confidence:** ${confidence}` : ""}  `);
+    lines.push(
+      `**Type:** ${typeLabel} · **Priority:** ${priority}${confidence ? ` · **Confidence:** ${confidence}` : ""}  `,
+    );
     lines.push("");
     lines.push(insight.content);
     if (insight.metadata?.suggested_action) {

@@ -20,7 +20,11 @@ import { retrieveEvidence, createEvidenceCitations, formatEvidenceForPrompt } fr
 import type { EvidenceCitation } from "@/lib/evidence";
 import type { Tables } from "@/lib/supabase/types";
 import { decisionReviewOutputSchema, type DecisionReviewOutput } from "./review-schemas";
-import { normalizeDecisionReviewOutput, formatZodIssuesForLog, formatZodIssuesForRetry } from "./review-normalize";
+import {
+  normalizeDecisionReviewOutput,
+  formatZodIssuesForLog,
+  formatZodIssuesForRetry,
+} from "./review-normalize";
 import { sanitizeCitationIds } from "./citation-utils";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -49,7 +53,16 @@ export interface DecisionReviewResult {
   summary: string;
 }
 
-type DecisionRow = Pick<Tables<"product_decisions">, "id" | "title" | "category" | "status" | "problem_statement" | "context_summary" | "confidence_score">;
+type DecisionRow = Pick<
+  Tables<"product_decisions">,
+  | "id"
+  | "title"
+  | "category"
+  | "status"
+  | "problem_statement"
+  | "context_summary"
+  | "confidence_score"
+>;
 
 // ── System prompt ───────────────────────────────────────────────────
 
@@ -69,9 +82,7 @@ Rules:
 
 // ── Main function ───────────────────────────────────────────────────
 
-export async function analyzeDecision(
-  input: DecisionReviewInput,
-): Promise<DecisionReviewResult> {
+export async function analyzeDecision(input: DecisionReviewInput): Promise<DecisionReviewResult> {
   const { userId, projectId, decisionId } = input;
   const startTime = Date.now();
   const supabase = createClient();
@@ -116,7 +127,9 @@ export async function analyzeDecision(
   // 3. Load structured project context (optional)
   const { data: ctx } = await supabase
     .from("project_context")
-    .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
+    .select(
+      "product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions",
+    )
     .eq("project_id", projectId)
     .maybeSingle();
   log("Phase 4: Context loaded", { hasContext: !!ctx });
@@ -145,7 +158,14 @@ export async function analyzeDecision(
 
   // 5. Build user prompt
   const validCitationIds = new Set(citations.map((c) => c.citationId));
-  const userPrompt = buildUserPrompt(dec, project, ctx, evidenceBlock, hasRelevantEvidence, citations);
+  const userPrompt = buildUserPrompt(
+    dec,
+    project,
+    ctx,
+    evidenceBlock,
+    hasRelevantEvidence,
+    citations,
+  );
 
   // 6. Call AI (with retry)
   const isReal = isRealAI();
@@ -245,9 +265,7 @@ export async function analyzeDecision(
 
 // ── OpenAI call with retry ──────────────────────────────────────────
 
-async function callOpenAIWithRetry(
-  userPrompt: string,
-): Promise<{
+async function callOpenAIWithRetry(userPrompt: string): Promise<{
   output: DecisionReviewOutput;
   totalPromptTokens: number;
   totalCompletionTokens: number;
@@ -316,7 +334,9 @@ async function callOpenAIWithRetry(
       }
       if (attempt >= MAX_RETRIES) {
         const devDetail = isDev ? ` Validation: ${issuesForRetry}` : "";
-        throw new Error(`AI response did not match expected format after retry. Please try again.${devDetail}`);
+        throw new Error(
+          `AI response did not match expected format after retry. Please try again.${devDetail}`,
+        );
       }
       continue;
     }
@@ -331,7 +351,6 @@ async function callOpenAIWithRetry(
 
   throw new Error("AI analysis failed. Please try again.");
 }
-
 
 // ── Prompt builder ──────────────────────────────────────────────────
 
@@ -386,11 +405,15 @@ function buildUserPrompt(
     parts.push("Only use the citation IDs listed above. Do not invent new citation IDs.");
   } else {
     parts.push("\n## Evidence");
-    parts.push("No relevant evidence was retrieved from project data. Lower your confidence scores accordingly and explicitly note that evidence is limited.");
+    parts.push(
+      "No relevant evidence was retrieved from project data. Lower your confidence scores accordingly and explicitly note that evidence is limited.",
+    );
   }
 
   parts.push("\n## Output Instructions");
-  parts.push("Return a single JSON object with this exact shape. ALL property names MUST be camelCase (e.g. confidenceScore, not confidence_score):");
+  parts.push(
+    "Return a single JSON object with this exact shape. ALL property names MUST be camelCase (e.g. confidenceScore, not confidence_score):",
+  );
   parts.push(`{
   "summary": "string (concise analysis summary, min 10 chars)",
   "confidenceScore": 55,
@@ -399,10 +422,18 @@ function buildUserPrompt(
   "risks": [{ "title": "string", "description": "string", "severity": "low|medium|high", "mitigation": "optional string", "supportingCitationIds": ["[1]"] }],
   "recommendation": { "recommendation": "string (min 10 chars)", "reasoning": ["at least one"], "supportingEvidence": ["string"], "assumptions": ["string"], "risks": ["string"], "alternatives": ["string"], "nextValidationSteps": ["string"], "confidenceScore": 55 }
 }`);
-  parts.push("Rules: exactly 3-4 options, at least 1 assumption, at least 1 risk. All confidenceScore values must be numbers (not strings). All property names must be camelCase.");
-  parts.push("\nCRITICAL — assumption.type MUST be exactly one of: market, user, technical, growth, pricing, ux, business, other");
-  parts.push("Do NOT use: legal, compliance, operational, product, strategy, risk, financial, regulatory, revenue, engineering, adoption, customer, usability, design, security, infrastructure, execution, process.");
-  parts.push("If the assumption is about legal/compliance/regulatory topics, use \"business\". If about finances/revenue, use \"pricing\". If about engineering/architecture, use \"technical\". If about adoption/retention, use \"growth\". If about usability/design, use \"ux\". If about customers/personas, use \"user\".");
+  parts.push(
+    "Rules: exactly 3-4 options, at least 1 assumption, at least 1 risk. All confidenceScore values must be numbers (not strings). All property names must be camelCase.",
+  );
+  parts.push(
+    "\nCRITICAL — assumption.type MUST be exactly one of: market, user, technical, growth, pricing, ux, business, other",
+  );
+  parts.push(
+    "Do NOT use: legal, compliance, operational, product, strategy, risk, financial, regulatory, revenue, engineering, adoption, customer, usability, design, security, infrastructure, execution, process.",
+  );
+  parts.push(
+    'If the assumption is about legal/compliance/regulatory topics, use "business". If about finances/revenue, use "pricing". If about engineering/architecture, use "technical". If about adoption/retention, use "growth". If about usability/design, use "ux". If about customers/personas, use "user".',
+  );
 
   return parts.join("\n");
 }
@@ -415,27 +446,97 @@ function buildMockOutput(dec: DecisionRow, hasEvidence: boolean): DecisionReview
     summary: `Analysis of "${dec.title}": This decision involves trade-offs between speed, quality, and resource allocation. ${hasEvidence ? "Some supporting evidence was found." : "Limited evidence is available — confidence is lower."}`,
     confidenceScore: confidence,
     assumptions: [
-      { statement: "The target user segment will adopt the proposed change.", type: "user", riskLevel: "medium", evidenceStatus: hasEvidence ? "weak" : "unsupported", validationMethod: "User interviews with 5-10 target users" },
-      { statement: "Technical implementation is feasible within current architecture.", type: "technical", riskLevel: "low", evidenceStatus: "unsupported", validationMethod: "Technical spike / proof of concept" },
-      { statement: "Market conditions will remain stable during rollout.", type: "market", riskLevel: "high", evidenceStatus: "unsupported" },
+      {
+        statement: "The target user segment will adopt the proposed change.",
+        type: "user",
+        riskLevel: "medium",
+        evidenceStatus: hasEvidence ? "weak" : "unsupported",
+        validationMethod: "User interviews with 5-10 target users",
+      },
+      {
+        statement: "Technical implementation is feasible within current architecture.",
+        type: "technical",
+        riskLevel: "low",
+        evidenceStatus: "unsupported",
+        validationMethod: "Technical spike / proof of concept",
+      },
+      {
+        statement: "Market conditions will remain stable during rollout.",
+        type: "market",
+        riskLevel: "high",
+        evidenceStatus: "unsupported",
+      },
     ],
     options: [
-      { title: "Full implementation", description: "Implement the full scope as described.", pros: ["Maximum impact", "Complete solution"], cons: ["Higher cost", "Longer timeline"], risks: ["Resource overcommitment"], effortEstimate: "high", reversibility: "low", confidenceScore: confidence - 10 },
-      { title: "Phased rollout", description: "Implement in 2-3 phases, validating at each stage.", pros: ["Lower risk", "Early feedback"], cons: ["Slower time to full value", "Coordination overhead"], risks: ["Scope creep between phases"], effortEstimate: "medium", reversibility: "medium", confidenceScore: confidence },
-      { title: "Minimum viable approach", description: "Build the smallest version that tests the core hypothesis.", pros: ["Fast to market", "Low resource cost"], cons: ["May not fully address the problem", "Could feel incomplete"], risks: ["Users may not see value in limited version"], effortEstimate: "low", reversibility: "high", confidenceScore: confidence - 5 },
+      {
+        title: "Full implementation",
+        description: "Implement the full scope as described.",
+        pros: ["Maximum impact", "Complete solution"],
+        cons: ["Higher cost", "Longer timeline"],
+        risks: ["Resource overcommitment"],
+        effortEstimate: "high",
+        reversibility: "low",
+        confidenceScore: confidence - 10,
+      },
+      {
+        title: "Phased rollout",
+        description: "Implement in 2-3 phases, validating at each stage.",
+        pros: ["Lower risk", "Early feedback"],
+        cons: ["Slower time to full value", "Coordination overhead"],
+        risks: ["Scope creep between phases"],
+        effortEstimate: "medium",
+        reversibility: "medium",
+        confidenceScore: confidence,
+      },
+      {
+        title: "Minimum viable approach",
+        description: "Build the smallest version that tests the core hypothesis.",
+        pros: ["Fast to market", "Low resource cost"],
+        cons: ["May not fully address the problem", "Could feel incomplete"],
+        risks: ["Users may not see value in limited version"],
+        effortEstimate: "low",
+        reversibility: "high",
+        confidenceScore: confidence - 5,
+      },
     ],
     risks: [
-      { title: "Insufficient user validation", description: "Decision may be based on assumptions rather than evidence.", severity: "high", mitigation: "Conduct rapid user research before committing." },
-      { title: "Resource competition", description: "Other priorities may reduce available engineering capacity.", severity: "medium", mitigation: "Secure resource commitment from leadership." },
+      {
+        title: "Insufficient user validation",
+        description: "Decision may be based on assumptions rather than evidence.",
+        severity: "high",
+        mitigation: "Conduct rapid user research before committing.",
+      },
+      {
+        title: "Resource competition",
+        description: "Other priorities may reduce available engineering capacity.",
+        severity: "medium",
+        mitigation: "Secure resource commitment from leadership.",
+      },
     ],
     recommendation: {
       recommendation: `Recommend a phased rollout approach for "${dec.title}" to balance risk and learning.`,
-      reasoning: ["Allows early validation of assumptions", "Reduces sunk cost if direction changes", "Enables course correction based on real data"],
-      supportingEvidence: hasEvidence ? ["Some relevant feedback was found in project data"] : ["No strong evidence available — rely on stakeholder judgment"],
-      assumptions: ["Target users will engage with the phased approach", "Team can deliver phase 1 within expected timeline"],
+      reasoning: [
+        "Allows early validation of assumptions",
+        "Reduces sunk cost if direction changes",
+        "Enables course correction based on real data",
+      ],
+      supportingEvidence: hasEvidence
+        ? ["Some relevant feedback was found in project data"]
+        : ["No strong evidence available — rely on stakeholder judgment"],
+      assumptions: [
+        "Target users will engage with the phased approach",
+        "Team can deliver phase 1 within expected timeline",
+      ],
       risks: ["Phased approach may lose momentum", "Early phases may not represent full value"],
-      alternatives: ["Full implementation if confidence increases", "Delay decision pending more research"],
-      nextValidationSteps: ["Conduct 5 user interviews", "Build lightweight prototype", "Define success metrics for phase 1"],
+      alternatives: [
+        "Full implementation if confidence increases",
+        "Delay decision pending more research",
+      ],
+      nextValidationSteps: [
+        "Conduct 5 user interviews",
+        "Build lightweight prototype",
+        "Define success metrics for phase 1",
+      ],
       confidenceScore: confidence,
     },
   };
@@ -452,7 +553,12 @@ async function saveAnalysisResults(
     aiOutput: DecisionReviewOutput;
     citations: EvidenceCitation[];
   },
-): Promise<{ recommendationId: string; optionsCreated: number; assumptionsCreated: number; evidenceCreated: number }> {
+): Promise<{
+  recommendationId: string;
+  optionsCreated: number;
+  assumptionsCreated: number;
+  evidenceCreated: number;
+}> {
   const { userId, projectId, decisionId, aiOutput, citations } = params;
 
   // ── Phase 1: Insert all new records first ──────────────────────
@@ -476,7 +582,8 @@ async function saveAnalysisResults(
       .select("id")
       .single();
     if (error) {
-      if (isDev) console.error("[decision-review] Evidence insert failed:", error.message, error.details);
+      if (isDev)
+        console.error("[decision-review] Evidence insert failed:", error.message, error.details);
       continue;
     }
     if (data) {
@@ -487,32 +594,40 @@ async function saveAnalysisResults(
 
   const newLinkIds: string[] = [];
   for (const evidenceId of evidenceIds) {
-    const { data } = await supabase.from("product_decision_evidence_links").insert({
-      user_id: userId,
-      project_id: projectId,
-      decision_id: decisionId,
-      evidence_id: evidenceId,
-      link_type: "informs",
-    }).select("id").single();
+    const { data } = await supabase
+      .from("product_decision_evidence_links")
+      .insert({
+        user_id: userId,
+        project_id: projectId,
+        decision_id: decisionId,
+        evidence_id: evidenceId,
+        link_type: "informs",
+      })
+      .select("id")
+      .single();
     if (data) newLinkIds.push(data.id);
   }
 
   let assumptionsCreated = 0;
   const newAssumptionIds: string[] = [];
   for (const assumption of aiOutput.assumptions) {
-    const { data, error } = await supabase.from("product_assumptions").insert({
-      user_id: userId,
-      project_id: projectId,
-      decision_id: decisionId,
-      assumption_type: assumption.type,
-      type: assumption.type,
-      statement: assumption.statement,
-      risk_level: assumption.riskLevel,
-      status: assumption.evidenceStatus ?? "untested",
-      evidence_status: assumption.evidenceStatus,
-      validation_method: assumption.validationMethod ?? null,
-      generated_by: GENERATED_BY,
-    }).select("id").single();
+    const { data, error } = await supabase
+      .from("product_assumptions")
+      .insert({
+        user_id: userId,
+        project_id: projectId,
+        decision_id: decisionId,
+        assumption_type: assumption.type,
+        type: assumption.type,
+        statement: assumption.statement,
+        risk_level: assumption.riskLevel,
+        status: assumption.evidenceStatus ?? "untested",
+        evidence_status: assumption.evidenceStatus,
+        validation_method: assumption.validationMethod ?? null,
+        generated_by: GENERATED_BY,
+      })
+      .select("id")
+      .single();
     if (!error && data) {
       assumptionsCreated++;
       newAssumptionIds.push(data.id);
@@ -522,21 +637,25 @@ async function saveAnalysisResults(
   let optionsCreated = 0;
   const newOptionIds: string[] = [];
   for (const option of aiOutput.options) {
-    const { data, error } = await supabase.from("product_decision_options").insert({
-      user_id: userId,
-      project_id: projectId,
-      decision_id: decisionId,
-      title: option.title,
-      description: option.description,
-      pros: option.pros,
-      cons: option.cons,
-      risks: option.risks,
-      expected_impact: option.expectedImpact ?? null,
-      effort_estimate: option.effortEstimate,
-      reversibility: option.reversibility,
-      confidence_score: option.confidenceScore,
-      generated_by: GENERATED_BY,
-    }).select("id").single();
+    const { data, error } = await supabase
+      .from("product_decision_options")
+      .insert({
+        user_id: userId,
+        project_id: projectId,
+        decision_id: decisionId,
+        title: option.title,
+        description: option.description,
+        pros: option.pros,
+        cons: option.cons,
+        risks: option.risks,
+        expected_impact: option.expectedImpact ?? null,
+        effort_estimate: option.effortEstimate,
+        reversibility: option.reversibility,
+        confidence_score: option.confidenceScore,
+        generated_by: GENERATED_BY,
+      })
+      .select("id")
+      .single();
     if (!error && data) {
       optionsCreated++;
       newOptionIds.push(data.id);
@@ -574,13 +693,28 @@ async function saveAnalysisResults(
 
   if (recError || !recData) {
     if (isDev) console.error("[decision-review] Recommendation insert failed:", recError?.message);
-    await cleanupIds(supabase, userId, [...evidenceIds, ...newLinkIds, ...newAssumptionIds, ...newOptionIds],
-      ["product_evidence", "product_decision_evidence_links", "product_assumptions", "product_decision_options"]);
+    await cleanupIds(
+      supabase,
+      userId,
+      [...evidenceIds, ...newLinkIds, ...newAssumptionIds, ...newOptionIds],
+      [
+        "product_evidence",
+        "product_decision_evidence_links",
+        "product_assumptions",
+        "product_decision_options",
+      ],
+    );
     throw new Error(`Failed to save recommendation: ${recError?.message ?? "unknown error"}`);
   }
 
   // ── Phase 2: Delete old records (new ones are safe) ────────────
-  const newIds = new Set([...evidenceIds, ...newLinkIds, ...newAssumptionIds, ...newOptionIds, recData.id]);
+  const newIds = new Set([
+    ...evidenceIds,
+    ...newLinkIds,
+    ...newAssumptionIds,
+    ...newOptionIds,
+    recData.id,
+  ]);
 
   await deleteOldRecords(supabase, userId, decisionId, projectId, newIds);
 
@@ -614,47 +748,83 @@ async function deleteOldRecords(
 
   // Delete old recommendations (AI-generated, including legacy rows without generated_by
   // that were created before the generated_by column was added)
-  const { data: oldRecs } = await supabase.from("product_decision_recommendations")
-    .select("id, generated_by").eq("decision_id", decisionId).eq("user_id", userId);
-  for (const r of (oldRecs ?? []).filter((r: any) => !newIds.has(r.id) && (r.generated_by === GENERATED_BY || r.generated_by === null))) {
-    await supabase.from("product_decision_recommendations").delete().eq("id", r.id).eq("user_id", userId);
+  const { data: oldRecs } = await supabase
+    .from("product_decision_recommendations")
+    .select("id, generated_by")
+    .eq("decision_id", decisionId)
+    .eq("user_id", userId);
+  for (const r of (oldRecs ?? []).filter(
+    (r: any) => !newIds.has(r.id) && (r.generated_by === GENERATED_BY || r.generated_by === null),
+  )) {
+    await supabase
+      .from("product_decision_recommendations")
+      .delete()
+      .eq("id", r.id)
+      .eq("user_id", userId);
   }
 
   // Delete old options (AI-generated or legacy null generated_by)
   // When manual option creation is added, change null filter to only GENERATED_BY
-  const { data: oldOpts } = await supabase.from("product_decision_options")
-    .select("id, generated_by").eq("decision_id", decisionId).eq("user_id", userId);
-  for (const o of (oldOpts ?? []).filter((o: any) => !newIds.has(o.id) && (o.generated_by === GENERATED_BY || o.generated_by === null))) {
+  const { data: oldOpts } = await supabase
+    .from("product_decision_options")
+    .select("id, generated_by")
+    .eq("decision_id", decisionId)
+    .eq("user_id", userId);
+  for (const o of (oldOpts ?? []).filter(
+    (o: any) => !newIds.has(o.id) && (o.generated_by === GENERATED_BY || o.generated_by === null),
+  )) {
     await supabase.from("product_decision_options").delete().eq("id", o.id).eq("user_id", userId);
   }
 
   // Delete old assumptions (AI-generated or legacy null generated_by)
   // When manual assumption creation is added, change null filter to only GENERATED_BY
-  const { data: oldAssumptions } = await supabase.from("product_assumptions")
-    .select("id, generated_by").eq("decision_id", decisionId).eq("user_id", userId);
-  for (const a of (oldAssumptions ?? []).filter((a: any) => !newIds.has(a.id) && (a.generated_by === GENERATED_BY || a.generated_by === null))) {
+  const { data: oldAssumptions } = await supabase
+    .from("product_assumptions")
+    .select("id, generated_by")
+    .eq("decision_id", decisionId)
+    .eq("user_id", userId);
+  for (const a of (oldAssumptions ?? []).filter(
+    (a: any) => !newIds.has(a.id) && (a.generated_by === GENERATED_BY || a.generated_by === null),
+  )) {
     await supabase.from("product_assumptions").delete().eq("id", a.id).eq("user_id", userId);
   }
 
   // Delete old evidence links (only those pointing to AI-generated evidence)
   // Keep links to non-AI evidence intact
-  const { data: oldLinks } = await supabase.from("product_decision_evidence_links")
-    .select("id, evidence_id").eq("decision_id", decisionId).eq("user_id", userId);
+  const { data: oldLinks } = await supabase
+    .from("product_decision_evidence_links")
+    .select("id, evidence_id")
+    .eq("decision_id", decisionId)
+    .eq("user_id", userId);
   for (const l of (oldLinks ?? []).filter((l: any) => !newIds.has(l.id))) {
     // Only delete if the linked evidence is AI-generated
-    const { data: ev } = await supabase.from("product_evidence")
-      .select("generated_by").eq("id", l.evidence_id).single();
+    const { data: ev } = await supabase
+      .from("product_evidence")
+      .select("generated_by")
+      .eq("id", l.evidence_id)
+      .single();
     if (ev?.generated_by === GENERATED_BY) {
-      await supabase.from("product_decision_evidence_links").delete().eq("id", l.id).eq("user_id", userId);
+      await supabase
+        .from("product_decision_evidence_links")
+        .delete()
+        .eq("id", l.id)
+        .eq("user_id", userId);
     }
   }
 
   // Delete orphaned AI-generated evidence (only for this decision's old evidence)
-  const { data: oldEvidence } = await supabase.from("product_evidence")
-    .select("id").eq("generated_by", GENERATED_BY).eq("user_id", userId).eq("project_id", projectId);
+  const { data: oldEvidence } = await supabase
+    .from("product_evidence")
+    .select("id")
+    .eq("generated_by", GENERATED_BY)
+    .eq("user_id", userId)
+    .eq("project_id", projectId);
   for (const e of (oldEvidence ?? []).filter((e: { id: string }) => !newIds.has(e.id))) {
-    const { data: links } = await supabase.from("product_decision_evidence_links")
-      .select("id").eq("evidence_id", e.id).limit(1);
+    const { data: links } = await supabase
+      .from("product_decision_evidence_links")
+      .select("id")
+      .eq("evidence_id", e.id)
+      .limit(1);
     if (!links || links.length === 0) {
       await supabase.from("product_evidence").delete().eq("id", e.id).eq("user_id", userId);
     }

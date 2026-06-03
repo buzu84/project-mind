@@ -80,8 +80,13 @@ export async function POST(req: Request) {
 
   if (!projectRes.data) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-  const featuresList = (featuresRes.data ?? []) as Array<{ id: string; name: string; description: string | null }>;
-  if (featuresList.length === 0) return NextResponse.json({ error: "No features to score" }, { status: 400 });
+  const featuresList = (featuresRes.data ?? []) as Array<{
+    id: string;
+    name: string;
+    description: string | null;
+  }>;
+  if (featuresList.length === 0)
+    return NextResponse.json({ error: "No features to score" }, { status: 400 });
 
   // Build context
   const project = projectRes.data;
@@ -103,7 +108,6 @@ export async function POST(req: Request) {
     .join("\n");
 
   const userPrompt = `Project Context:\n${contextParts.join("\n")}\n\nFeature Ideas to Score:\n${featureList}`;
-
 
   const isReal = isRealAI();
   const isMock = !isReal;
@@ -151,7 +155,9 @@ export async function POST(req: Request) {
     // Re-fetch updated features
     const { data: updated } = await supabase
       .from("feature_ideas")
-      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at")
+      .select(
+        "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at",
+      )
       .eq("project_id", projectId)
       .order("rice_score", { ascending: false });
 
@@ -205,7 +211,7 @@ export async function POST(req: Request) {
     // Match AI results to DB features by name and update
     for (const feature of featuresList) {
       const match = scored.find(
-        (s) => s.name.toLowerCase().trim() === feature.name.toLowerCase().trim()
+        (s) => s.name.toLowerCase().trim() === feature.name.toLowerCase().trim(),
       );
       if (!match) continue;
 
@@ -252,10 +258,11 @@ export async function POST(req: Request) {
     // Re-fetch updated features
     const { data: updated } = await supabase
       .from("feature_ideas")
-      .select("id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at")
+      .select(
+        "id, name, description, reach, impact, confidence, effort, rice_score, ice_score, ai_commentary, status, created_at, updated_at, scored_at",
+      )
       .eq("project_id", projectId)
       .order("rice_score", { ascending: false });
-
 
     return NextResponse.json({ features: updated ?? [] });
   } catch (err) {

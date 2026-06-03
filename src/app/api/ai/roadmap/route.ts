@@ -11,7 +11,6 @@ import { checkHeavyAILimit, rateLimitResponse } from "@/lib/ai/rate-limiter";
 
 // ── AI mode helpers ─────────────────────────────────────────────────
 
-
 function hasOpenAIKey(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
@@ -154,7 +153,9 @@ export async function POST(req: Request) {
       .single(),
     supabase
       .from("project_context")
-      .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
+      .select(
+        "product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions",
+      )
       .eq("project_id", projectId)
       .maybeSingle(),
     supabase
@@ -169,17 +170,35 @@ export async function POST(req: Request) {
       .eq("project_id", projectId)
       .order("created_at", { ascending: false })
       .limit(15),
-    retrieveRelevantContext("product roadmap priorities risks milestones", projectId, user.id).catch(() => ({
+    retrieveRelevantContext(
+      "product roadmap priorities risks milestones",
+      projectId,
+      user.id,
+    ).catch(() => ({
       context: "",
       results: [],
-      qualityStats: { retrievedChunks: 0, usedChunks: 0, discardedChunks: 0, minSimilarityUsed: null, maxSimilarityUsed: null, hasRelevantContext: false, lexicalGuardApplied: false, lexicalMatched: false, discardedByLexicalGuard: 0 },
+      qualityStats: {
+        retrievedChunks: 0,
+        usedChunks: 0,
+        discardedChunks: 0,
+        minSimilarityUsed: null,
+        maxSimilarityUsed: null,
+        hasRelevantContext: false,
+        lexicalGuardApplied: false,
+        lexicalMatched: false,
+        discardedByLexicalGuard: 0,
+      },
     })),
   ]);
 
   if (!projectRes.data) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   // Build feedback summary (truncated)
-  const feedbackDocs = (feedbackRes.data ?? []) as Array<{ title: string; content: string; source: string | null }>;
+  const feedbackDocs = (feedbackRes.data ?? []) as Array<{
+    title: string;
+    content: string;
+    source: string | null;
+  }>;
   const feedbackSummary =
     feedbackDocs.length > 0
       ? feedbackDocs
@@ -192,7 +211,11 @@ export async function POST(req: Request) {
       : null;
 
   // Build insights summary
-  const insightsList = (insightsRes.data ?? []) as Array<{ type: string; title: string; content: string }>;
+  const insightsList = (insightsRes.data ?? []) as Array<{
+    type: string;
+    title: string;
+    content: string;
+  }>;
   const insightsSummary =
     insightsList.length > 0
       ? insightsList.map((i) => `[${i.type}] ${i.title}: ${i.content}`).join("\n")
@@ -208,7 +231,6 @@ export async function POST(req: Request) {
 
   const isReal = isRealAI();
   const isMock = !isReal;
-
 
   const startTime = Date.now();
 
@@ -242,7 +264,10 @@ export async function POST(req: Request) {
       // ── Real AI mode ────────────────────────────────────────────
       if (!hasOpenAIKey()) {
         return NextResponse.json(
-          { error: "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode." },
+          {
+            error:
+              "AI is not configured. Set OPENAI_API_KEY or use USE_REAL_AI=false for mock mode.",
+          },
           { status: 503 },
         );
       }
@@ -251,7 +276,10 @@ export async function POST(req: Request) {
         model: "gpt-4o",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: "Generate a product roadmap based on this project:\n\n" + promptContext },
+          {
+            role: "user",
+            content: "Generate a product roadmap based on this project:\n\n" + promptContext,
+          },
         ],
         temperature: 0.6,
         max_tokens: 4096,
@@ -287,9 +315,7 @@ export async function POST(req: Request) {
     }
 
     const ensureArray = (val: unknown): RoadmapItem[] =>
-      Array.isArray(val)
-        ? val.filter((item) => item && typeof item.title === "string")
-        : [];
+      Array.isArray(val) ? val.filter((item) => item && typeof item.title === "string") : [];
 
     // Build row for DB
     const row = {
@@ -320,7 +346,6 @@ export async function POST(req: Request) {
       console.error("[roadmap] Insert failed:", insertError.message);
       return NextResponse.json({ error: "Failed to save roadmap" }, { status: 500 });
     }
-
 
     return NextResponse.json({ roadmap: inserted });
   } catch (err) {
@@ -370,4 +395,3 @@ export async function DELETE(req: Request) {
 
   return NextResponse.json({ success: true });
 }
-

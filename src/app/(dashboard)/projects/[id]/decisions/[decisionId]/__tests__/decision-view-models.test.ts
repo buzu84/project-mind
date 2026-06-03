@@ -212,11 +212,7 @@ describe("toRecommendationViewModel", () => {
     });
     const vm = toRecommendationViewModel(row);
 
-    expect(vm.reasoning).toEqual([
-      "Lower risk",
-      "Early validation",
-      "Faster launch",
-    ]);
+    expect(vm.reasoning).toEqual(["Lower risk", "Early validation", "Faster launch"]);
   });
 
   it("returns single-element array for single-line reasoning", () => {
@@ -321,4 +317,3 @@ describe("toEvidenceLinkViewModel", () => {
     expect(vm.evidence.relevance_score).toBeNull();
   });
 });
-

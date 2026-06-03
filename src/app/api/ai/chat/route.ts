@@ -97,7 +97,9 @@ export async function POST(req: Request) {
   const [contextRes, ragResult] = await Promise.all([
     supabase
       .from("project_context")
-      .select("product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions")
+      .select(
+        "product_overview, target_personas, current_metrics, pain_points, competitors, strategic_goals, constraints, open_questions",
+      )
       .eq("project_id", projectId)
       .maybeSingle(),
     retrieveRelevantContext(message, projectId, user.id),
@@ -107,22 +109,27 @@ export async function POST(req: Request) {
   await supabase.from("messages").insert({ project_id: projectId, role: "user", content: message });
 
   // Load history
-    const { data: historyRaw } = await supabase
-      .from("messages")
-      .select("role, content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+  const { data: historyRaw } = await supabase
+    .from("messages")
+    .select("role, content")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(50);
 
-    const history = (historyRaw ?? []).reverse();
+  const history = (historyRaw ?? []).reverse();
 
   const projectContext = buildProjectContext(project, contextRes.data, ragResult.context);
 
   if (!ragResult.qualityStats.hasRelevantContext && process.env.NODE_ENV === "development") {
     // eslint-disable-next-line no-console
-    console.warn("[chat] No relevant RAG context for project", projectId,
-      "— retrievedChunks:", ragResult.qualityStats.retrievedChunks,
-      "discardedChunks:", ragResult.qualityStats.discardedChunks);
+    console.warn(
+      "[chat] No relevant RAG context for project",
+      projectId,
+      "— retrievedChunks:",
+      ragResult.qualityStats.retrievedChunks,
+      "discardedChunks:",
+      ragResult.qualityStats.discardedChunks,
+    );
   }
 
   const noContextWarning = ragResult.qualityStats.hasRelevantContext
@@ -130,7 +137,6 @@ export async function POST(req: Request) {
     : "\n\nIMPORTANT: You do not have relevant project evidence for this question. Do not fabricate insights based on assumed context. If the user asks about specific feedback, research, or data, let them know you don't have enough relevant evidence to answer confidently.";
 
   const systemMessage = `${SYSTEM_PROMPT}${noContextWarning}\n\nYou are assisting with the following project:\n${projectContext}`;
-
 
   const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
     { role: "system", content: systemMessage },
@@ -171,7 +177,11 @@ export async function POST(req: Request) {
         let i = 0;
         const interval = setInterval(() => {
           if (i >= words.length) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, id: `mock-${Date.now()}`, createdAt: new Date().toISOString() })}\n\n`));
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ done: true, id: `mock-${Date.now()}`, createdAt: new Date().toISOString() })}\n\n`,
+              ),
+            );
             controller.close();
             clearInterval(interval);
             return;
@@ -184,7 +194,11 @@ export async function POST(req: Request) {
     });
 
     return new Response(readable, {
-      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   }
 
@@ -226,7 +240,8 @@ export async function POST(req: Request) {
             .single();
 
           // Estimate tokens from content (streaming doesn't return usage)
-          const historyTokens = (history ?? []).reduce((s: number, m: any) => s + m.content.length, 0) / 4;
+          const historyTokens =
+            (history ?? []).reduce((s: number, m: any) => s + m.content.length, 0) / 4;
           const estimatedPromptTokens = Math.ceil(systemMessage.length / 4 + historyTokens);
           const estimatedCompletionTokens = Math.ceil(fullContent.length / 4);
           void trackAIUsage({
@@ -242,7 +257,9 @@ export async function POST(req: Request) {
           });
 
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ done: true, id: saved?.id, createdAt: saved?.created_at })}\n\n`),
+            encoder.encode(
+              `data: ${JSON.stringify({ done: true, id: saved?.id, createdAt: saved?.created_at })}\n\n`,
+            ),
           );
           controller.close();
         } catch (err) {
@@ -250,15 +267,22 @@ export async function POST(req: Request) {
           if (fullContent.length > 0) {
             await supabase
               .from("messages")
-              .insert({ project_id: projectId, role: "assistant", content: fullContent + "\n\n[Response interrupted]" })
+              .insert({
+                project_id: projectId,
+                role: "assistant",
+                content: fullContent + "\n\n[Response interrupted]",
+              })
               .select("id")
               .single()
-              .catch(() => { /* best-effort */ });
+              .catch(() => {
+                /* best-effort */
+              });
           }
           const rawMsg = err instanceof Error ? err.message : "Stream failed";
-          const errorMsg = rawMsg.includes("401") || rawMsg.includes("API key")
-            ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
-            : "Could not generate response. Please try again.";
+          const errorMsg =
+            rawMsg.includes("401") || rawMsg.includes("API key")
+              ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
+              : "Could not generate response. Please try again.";
           void trackAIUsageError({
             userId: user.id,
             projectId,
@@ -266,7 +290,11 @@ export async function POST(req: Request) {
             model: "gpt-4o",
             error: err,
             latencyMs: Date.now() - startTime,
-            metadata: { project_scoped: true, streaming: true, partialContentLength: fullContent.length },
+            metadata: {
+              project_scoped: true,
+              streaming: true,
+              partialContentLength: fullContent.length,
+            },
           });
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`));
           controller.close();
@@ -275,7 +303,11 @@ export async function POST(req: Request) {
     });
 
     return new Response(readable, {
-      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "OpenAI request failed";

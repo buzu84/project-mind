@@ -58,7 +58,14 @@ const ASSUMPTION_TYPE_ALIASES: Record<string, string> = {
 };
 
 const VALID_ASSUMPTION_TYPES = new Set([
-  "market", "user", "technical", "growth", "pricing", "ux", "business", "other",
+  "market",
+  "user",
+  "technical",
+  "growth",
+  "pricing",
+  "ux",
+  "business",
+  "other",
 ]);
 
 function normalizeAssumptionType(value: unknown): string {
@@ -83,10 +90,17 @@ function normalizeAssumptionType(value: unknown): string {
 // ── Other enum normalizers ──────────────────────────────────────────
 
 const EVIDENCE_STATUS_ALIASES: Record<string, string> = {
-  none: "unsupported", unknown: "unsupported", missing: "unsupported",
-  partial: "weak", limited: "weak", anecdotal: "weak",
-  mixed: "moderate", some: "moderate",
-  confirmed: "strong", validated: "strong", proven: "strong",
+  none: "unsupported",
+  unknown: "unsupported",
+  missing: "unsupported",
+  partial: "weak",
+  limited: "weak",
+  anecdotal: "weak",
+  mixed: "moderate",
+  some: "moderate",
+  confirmed: "strong",
+  validated: "strong",
+  proven: "strong",
 };
 const VALID_EVIDENCE_STATUS = new Set(["unsupported", "weak", "moderate", "strong"]);
 
@@ -98,9 +112,14 @@ function normalizeEvidenceStatus(value: unknown): string {
 }
 
 const RISK_LEVEL_ALIASES: Record<string, string> = {
-  critical: "high", severe: "high", very_high: "high",
-  moderate: "medium", normal: "medium",
-  minimal: "low", negligible: "low", none: "low",
+  critical: "high",
+  severe: "high",
+  very_high: "high",
+  moderate: "medium",
+  normal: "medium",
+  minimal: "low",
+  negligible: "low",
+  none: "low",
 };
 const VALID_RISK_LEVELS = new Set(["low", "medium", "high"]);
 
@@ -112,10 +131,17 @@ function normalizeRiskLevel(value: unknown): string {
 }
 
 const EFFORT_ALIASES: Record<string, string> = {
-  trivial: "low", small: "low", easy: "low",
-  moderate: "medium", normal: "medium",
-  large: "high", significant: "high", complex: "high",
-  unclear: "unknown", uncertain: "unknown", tbd: "unknown",
+  trivial: "low",
+  small: "low",
+  easy: "low",
+  moderate: "medium",
+  normal: "medium",
+  large: "high",
+  significant: "high",
+  complex: "high",
+  unclear: "unknown",
+  uncertain: "unknown",
+  tbd: "unknown",
 };
 const VALID_EFFORT = new Set(["low", "medium", "high", "unknown"]);
 
@@ -195,7 +221,9 @@ function normalizeItem(item: unknown): unknown {
 /**
  * Normalize raw AI output before Zod validation.
  */
-export function normalizeDecisionReviewOutput(raw: Record<string, unknown>): Record<string, unknown> {
+export function normalizeDecisionReviewOutput(
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
   const out = remapKeys(raw);
 
   // Top-level confidenceScore
@@ -211,14 +239,24 @@ export function normalizeDecisionReviewOutput(raw: Record<string, unknown>): Rec
   }
 
   // Normalize recommendation object
-  if (out.recommendation && typeof out.recommendation === "object" && !Array.isArray(out.recommendation)) {
+  if (
+    out.recommendation &&
+    typeof out.recommendation === "object" &&
+    !Array.isArray(out.recommendation)
+  ) {
     out.recommendation = normalizeItem(out.recommendation);
   }
 
   // Ensure optional arrays in recommendation default to [] if null
   if (out.recommendation && typeof out.recommendation === "object") {
     const rec = out.recommendation as Record<string, unknown>;
-    for (const field of ["supportingEvidence", "assumptions", "risks", "alternatives", "nextValidationSteps"]) {
+    for (const field of [
+      "supportingEvidence",
+      "assumptions",
+      "risks",
+      "alternatives",
+      "nextValidationSteps",
+    ]) {
       if (rec[field] === null || rec[field] === undefined) {
         rec[field] = [];
       }
@@ -254,14 +292,14 @@ export function formatZodIssuesForLog(error: ZodError): string[] {
  * Concise, no sensitive data.
  */
 export function formatZodIssuesForRetry(error: ZodError): string {
-  return error.issues.slice(0, 10).map((issue: ZodIssue) => {
-    const path = issue.path.join(".");
-    if ("expected" in issue && "received" in issue) {
-      return `${path}: expected ${issue.expected}, got ${issue.received}`;
-    }
-    return `${path}: ${issue.message}`;
-  }).join("; ");
+  return error.issues
+    .slice(0, 10)
+    .map((issue: ZodIssue) => {
+      const path = issue.path.join(".");
+      if ("expected" in issue && "received" in issue) {
+        return `${path}: expected ${issue.expected}, got ${issue.received}`;
+      }
+      return `${path}: ${issue.message}`;
+    })
+    .join("; ");
 }
-
-
-

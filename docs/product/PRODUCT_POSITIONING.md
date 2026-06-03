@@ -42,21 +42,21 @@ The differentiator is **project-scoped context**: every AI feature receives the 
 
 ## Current Feature Set
 
-| Feature | AI? | Uses RAG? | Output |
-|---|---|---|---|
-| Context Builder | No | No | Saves structured project context (8 fields) to DB |
-| Feedback & Research | No | Triggers embedding | Upload/manage feedback documents; chunks + embeds them |
-| AI Chat (per project) | Yes | **Yes** | Streaming conversational assistant scoped to one project |
-| Global AI Assistant | Yes | **No** | General product strategy chat, no project context |
-| PRD Generator | Yes | No — DB context only | Structured PRD (JSON stored in `decisions` table) |
-| Feature Prioritizer | Yes | No | RICE/ICE scores per feature |
-| Competitive Analysis | Yes | No — DB context only | Market/competitor comparison |
-| AI Insights | Yes | No | Strategic risks, opportunities, recommendations |
-| AI Roadmap | Yes | **Yes** | Now/Next/Later + 30/60/90-day plan |
-| Multi-Agent Review | Yes | **Yes** (optional) | 4-persona review + consensus |
-| Decision Review | Yes | **Yes** (Evidence Layer) | Options, assumptions, evidence, confidence score |
-| AI Usage | No | No | View-only usage telemetry log |
-| Settings | No | No | Profile, password, admin status display |
+| Feature               | AI? | Uses RAG?                | Output                                                   |
+| --------------------- | --- | ------------------------ | -------------------------------------------------------- |
+| Context Builder       | No  | No                       | Saves structured project context (8 fields) to DB        |
+| Feedback & Research   | No  | Triggers embedding       | Upload/manage feedback documents; chunks + embeds them   |
+| AI Chat (per project) | Yes | **Yes**                  | Streaming conversational assistant scoped to one project |
+| Global AI Assistant   | Yes | **No**                   | General product strategy chat, no project context        |
+| PRD Generator         | Yes | No — DB context only     | Structured PRD (JSON stored in `decisions` table)        |
+| Feature Prioritizer   | Yes | No                       | RICE/ICE scores per feature                              |
+| Competitive Analysis  | Yes | No — DB context only     | Market/competitor comparison                             |
+| AI Insights           | Yes | No                       | Strategic risks, opportunities, recommendations          |
+| AI Roadmap            | Yes | **Yes**                  | Now/Next/Later + 30/60/90-day plan                       |
+| Multi-Agent Review    | Yes | **Yes** (optional)       | 4-persona review + consensus                             |
+| Decision Review       | Yes | **Yes** (Evidence Layer) | Options, assumptions, evidence, confidence score         |
+| AI Usage              | No  | No                       | View-only usage telemetry log                            |
+| Settings              | No  | No                       | Profile, password, admin status display                  |
 
 ---
 
@@ -87,6 +87,7 @@ The differentiator is **project-scoped context**: every AI feature receives the 
 ## Honest Positioning
 
 ProductMind is a **portfolio/demo-quality MVP** that demonstrates:
+
 - Full-stack Next.js + Supabase + OpenAI integration
 - RAG pipeline with pgvector
 - Structured AI output generation
@@ -97,5 +98,4 @@ It is suitable for personal use and demonstration. It is not positioned as enter
 
 ---
 
-*Last updated: 2026-05-24*
-
+_Last updated: 2026-05-24_

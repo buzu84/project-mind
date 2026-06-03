@@ -11,4 +11,3 @@ export function isRealAI(): boolean {
   if (process.env.USE_REAL_AI === "true") return true;
   return !!process.env.OPENAI_API_KEY;
 }
-

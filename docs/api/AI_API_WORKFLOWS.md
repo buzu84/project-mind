@@ -29,11 +29,13 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/chat` — Project Chat (SSE)
 
 **Input:**
+
 ```json
 { "projectId": "uuid", "message": "string (1–10000 chars)" }
 ```
 
 **Flow:**
+
 1. Load project metadata (name, description, target_users, market, business_model, goals)
 2. Load `project_context` (detailed structured context if saved)
 3. Load conversation history from `messages` table (last 50, oldest first)
@@ -51,11 +53,13 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/global-chat` — General Chat (SSE)
 
 **Input:**
+
 ```json
 { "message": "string (1–10000 chars)" }
 ```
 
 **Flow:**
+
 1. Save user message to `global_chat_messages`
 2. Load conversation history (last 50)
 3. Stream OpenAI response
@@ -68,6 +72,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/prd` — PRD Generator
 
 **Input:**
+
 ```json
 {
   "projectId": "uuid",
@@ -78,11 +83,13 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ```
 
 **Flow:**
+
 1. Verify project ownership
 2. Call `generateCompletionWithUsage()` with system prompt requesting structured markdown with `##` headings
 3. Insert into `decisions` table with `type: "PRD"`
 
 **Response:**
+
 ```json
 { "id": "decision-uuid", "content": "markdown string" }
 ```
@@ -94,6 +101,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/competitive-analysis` — Competitive Analysis
 
 **Input:**
+
 ```json
 {
   "projectId": "uuid",
@@ -104,6 +112,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ```
 
 **Flow:**
+
 1. Load project metadata for context enrichment
 2. Build context-enriched prompt including project description, target users, market
 3. Call OpenAI
@@ -116,17 +125,20 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/insights` — Strategic Insights
 
 **Input:**
+
 ```json
 { "projectId": "uuid" }
 ```
 
 **Flow:**
+
 1. Load project + `project_context` + recent feedback documents
 2. Ask OpenAI for JSON with 7–12 insights (type: risk/opportunity/next_action/etc.)
 3. Normalize AI output through `normalizeInsightsFromAI()` — handles inconsistent casing, missing fields
 4. Save each insight to the `insights` table
 
 **Response:**
+
 ```json
 {
   "insights": [{ "title": "...", "type": "risk", "priority": "high", ... }]
@@ -138,11 +150,13 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/roadmap` — Roadmap Generator
 
 **Input:**
+
 ```json
 { "projectId": "uuid" }
 ```
 
 **Flow:**
+
 1. Load project metadata + `project_context` + recent insights
 2. RAG: retrieve relevant feedback chunks
 3. Ask OpenAI for structured JSON roadmap (now/next/later + 30/60/90 day plans + risks + dependencies + success metrics)
@@ -150,6 +164,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 5. Save to `roadmaps` table
 
 **Response:**
+
 ```json
 { "roadmap": { "title": "...", "now": [...], "next": [...], ... } }
 ```
@@ -161,6 +176,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/multi-agent-review` — Multi-Persona Review
 
 **Input:**
+
 ```json
 {
   "projectId": "uuid",
@@ -173,6 +189,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ```
 
 **Flow:**
+
 1. Build context from project + project_context + optional RAG + optional insights
 2. Call OpenAI **4 times in parallel** — one per persona (PM, CTO, UX Researcher, Growth Marketer)
 3. Each persona returns structured JSON: `{ summary, key_points, concerns, recommendations, confidence }`
@@ -180,6 +197,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 5. Return all 5 responses
 
 **Response:**
+
 ```json
 {
   "agents": {
@@ -204,6 +222,7 @@ Errors at step 5 are caught, tracked via `trackAIUsageError()`, and returned as 
 ### `/api/ai/prioritize` — Feature Prioritization
 
 **Input:**
+
 ```json
 {
   "projectId": "uuid",
@@ -221,11 +240,13 @@ Features are scored using RICE framework. Max 30 features per request.
 ### `/api/ai/score-features` — Feature Scoring
 
 **Input:**
+
 ```json
 { "projectId": "uuid" }
 ```
 
 **Flow:**
+
 1. Load all `feature_ideas` for the project from DB
 2. Load `project_context` for scoring context
 3. Ask OpenAI to score each feature with RICE + ICE
@@ -240,6 +261,7 @@ Features are scored using RICE framework. Max 30 features per request.
 **Input:** None (reads decision from DB by URL params)
 
 **Flow:** Delegates entirely to `analyzeDecision()` in `src/lib/decisions/decision-review-service.ts`:
+
 1. Load decision with all options, assumptions, and existing evidence
 2. Retrieve relevant evidence via RAG/evidence layer
 3. Build structured prompt with decision context
@@ -256,15 +278,13 @@ Features are scored using RICE framework. Max 30 features per request.
 
 ## Error Handling Across AI Routes
 
-| Scenario | Status | Response |
-|---|---|---|
-| No auth session | 401 | `{ "error": "Unauthorized" }` |
-| Rate limited | 429 | `{ "error": "Rate limit reached..." }` + `Retry-After` header |
-| Zod validation fails | 400 | `{ "error": "Invalid input" }` or `{ "error": "field: message" }` |
-| Project not owned by user | 404 | `{ "error": "Project not found" }` |
-| `OPENAI_API_KEY` missing (non-mock) | 503 | `{ "error": "AI is not configured..." }` |
-| OpenAI call fails | 502 | `{ "error": "AI error: <message>" }` |
+| Scenario                            | Status | Response                                                          |
+| ----------------------------------- | ------ | ----------------------------------------------------------------- |
+| No auth session                     | 401    | `{ "error": "Unauthorized" }`                                     |
+| Rate limited                        | 429    | `{ "error": "Rate limit reached..." }` + `Retry-After` header     |
+| Zod validation fails                | 400    | `{ "error": "Invalid input" }` or `{ "error": "field: message" }` |
+| Project not owned by user           | 404    | `{ "error": "Project not found" }`                                |
+| `OPENAI_API_KEY` missing (non-mock) | 503    | `{ "error": "AI is not configured..." }`                          |
+| OpenAI call fails                   | 502    | `{ "error": "AI error: <message>" }`                              |
 
 All AI errors are tracked to `ai_usage` with `status: "error"` and a sanitized error message (API keys stripped).
-
-

@@ -47,7 +47,7 @@ export const RETRIEVAL_INTENT_CONFIG: Record<RetrievalIntent, IntentConfig> = {
   },
   feedback_synthesis: {
     defaultLimit: 15,
-    minSimilarity: 0.60,
+    minSimilarity: 0.6,
     preferredSourceTypes: ["feedback"],
   },
   competitive_analysis: {
@@ -57,4 +57,3 @@ export const RETRIEVAL_INTENT_CONFIG: Record<RetrievalIntent, IntentConfig> = {
     preferredSourceTypes: ["competitor", "research", "document"],
   },
 };
-

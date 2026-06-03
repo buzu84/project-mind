@@ -19,17 +19,23 @@ export async function POST(req: Request) {
   const parsed = prdSchema.safeParse(body);
   if (!parsed.success) {
     const fieldErrors = parsed.error.flatten().fieldErrors;
-    const msg = Object.entries(fieldErrors)
-      .filter(([, v]) => v && v.length > 0)
-      .map(([k, v]) => `${k}: ${v![0]}`)
-      .join(", ") || "Invalid input";
+    const msg =
+      Object.entries(fieldErrors)
+        .filter(([, v]) => v && v.length > 0)
+        .map(([k, v]) => `${k}: ${v![0]}`)
+        .join(", ") || "Invalid input";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const { projectId, productName, productDescription, targetAudience } = parsed.data;
   const supabase = createClient();
 
-  const { data: project } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", user.id).single();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const isReal = isRealAI();
@@ -52,7 +58,12 @@ export async function POST(req: Request) {
 
     const { data: decision } = await supabase
       .from("decisions")
-      .insert({ type: "PRD", input: parsed.data as object, output: { content }, project_id: projectId })
+      .insert({
+        type: "PRD",
+        input: parsed.data as object,
+        output: { content },
+        project_id: projectId,
+      })
       .select("id")
       .single();
 
@@ -68,7 +79,6 @@ export async function POST(req: Request) {
 
   const systemPrompt = `You are a senior product manager. Generate a comprehensive Product Requirements Document (PRD) in Markdown format. Use ## (h2) headings for each major section: Executive Summary, Problem Statement, Goals & Success Metrics, User Stories, Functional Requirements, Non-Functional Requirements, Timeline, and Risks. Do NOT wrap all sections under a single ## heading; each section must be its own ## heading.`;
   const userPrompt = `Product: ${productName}\nDescription: ${productDescription}${targetAudience ? `\nTarget Audience: ${targetAudience}` : ""}`;
-
 
   try {
     const result = await generateCompletionWithUsage(systemPrompt, userPrompt);
@@ -86,7 +96,12 @@ export async function POST(req: Request) {
 
     const { data: decision } = await supabase
       .from("decisions")
-      .insert({ type: "PRD", input: parsed.data as object, output: { content: result.content }, project_id: projectId })
+      .insert({
+        type: "PRD",
+        input: parsed.data as object,
+        output: { content: result.content },
+        project_id: projectId,
+      })
       .select("id")
       .single();
 

@@ -16,10 +16,7 @@ export const dynamic = "force-dynamic";
  *   2. Verify the project belongs to the user (projects.user_id)
  *   3. Delete only where decisions.id AND decisions.project_id match
  */
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -60,4 +57,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
-

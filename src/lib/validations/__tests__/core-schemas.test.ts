@@ -1,20 +1,27 @@
 import { describe, it, expect } from "vitest";
 import {
   decisionSchema,
-  DECISION_TITLE_MIN, DECISION_TITLE_MAX,
-  DECISION_PROBLEM_MIN, DECISION_PROBLEM_MAX,
+  DECISION_TITLE_MIN,
+  DECISION_TITLE_MAX,
+  DECISION_PROBLEM_MIN,
+  DECISION_PROBLEM_MAX,
   DECISION_CONTEXT_MAX,
 } from "../decision";
 import { projectSchema, PROJECT_NAME_MIN, PROJECT_NAME_MAX, PROJECT_DESC_MAX } from "../project";
 import {
   featureSchema,
-  FEATURE_NAME_MIN, FEATURE_NAME_MAX,
-  FEATURE_DESC_MIN, FEATURE_DESC_MAX,
+  FEATURE_NAME_MIN,
+  FEATURE_NAME_MAX,
+  FEATURE_DESC_MIN,
+  FEATURE_DESC_MAX,
 } from "../feature";
 import {
-  feedbackSchema, VALID_SOURCES,
-  FEEDBACK_TITLE_MIN, FEEDBACK_TITLE_MAX,
-  FEEDBACK_CONTENT_MIN, FEEDBACK_CONTENT_MAX,
+  feedbackSchema,
+  VALID_SOURCES,
+  FEEDBACK_TITLE_MIN,
+  FEEDBACK_TITLE_MAX,
+  FEEDBACK_CONTENT_MIN,
+  FEEDBACK_CONTENT_MAX,
 } from "../feedback";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -97,7 +104,15 @@ describe("decisionSchema", () => {
   });
 
   it("accepts all valid categories", () => {
-    for (const cat of ["product", "technical", "growth", "ux", "business", "strategy", "other"] as const) {
+    for (const cat of [
+      "product",
+      "technical",
+      "growth",
+      "ux",
+      "business",
+      "strategy",
+      "other",
+    ] as const) {
       expect(decisionSchema.safeParse({ ...valid, category: cat }).success).toBe(true);
     }
   });
@@ -109,35 +124,58 @@ describe("decisionSchema", () => {
   });
 
   it("accepts title at exact min length", () => {
-    expect(decisionSchema.safeParse({ ...valid, title: "x".repeat(DECISION_TITLE_MIN) }).success).toBe(true);
+    expect(
+      decisionSchema.safeParse({ ...valid, title: "x".repeat(DECISION_TITLE_MIN) }).success,
+    ).toBe(true);
   });
 
   it("accepts title at exact max length", () => {
-    expect(decisionSchema.safeParse({ ...valid, title: "x".repeat(DECISION_TITLE_MAX) }).success).toBe(true);
+    expect(
+      decisionSchema.safeParse({ ...valid, title: "x".repeat(DECISION_TITLE_MAX) }).success,
+    ).toBe(true);
   });
 
   it("rejects title above max length", () => {
-    expect(decisionSchema.safeParse({ ...valid, title: "x".repeat(DECISION_TITLE_MAX + 1) }).success).toBe(false);
+    expect(
+      decisionSchema.safeParse({ ...valid, title: "x".repeat(DECISION_TITLE_MAX + 1) }).success,
+    ).toBe(false);
   });
 
   it("accepts problem_statement at exact min length", () => {
-    expect(decisionSchema.safeParse({ ...valid, problem_statement: "x".repeat(DECISION_PROBLEM_MIN) }).success).toBe(true);
+    expect(
+      decisionSchema.safeParse({ ...valid, problem_statement: "x".repeat(DECISION_PROBLEM_MIN) })
+        .success,
+    ).toBe(true);
   });
 
   it("accepts problem_statement at exact max length", () => {
-    expect(decisionSchema.safeParse({ ...valid, problem_statement: "x".repeat(DECISION_PROBLEM_MAX) }).success).toBe(true);
+    expect(
+      decisionSchema.safeParse({ ...valid, problem_statement: "x".repeat(DECISION_PROBLEM_MAX) })
+        .success,
+    ).toBe(true);
   });
 
   it("rejects problem_statement above max length", () => {
-    expect(decisionSchema.safeParse({ ...valid, problem_statement: "x".repeat(DECISION_PROBLEM_MAX + 1) }).success).toBe(false);
+    expect(
+      decisionSchema.safeParse({
+        ...valid,
+        problem_statement: "x".repeat(DECISION_PROBLEM_MAX + 1),
+      }).success,
+    ).toBe(false);
   });
 
   it("accepts context_summary at exact max length", () => {
-    expect(decisionSchema.safeParse({ ...valid, context_summary: "x".repeat(DECISION_CONTEXT_MAX) }).success).toBe(true);
+    expect(
+      decisionSchema.safeParse({ ...valid, context_summary: "x".repeat(DECISION_CONTEXT_MAX) })
+        .success,
+    ).toBe(true);
   });
 
   it("rejects context_summary above max length", () => {
-    expect(decisionSchema.safeParse({ ...valid, context_summary: "x".repeat(DECISION_CONTEXT_MAX + 1) }).success).toBe(false);
+    expect(
+      decisionSchema.safeParse({ ...valid, context_summary: "x".repeat(DECISION_CONTEXT_MAX + 1) })
+        .success,
+    ).toBe(false);
   });
 });
 
@@ -203,11 +241,16 @@ describe("projectSchema", () => {
   });
 
   it("accepts description at exact max length", () => {
-    expect(projectSchema.safeParse({ name: "Acme", description: "x".repeat(PROJECT_DESC_MAX) }).success).toBe(true);
+    expect(
+      projectSchema.safeParse({ name: "Acme", description: "x".repeat(PROJECT_DESC_MAX) }).success,
+    ).toBe(true);
   });
 
   it("rejects description above max length", () => {
-    expect(projectSchema.safeParse({ name: "Acme", description: "x".repeat(PROJECT_DESC_MAX + 1) }).success).toBe(false);
+    expect(
+      projectSchema.safeParse({ name: "Acme", description: "x".repeat(PROJECT_DESC_MAX + 1) })
+        .success,
+    ).toBe(false);
   });
 });
 
@@ -254,27 +297,39 @@ describe("featureSchema", () => {
   });
 
   it("accepts name at exact min length", () => {
-    expect(featureSchema.safeParse({ ...valid, name: "x".repeat(FEATURE_NAME_MIN) }).success).toBe(true);
+    expect(featureSchema.safeParse({ ...valid, name: "x".repeat(FEATURE_NAME_MIN) }).success).toBe(
+      true,
+    );
   });
 
   it("accepts name at exact max length", () => {
-    expect(featureSchema.safeParse({ ...valid, name: "x".repeat(FEATURE_NAME_MAX) }).success).toBe(true);
+    expect(featureSchema.safeParse({ ...valid, name: "x".repeat(FEATURE_NAME_MAX) }).success).toBe(
+      true,
+    );
   });
 
   it("rejects name above max length", () => {
-    expect(featureSchema.safeParse({ ...valid, name: "x".repeat(FEATURE_NAME_MAX + 1) }).success).toBe(false);
+    expect(
+      featureSchema.safeParse({ ...valid, name: "x".repeat(FEATURE_NAME_MAX + 1) }).success,
+    ).toBe(false);
   });
 
   it("accepts description at exact min length", () => {
-    expect(featureSchema.safeParse({ ...valid, description: "x".repeat(FEATURE_DESC_MIN) }).success).toBe(true);
+    expect(
+      featureSchema.safeParse({ ...valid, description: "x".repeat(FEATURE_DESC_MIN) }).success,
+    ).toBe(true);
   });
 
   it("accepts description at exact max length", () => {
-    expect(featureSchema.safeParse({ ...valid, description: "x".repeat(FEATURE_DESC_MAX) }).success).toBe(true);
+    expect(
+      featureSchema.safeParse({ ...valid, description: "x".repeat(FEATURE_DESC_MAX) }).success,
+    ).toBe(true);
   });
 
   it("rejects description above max length", () => {
-    expect(featureSchema.safeParse({ ...valid, description: "x".repeat(FEATURE_DESC_MAX + 1) }).success).toBe(false);
+    expect(
+      featureSchema.safeParse({ ...valid, description: "x".repeat(FEATURE_DESC_MAX + 1) }).success,
+    ).toBe(false);
   });
 });
 
@@ -331,26 +386,38 @@ describe("feedbackSchema", () => {
   });
 
   it("accepts title at exact min length", () => {
-    expect(feedbackSchema.safeParse({ ...valid, title: "x".repeat(FEEDBACK_TITLE_MIN) }).success).toBe(true);
+    expect(
+      feedbackSchema.safeParse({ ...valid, title: "x".repeat(FEEDBACK_TITLE_MIN) }).success,
+    ).toBe(true);
   });
 
   it("accepts title at exact max length", () => {
-    expect(feedbackSchema.safeParse({ ...valid, title: "x".repeat(FEEDBACK_TITLE_MAX) }).success).toBe(true);
+    expect(
+      feedbackSchema.safeParse({ ...valid, title: "x".repeat(FEEDBACK_TITLE_MAX) }).success,
+    ).toBe(true);
   });
 
   it("rejects title above max length", () => {
-    expect(feedbackSchema.safeParse({ ...valid, title: "x".repeat(FEEDBACK_TITLE_MAX + 1) }).success).toBe(false);
+    expect(
+      feedbackSchema.safeParse({ ...valid, title: "x".repeat(FEEDBACK_TITLE_MAX + 1) }).success,
+    ).toBe(false);
   });
 
   it("accepts content at exact min length", () => {
-    expect(feedbackSchema.safeParse({ ...valid, content: "x".repeat(FEEDBACK_CONTENT_MIN) }).success).toBe(true);
+    expect(
+      feedbackSchema.safeParse({ ...valid, content: "x".repeat(FEEDBACK_CONTENT_MIN) }).success,
+    ).toBe(true);
   });
 
   it("accepts content at exact max length", () => {
-    expect(feedbackSchema.safeParse({ ...valid, content: "x".repeat(FEEDBACK_CONTENT_MAX) }).success).toBe(true);
+    expect(
+      feedbackSchema.safeParse({ ...valid, content: "x".repeat(FEEDBACK_CONTENT_MAX) }).success,
+    ).toBe(true);
   });
 
   it("rejects content above max length", () => {
-    expect(feedbackSchema.safeParse({ ...valid, content: "x".repeat(FEEDBACK_CONTENT_MAX + 1) }).success).toBe(false);
+    expect(
+      feedbackSchema.safeParse({ ...valid, content: "x".repeat(FEEDBACK_CONTENT_MAX + 1) }).success,
+    ).toBe(false);
   });
 });

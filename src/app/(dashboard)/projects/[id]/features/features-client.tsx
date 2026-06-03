@@ -33,7 +33,6 @@ type SortKey = "rice_score" | "ice_score" | "impact" | "effort" | "created_at";
 
 type ScoreState = "not_scored" | "scored" | "outdated";
 
-
 function getScoreState(f: FeatureIdea): ScoreState {
   const hasScores = f.rice_score > 0 || f.ice_score > 0;
   if (!hasScores) return "not_scored";
@@ -106,25 +105,32 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
   const [nameBlurred, setNameBlurred] = useState(false);
   const [descBlurred, setDescBlurred] = useState(false);
 
-  const nameError = nameBlurred && featureName.trim().length < FEATURE_NAME_MIN
-    ? `Feature name must be at least ${FEATURE_NAME_MIN} characters.`
-    : null;
-  const descError = descBlurred && featureDesc.trim().length < FEATURE_DESC_MIN
-    ? FEATURE_DESC_QUALITY_HELPER
-    : null;
-  const isFormValid = featureName.trim().length >= FEATURE_NAME_MIN && featureDesc.trim().length >= FEATURE_DESC_MIN;
+  const nameError =
+    nameBlurred && featureName.trim().length < FEATURE_NAME_MIN
+      ? `Feature name must be at least ${FEATURE_NAME_MIN} characters.`
+      : null;
+  const descError =
+    descBlurred && featureDesc.trim().length < FEATURE_DESC_MIN
+      ? FEATURE_DESC_QUALITY_HELPER
+      : null;
+  const isFormValid =
+    featureName.trim().length >= FEATURE_NAME_MIN && featureDesc.trim().length >= FEATURE_DESC_MIN;
 
   // Edit form validation
-  const editNameError = editNameBlurred && editName.trim().length < FEATURE_NAME_MIN
-    ? `Feature name must be at least ${FEATURE_NAME_MIN} characters.`
-    : null;
-  const editDescError = editDescBlurred && editDesc.trim().length < FEATURE_DESC_MIN
-    ? FEATURE_DESC_QUALITY_HELPER
-    : null;
-  const isEditValid = editName.trim().length >= FEATURE_NAME_MIN && editDesc.trim().length >= FEATURE_DESC_MIN;
+  const editNameError =
+    editNameBlurred && editName.trim().length < FEATURE_NAME_MIN
+      ? `Feature name must be at least ${FEATURE_NAME_MIN} characters.`
+      : null;
+  const editDescError =
+    editDescBlurred && editDesc.trim().length < FEATURE_DESC_MIN
+      ? FEATURE_DESC_QUALITY_HELPER
+      : null;
+  const isEditValid =
+    editName.trim().length >= FEATURE_NAME_MIN && editDesc.trim().length >= FEATURE_DESC_MIN;
 
   const sorted = [...features].sort((a, b) => {
-    if (sortBy === "created_at") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortBy === "created_at")
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     if (sortBy === "effort") return (a[sortBy] ?? 0) - (b[sortBy] ?? 0);
     return (b[sortBy] ?? 0) - (a[sortBy] ?? 0);
   });
@@ -147,9 +153,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
     setEditNameBlurred(false);
     setEditDescBlurred(false);
     // Restore focus to the Edit button that opened the form
-    focusAfterPaint(() =>
-      trigger && trigger.isConnected ? trigger : null,
-    );
+    focusAfterPaint(() => (trigger && trigger.isConnected ? trigger : null));
   }
 
   async function saveEdit(featureId: string) {
@@ -167,7 +171,12 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       setFeatures((prev) =>
         prev.map((f) =>
           f.id === featureId
-            ? { ...f, name: editName.trim(), description: editDesc.trim(), updated_at: new Date().toISOString() }
+            ? {
+                ...f,
+                name: editName.trim(),
+                description: editDesc.trim(),
+                updated_at: new Date().toISOString(),
+              }
             : f,
         ),
       );
@@ -178,9 +187,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       showToast("Feature updated");
       router.refresh();
       // Restore focus to the Edit button
-      focusAfterPaint(() =>
-        trigger && trigger.isConnected ? trigger : null,
-      );
+      focusAfterPaint(() => (trigger && trigger.isConnected ? trigger : null));
     } else {
       setError(res.error ?? "Could not update feature.");
     }
@@ -209,10 +216,15 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
           id: dbId,
           name,
           description,
-          reach: 0, impact: 0, confidence: 0, effort: 0,
+          reach: 0,
+          impact: 0,
+          confidence: 0,
+          effort: 0,
           priority: 0,
-          rice_score: 0, ice_score: 0,
-          ai_commentary: null, status: "idea",
+          rice_score: 0,
+          ice_score: 0,
+          ai_commentary: null,
+          status: "idea",
           project_id: projectId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -229,15 +241,24 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
         router.refresh();
         focusAfterPaint(() => addFeatureButtonRef.current);
       } else {
-        setError(res.error ?? res.fieldErrors?.name?.[0] ?? res.fieldErrors?.description?.[0] ?? "Could not add feature");
+        setError(
+          res.error ??
+            res.fieldErrors?.name?.[0] ??
+            res.fieldErrors?.description?.[0] ??
+            "Could not add feature",
+        );
       }
     });
   }
 
   async function handleAIScore() {
-    const underDescribed = features.filter((f) => !f.description || f.description.trim().length < FEATURE_DESC_MIN);
+    const underDescribed = features.filter(
+      (f) => !f.description || f.description.trim().length < FEATURE_DESC_MIN,
+    );
     if (underDescribed.length > 0) {
-      setError("Add a more detailed description before using AI scoring. Some features have descriptions that are too short.");
+      setError(
+        "Add a more detailed description before using AI scoring. Some features have descriptions that are too short.",
+      );
       return;
     }
 
@@ -274,10 +295,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
         showToast("Feature deleted");
         router.refresh();
         // Focus fallback: Add Feature button or section heading
-        focusFirstAvailable(
-          addFeatureButtonRef.current,
-          sectionHeadingRef.current,
-        );
+        focusFirstAvailable(addFeatureButtonRef.current, sectionHeadingRef.current);
       } else {
         setError(res.error ?? "Could not delete feature.");
       }
@@ -293,10 +311,16 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
 
   function renderScoreCell(value: number, max: number, state: ScoreState) {
     if (state === "not_scored") {
-      return <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs text-gray-300">—</span>;
+      return (
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs text-gray-300">
+          —
+        </span>
+      );
     }
     return (
-      <span className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-semibold ${scoreColor(value, max)}`}>
+      <span
+        className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-semibold ${scoreColor(value, max)}`}
+      >
         {value}
       </span>
     );
@@ -310,7 +334,12 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       <div className="flex flex-col items-center gap-0.5">
         <Badge variant={variant}>{score.toFixed(0)}</Badge>
         {state === "outdated" && (
-          <span className="text-[10px] text-amber-600 font-medium" title="Feature changed after scoring">Outdated</span>
+          <span
+            className="text-[10px] font-medium text-amber-600"
+            title="Feature changed after scoring"
+          >
+            Outdated
+          </span>
         )}
       </div>
     );
@@ -318,13 +347,19 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
 
   return (
     <>
-
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Feature Ideas</h1>
+            <h1
+              ref={sectionHeadingRef}
+              tabIndex={-1}
+              className="text-2xl font-bold text-gray-900 focus:outline-none"
+            >
+              Feature Ideas
+            </h1>
             <p className="mt-1 text-sm text-gray-500">
-              Add features and let AI score them using RICE &amp; ICE frameworks for <strong>{projectName}</strong>
+              Add features and let AI score them using RICE &amp; ICE frameworks for{" "}
+              <strong>{projectName}</strong>
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -341,7 +376,12 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
                 {isScoring ? "Scoring..." : "AI Score All"}
               </Button>
             )}
-            <Button ref={addFeatureButtonRef} onClick={() => setIsFormOpen(true)} className="gap-2 whitespace-nowrap" disabled={isFormOpen}>
+            <Button
+              ref={addFeatureButtonRef}
+              onClick={() => setIsFormOpen(true)}
+              className="gap-2 whitespace-nowrap"
+              disabled={isFormOpen}
+            >
               <IconPlus className="h-4 w-4" />
               Add Feature
             </Button>
@@ -350,9 +390,19 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {error}
-          <button type="button" onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700" aria-label="Dismiss error">✕</button>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-2 text-red-500 hover:text-red-700"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -365,8 +415,11 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
             <div>
               <Input
                 ref={addNameInputRef}
-                id="name" name="name" label="Feature Name *"
-                placeholder="e.g. Dark mode" required
+                id="name"
+                name="name"
+                label="Feature Name *"
+                placeholder="e.g. Dark mode"
+                required
                 value={featureName}
                 onChange={(e) => setFeatureName(e.target.value)}
                 onBlur={() => setNameBlurred(true)}
@@ -379,7 +432,9 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
             </div>
             <div>
               <Textarea
-                id="description" name="description" label="Description *"
+                id="description"
+                name="description"
+                label="Description *"
                 placeholder="What does this feature do and why is it valuable?"
                 value={featureDesc}
                 onChange={(e) => setFeatureDesc(e.target.value)}
@@ -393,18 +448,41 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => { setIsFormOpen(false); setFeatureName(""); setFeatureDesc(""); setNameBlurred(false); setDescBlurred(false); focusAfterPaint(() => addFeatureButtonRef.current); }}>Cancel</Button>
-              <Button type="submit" isLoading={isPending} disabled={isPending || !isFormValid}>Add Feature</Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsFormOpen(false);
+                  setFeatureName("");
+                  setFeatureDesc("");
+                  setNameBlurred(false);
+                  setDescBlurred(false);
+                  focusAfterPaint(() => addFeatureButtonRef.current);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" isLoading={isPending} disabled={isPending || !isFormValid}>
+                Add Feature
+              </Button>
             </div>
           </form>
         </Card>
       )}
 
       {isScoring && (
-        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center" role="status">
-          <IconSparkles className="mx-auto h-8 w-8 text-brand-600 animate-pulse" aria-hidden="true" />
+        <div
+          className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center"
+          role="status"
+        >
+          <IconSparkles
+            className="mx-auto h-8 w-8 animate-pulse text-brand-600"
+            aria-hidden="true"
+          />
           <p className="mt-2 text-sm font-medium text-brand-900">Scoring features with AI...</p>
-          <p className="mt-1 text-xs text-brand-600">Analyzing reach, impact, confidence, and effort for each feature.</p>
+          <p className="mt-1 text-xs text-brand-600">
+            Analyzing reach, impact, confidence, and effort for each feature.
+          </p>
         </div>
       )}
 
@@ -414,182 +492,281 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
             <IconTarget className="h-7 w-7 text-gray-500" />
           </div>
           <h2 className="mt-4 text-base font-semibold text-gray-900">No feature ideas yet</h2>
-          <p className="mt-1 max-w-sm text-sm text-gray-500">Add feature ideas, then use AI to score and prioritize them.</p>
+          <p className="mt-1 max-w-sm text-sm text-gray-500">
+            Add feature ideas, then use AI to score and prioritize them.
+          </p>
           <Button onClick={() => setIsFormOpen(true)} className="mt-6 gap-2">
             <IconPlus className="h-4 w-4" />
             Add Feature
           </Button>
         </Card>
-      ) : features.length > 0 && (
-        <>
-          {/* Sort controls */}
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-gray-500 font-medium whitespace-nowrap">Sort by:</span>
-            {([["rice_score", "RICE"], ["ice_score", "ICE"], ["impact", "Impact"], ["effort", "Effort"], ["created_at", "Newest"]] as [SortKey, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setSortBy(key)}
-                className={`rounded-full px-3 py-1 transition ${sortBy === key ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      ) : (
+        features.length > 0 && (
+          <>
+            {/* Sort controls */}
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+              <span className="whitespace-nowrap font-medium text-gray-500">Sort by:</span>
+              {(
+                [
+                  ["rice_score", "RICE"],
+                  ["ice_score", "ICE"],
+                  ["impact", "Impact"],
+                  ["effort", "Effort"],
+                  ["created_at", "Newest"],
+                ] as [SortKey, string][]
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setSortBy(key)}
+                  className={`rounded-full px-3 py-1 transition ${sortBy === key ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-          {/* AI scoring note */}
-          {sorted.some((f) => getScoreState(f) !== "not_scored") && (
-            <p className="mb-3 text-xs text-gray-500">
-              Scores are AI-estimated based on your project context. Similar features may receive different scores due to differences in reach, impact, effort, and confidence.
-            </p>
-          )}
+            {/* AI scoring note */}
+            {sorted.some((f) => getScoreState(f) !== "not_scored") && (
+              <p className="mb-3 text-xs text-gray-500">
+                Scores are AI-estimated based on your project context. Similar features may receive
+                different scores due to differences in reach, impact, effort, and confidence.
+              </p>
+            )}
 
-          {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="min-w-[640px] w-full text-sm table-fixed">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Feature</th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Reach: How many users will this impact? (1-10)"><abbr title="Reach">R</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Impact: How much will this move the needle? (1-10)"><abbr title="Impact">I</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Confidence: How sure are we about the estimates? (1-10)"><abbr title="Confidence">C</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-14" title="Effort: How much work is required? Lower is better. (1-10)"><abbr title="Effort">E</abbr></th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-20" title="RICE Score = (Reach × Impact × Confidence) / Effort">RICE</th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-20" title="ICE Score = Impact × Confidence × Ease">ICE</th>
-                  <th className="px-3 py-3 text-center font-medium text-gray-500 w-24"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((f, idx) => {
-                  const isExpanded = expandedId === f.id;
-                  const isEditing = editingId === f.id;
-                  const state = getScoreState(f);
-                  const isHighlighted = highlightId === f.id;
+            {/* Table */}
+            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+              <table className="w-full min-w-[640px] table-fixed text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/50">
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Feature</th>
+                    <th
+                      className="w-14 px-3 py-3 text-center font-medium text-gray-500"
+                      title="Reach: How many users will this impact? (1-10)"
+                    >
+                      <abbr title="Reach">R</abbr>
+                    </th>
+                    <th
+                      className="w-14 px-3 py-3 text-center font-medium text-gray-500"
+                      title="Impact: How much will this move the needle? (1-10)"
+                    >
+                      <abbr title="Impact">I</abbr>
+                    </th>
+                    <th
+                      className="w-14 px-3 py-3 text-center font-medium text-gray-500"
+                      title="Confidence: How sure are we about the estimates? (1-10)"
+                    >
+                      <abbr title="Confidence">C</abbr>
+                    </th>
+                    <th
+                      className="w-14 px-3 py-3 text-center font-medium text-gray-500"
+                      title="Effort: How much work is required? Lower is better. (1-10)"
+                    >
+                      <abbr title="Effort">E</abbr>
+                    </th>
+                    <th
+                      className="w-20 px-3 py-3 text-center font-medium text-gray-500"
+                      title="RICE Score = (Reach × Impact × Confidence) / Effort"
+                    >
+                      RICE
+                    </th>
+                    <th
+                      className="w-20 px-3 py-3 text-center font-medium text-gray-500"
+                      title="ICE Score = Impact × Confidence × Ease"
+                    >
+                      ICE
+                    </th>
+                    <th className="w-24 px-3 py-3 text-center font-medium text-gray-500">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((f, idx) => {
+                    const isExpanded = expandedId === f.id;
+                    const isEditing = editingId === f.id;
+                    const state = getScoreState(f);
+                    const isHighlighted = highlightId === f.id;
 
-                  if (isEditing) {
-                    return (
-                      <tr key={f.id} className="border-b border-gray-50 bg-blue-50/30">
-                        <td colSpan={8} className="px-4 py-4">
-                          <div className="space-y-3">
-                            <Input
-                              ref={editInputRef}
-                              id={`edit-name-${f.id}`}
-                              label="Feature Name *"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              onBlur={() => setEditNameBlurred(true)}
-                              error={editNameError ?? undefined}
-                              maxLength={FEATURE_NAME_MAX}
-                            />
-                            <div className="mt-1 flex justify-end">
-                              <CharacterCounter current={editName.length} max={FEATURE_NAME_MAX} />
-                            </div>
-                            <div>
-                              <Textarea
-                                id={`edit-desc-${f.id}`}
-                                label="Description *"
-                                value={editDesc}
-                                onChange={(e) => setEditDesc(e.target.value)}
-                                onBlur={() => setEditDescBlurred(true)}
-                                error={editDescError ?? undefined}
-                                maxLength={FEATURE_DESC_MAX}
+                    if (isEditing) {
+                      return (
+                        <tr key={f.id} className="border-b border-gray-50 bg-blue-50/30">
+                          <td colSpan={8} className="px-4 py-4">
+                            <div className="space-y-3">
+                              <Input
+                                ref={editInputRef}
+                                id={`edit-name-${f.id}`}
+                                label="Feature Name *"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                onBlur={() => setEditNameBlurred(true)}
+                                error={editNameError ?? undefined}
+                                maxLength={FEATURE_NAME_MAX}
                               />
-                              <div className="mt-1 flex items-center justify-between">
-                                <MinLengthHint current={editDesc.trim().length} min={FEATURE_DESC_MIN} />
-                                <CharacterCounter current={editDesc.length} max={FEATURE_DESC_MAX} />
+                              <div className="mt-1 flex justify-end">
+                                <CharacterCounter
+                                  current={editName.length}
+                                  max={FEATURE_NAME_MAX}
+                                />
+                              </div>
+                              <div>
+                                <Textarea
+                                  id={`edit-desc-${f.id}`}
+                                  label="Description *"
+                                  value={editDesc}
+                                  onChange={(e) => setEditDesc(e.target.value)}
+                                  onBlur={() => setEditDescBlurred(true)}
+                                  error={editDescError ?? undefined}
+                                  maxLength={FEATURE_DESC_MAX}
+                                />
+                                <div className="mt-1 flex items-center justify-between">
+                                  <MinLengthHint
+                                    current={editDesc.trim().length}
+                                    min={FEATURE_DESC_MIN}
+                                  />
+                                  <CharacterCounter
+                                    current={editDesc.length}
+                                    max={FEATURE_DESC_MAX}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={cancelEditing}
+                                  disabled={editSaving}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => saveEdit(f.id)}
+                                  isLoading={editSaving}
+                                  disabled={editSaving || !isEditValid}
+                                >
+                                  Save
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex justify-end gap-2">
-                              <Button type="button" variant="secondary" size="sm" onClick={cancelEditing} disabled={editSaving}>
-                                Cancel
-                              </Button>
-                              <Button type="button" size="sm" onClick={() => saveEdit(f.id)} isLoading={editSaving} disabled={editSaving || !isEditValid}>
-                                Save
-                              </Button>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return (
+                      <tr
+                        key={f.id}
+                        className={`group cursor-pointer border-b border-gray-50 transition-colors last:border-0 ${
+                          isHighlighted ? "bg-emerald-50/60" : "hover:bg-gray-50/50"
+                        }`}
+                      >
+                        <td className="overflow-hidden px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(isExpanded ? null : f.id)}
+                            className="w-full text-left"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 shrink-0 text-xs font-bold text-gray-300">
+                                {idx + 1}
+                              </span>
+                              <div className="min-w-0 overflow-hidden">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-gray-900">{f.name}</p>
+                                  {state === "not_scored" && (
+                                    <span className="text-[10px] font-medium text-gray-500">
+                                      Not scored
+                                    </span>
+                                  )}
+                                </div>
+                                {f.description && !isExpanded && (
+                                  <p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
+                                    {f.description}
+                                  </p>
+                                )}
+                              </div>
                             </div>
+                          </button>
+                          {isExpanded && (
+                            <div className="ml-7 mt-2 space-y-2">
+                              {f.description && (
+                                <p className="whitespace-pre-wrap text-xs text-gray-500">
+                                  {f.description}
+                                </p>
+                              )}
+                              {f.ai_commentary && (
+                                <div className="rounded-lg bg-brand-50 px-3 py-2">
+                                  <p className="mb-1 text-xs font-medium text-brand-800">
+                                    AI Analysis
+                                  </p>
+                                  <p className="whitespace-pre-wrap text-xs text-brand-700">
+                                    {f.ai_commentary}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {renderScoreCell(f.reach, 10, state)}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {renderScoreCell(f.impact, 10, state)}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {renderScoreCell(f.confidence, 10, state)}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {renderScoreCell(10 - f.effort, 10, state)}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {renderAggregateBadge(f.rice_score, "success", state)}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {renderAggregateBadge(f.ice_score, "info", state)}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditing(f, e.currentTarget);
+                              }}
+                              className="rounded text-xs text-gray-500 transition hover:text-brand-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                              aria-label={`Edit ${f.name}`}
+                            >
+                              Edit
+                            </button>
+                            <ConfirmDialog
+                              title={`Delete "${f.name}"?`}
+                              message={`This will permanently delete "${f.name}". This action cannot be undone.`}
+                              confirmLabel="Delete"
+                              variant="danger"
+                              onConfirm={() => handleDelete(f.id)}
+                              focusFallbackRef={addFeatureButtonRef}
+                              trigger={
+                                <button
+                                  type="button"
+                                  className="rounded text-xs text-gray-500 transition hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                                  aria-label={`Delete ${f.name}`}
+                                >
+                                  Delete
+                                </button>
+                              }
+                            />
                           </div>
                         </td>
                       </tr>
                     );
-                  }
-
-                  return (
-                    <tr
-                      key={f.id}
-                      className={`group border-b border-gray-50 last:border-0 cursor-pointer transition-colors ${
-                        isHighlighted ? "bg-emerald-50/60" : "hover:bg-gray-50/50"
-                      }`}
-                    >
-                      <td className="px-4 py-3 overflow-hidden">
-                        <button type="button" onClick={() => setExpandedId(isExpanded ? null : f.id)} className="text-left w-full">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-300 w-5 shrink-0">{idx + 1}</span>
-                            <div className="min-w-0 overflow-hidden">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-gray-900">{f.name}</p>
-                                {state === "not_scored" && (
-                                  <span className="text-[10px] text-gray-500 font-medium">Not scored</span>
-                                )}
-                              </div>
-                              {f.description && !isExpanded && (
-                                <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">{f.description}</p>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                        {isExpanded && (
-                          <div className="mt-2 ml-7 space-y-2">
-                            {f.description && <p className="text-xs text-gray-500 whitespace-pre-wrap">{f.description}</p>}
-                            {f.ai_commentary && (
-                              <div className="rounded-lg bg-brand-50 px-3 py-2">
-                                <p className="text-xs font-medium text-brand-800 mb-1">AI Analysis</p>
-                                <p className="text-xs text-brand-700 whitespace-pre-wrap">{f.ai_commentary}</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-3 text-center">{renderScoreCell(f.reach, 10, state)}</td>
-                      <td className="px-3 py-3 text-center">{renderScoreCell(f.impact, 10, state)}</td>
-                      <td className="px-3 py-3 text-center">{renderScoreCell(f.confidence, 10, state)}</td>
-                      <td className="px-3 py-3 text-center">{renderScoreCell(10 - f.effort, 10, state)}</td>
-                      <td className="px-3 py-3 text-center">{renderAggregateBadge(f.rice_score, "success", state)}</td>
-                      <td className="px-3 py-3 text-center">{renderAggregateBadge(f.ice_score, "info", state)}</td>
-                      <td className="px-3 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); startEditing(f, e.currentTarget); }}
-                            className="text-xs text-gray-500 hover:text-brand-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
-                            aria-label={`Edit ${f.name}`}
-                          >
-                            Edit
-                          </button>
-                          <ConfirmDialog
-                            title={`Delete "${f.name}"?`}
-                            message={`This will permanently delete "${f.name}". This action cannot be undone.`}
-                            confirmLabel="Delete"
-                            variant="danger"
-                            onConfirm={() => handleDelete(f.id)}
-                            focusFallbackRef={addFeatureButtonRef}
-                            trigger={
-                              <button
-                                type="button"
-                                className="text-xs text-gray-500 hover:text-red-500 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
-                                aria-label={`Delete ${f.name}`}
-                              >
-                                Delete
-                              </button>
-                            }
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )
       )}
     </>
   );

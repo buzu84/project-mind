@@ -1,6 +1,10 @@
 export default function ProjectDetailLoading() {
   return (
-    <div className="mx-auto max-w-5xl animate-pulse space-y-6" role="status" aria-label="Loading project">
+    <div
+      className="mx-auto max-w-5xl animate-pulse space-y-6"
+      role="status"
+      aria-label="Loading project"
+    >
       <span className="sr-only">Loading project…</span>
       <div className="h-4 w-32 rounded bg-gray-200" />
       <div className="h-8 w-64 rounded bg-gray-200" />
@@ -15,4 +19,3 @@ export default function ProjectDetailLoading() {
     </div>
   );
 }
-

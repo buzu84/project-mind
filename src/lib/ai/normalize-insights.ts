@@ -165,5 +165,3 @@ export function normalizeInsightsFromAI(raw: string): {
 
   return { insights, rawParsedCount };
 }
-
-

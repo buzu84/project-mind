@@ -8,7 +8,6 @@ import { redactSecrets } from "@/lib/redact";
 import { calculateAICost } from "./pricing";
 import type { TrackAIUsageInput, AIUsageFeature, AIUsageSummary } from "./usage-types";
 
-
 /**
  * Record an AI usage event. Safe to call fire-and-forget.
  */
@@ -49,7 +48,10 @@ export async function trackAIUsage(input: TrackAIUsageInput): Promise<void> {
       console.error("[AI_USAGE_TRACK_ERROR]", { feature: input.feature, error: error.message });
     }
   } catch (err) {
-    console.error("[AI_USAGE_TRACK_ERROR]", { feature: input.feature, error: err instanceof Error ? err.message : err });
+    console.error("[AI_USAGE_TRACK_ERROR]", {
+      feature: input.feature,
+      error: err instanceof Error ? err.message : err,
+    });
   }
 }
 
@@ -78,7 +80,9 @@ export async function trackAIUsageError(input: {
     completionTokens: 0,
     isMock: input.isMock ?? false,
     status: "error",
-    errorMessage: redactSecrets(input.error instanceof Error ? input.error.message : String(input.error)),
+    errorMessage: redactSecrets(
+      input.error instanceof Error ? input.error.message : String(input.error),
+    ),
     latencyMs: input.latencyMs,
     metadata: input.metadata,
   });
@@ -99,7 +103,10 @@ export function extractTokenUsage(response: {
 /**
  * Get usage summary for the current month.
  */
-export async function getMonthlyUsageSummary(userId: string, existingClient?: ReturnType<typeof createClient>): Promise<AIUsageSummary> {
+export async function getMonthlyUsageSummary(
+  userId: string,
+  existingClient?: ReturnType<typeof createClient>,
+): Promise<AIUsageSummary> {
   try {
     const supabase = existingClient ?? createClient();
     const startOfMonth = new Date();
@@ -114,11 +121,26 @@ export async function getMonthlyUsageSummary(userId: string, existingClient?: Re
       .order("created_at", { ascending: false });
 
     // Filter success status in JS to avoid missing rows due to case/null mismatch
-    type UsageQueryRow = { feature: string; total_tokens: number; estimated_cost: number; is_mock: boolean; status: string; created_at: string };
-    const list = ((rows ?? []) as UsageQueryRow[]).filter((r) => !r.status || r.status === "success");
+    type UsageQueryRow = {
+      feature: string;
+      total_tokens: number;
+      estimated_cost: number;
+      is_mock: boolean;
+      status: string;
+      created_at: string;
+    };
+    const list = ((rows ?? []) as UsageQueryRow[]).filter(
+      (r) => !r.status || r.status === "success",
+    );
 
     if (list.length === 0) {
-      return { totalRequests: 0, totalTokens: 0, estimatedCost: 0, topFeature: null, allMock: true };
+      return {
+        totalRequests: 0,
+        totalTokens: 0,
+        estimatedCost: 0,
+        topFeature: null,
+        allMock: true,
+      };
     }
 
     const totalRequests = list.length;

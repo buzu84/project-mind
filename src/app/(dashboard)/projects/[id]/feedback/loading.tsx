@@ -1,6 +1,10 @@
 export default function FeedbackLoading() {
   return (
-    <div className="mx-auto max-w-4xl animate-pulse space-y-6" role="status" aria-label="Loading feedback">
+    <div
+      className="mx-auto max-w-4xl animate-pulse space-y-6"
+      role="status"
+      aria-label="Loading feedback"
+    >
       <span className="sr-only">Loading feedback…</span>
 
       {/* Back link */}
@@ -21,7 +25,7 @@ export default function FeedbackLoading() {
       {/* Document cards */}
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-gray-200 bg-white p-6 space-y-3">
+          <div key={i} className="space-y-3 rounded-xl border border-gray-200 bg-white p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -46,4 +50,3 @@ export default function FeedbackLoading() {
     </div>
   );
 }
-

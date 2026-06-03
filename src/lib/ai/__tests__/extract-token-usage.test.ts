@@ -39,4 +39,3 @@ describe("extractTokenUsage", () => {
     expect(result).toEqual({ promptTokens: 0, completionTokens: 0 });
   });
 });
-

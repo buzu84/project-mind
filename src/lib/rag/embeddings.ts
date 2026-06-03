@@ -76,16 +76,15 @@ export async function generateEmbeddings(
 
   try {
     for (let i = 0; i < texts.length; i += MAX_BATCH_SIZE) {
-      const batch = texts
-        .slice(i, i + MAX_BATCH_SIZE)
-        .map((t) => t.replace(/\n/g, " ").trim());
+      const batch = texts.slice(i, i + MAX_BATCH_SIZE).map((t) => t.replace(/\n/g, " ").trim());
 
       const response = await openai.embeddings.create({
         model: EMBEDDING_MODEL,
         input: batch,
       });
 
-      totalPromptTokens += response.usage?.prompt_tokens ?? batch.reduce((sum, t) => sum + Math.ceil(t.length / 4), 0);
+      totalPromptTokens +=
+        response.usage?.prompt_tokens ?? batch.reduce((sum, t) => sum + Math.ceil(t.length / 4), 0);
 
       // Sort by index to maintain order
       const sorted = response.data.sort((a, b) => a.index - b.index);

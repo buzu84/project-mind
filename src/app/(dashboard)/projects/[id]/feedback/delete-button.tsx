@@ -50,7 +50,7 @@ export function DeleteFeedbackButton({ projectId, documentId }: DeleteFeedbackBu
         ref={deleteTriggerRef}
         type="button"
         onClick={() => setConfirming(true)}
-        className="ml-4 flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+        className="ml-4 flex-shrink-0 rounded text-xs text-gray-400 opacity-0 transition hover:text-red-500 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 group-hover:opacity-100"
         aria-label="Delete feedback document"
       >
         Delete
@@ -60,12 +60,7 @@ export function DeleteFeedbackButton({ projectId, documentId }: DeleteFeedbackBu
 
   return (
     <div className="ml-4 flex flex-shrink-0 items-center gap-2">
-      <Button
-        size="sm"
-        variant="ghost"
-        ref={cancelRef}
-        onClick={cancelConfirm}
-      >
+      <Button size="sm" variant="ghost" ref={cancelRef} onClick={cancelConfirm}>
         Cancel
       </Button>
       <Button
@@ -79,9 +74,7 @@ export function DeleteFeedbackButton({ projectId, documentId }: DeleteFeedbackBu
               toast("Feedback deleted");
               setConfirming(false);
               router.refresh();
-              focusAfterPaint(() =>
-                document.querySelector<HTMLElement>("[data-feedback-add-btn]"),
-              );
+              focusAfterPaint(() => document.querySelector<HTMLElement>("[data-feedback-add-btn]"));
             } else {
               toast(res.error ?? "Could not delete document.", "error");
               setConfirming(false);
