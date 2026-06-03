@@ -68,9 +68,9 @@ export default async function ProjectsPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
             <IconProjects className="h-7 w-7 text-gray-400" />
           </div>
-          <h3 className="mt-4 text-base font-semibold text-gray-900">
+          <h2 className="mt-4 text-base font-semibold text-gray-900">
             No projects yet
-          </h3>
+          </h2>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
             Create your first project above to start generating PRDs, prioritizing
             features, and analyzing competition.

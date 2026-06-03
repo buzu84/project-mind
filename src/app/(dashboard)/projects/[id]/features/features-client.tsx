@@ -359,7 +359,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
       {isFormOpen && (
         <Card className="mb-6">
           <div className="mb-4">
-            <h3 className="text-base font-semibold text-gray-900">New Feature Idea</h3>
+            <h2 className="text-base font-semibold text-gray-900">New Feature Idea</h2>
           </div>
           <form ref={formRef} action={handleAddFeature} className="space-y-4">
             <div>
@@ -413,7 +413,7 @@ export function FeaturesClient({ projectId, projectName, initialFeatures }: Feat
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
             <IconTarget className="h-7 w-7 text-gray-500" />
           </div>
-          <h3 className="mt-4 text-base font-semibold text-gray-900">No feature ideas yet</h3>
+          <h2 className="mt-4 text-base font-semibold text-gray-900">No feature ideas yet</h2>
           <p className="mt-1 max-w-sm text-sm text-gray-500">Add feature ideas, then use AI to score and prioritize them.</p>
           <Button onClick={() => setIsFormOpen(true)} className="mt-6 gap-2">
             <IconPlus className="h-4 w-4" />
