@@ -18,4 +18,3 @@ export function redactSecrets(text: string): string {
     .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
     .slice(0, 500);
 }
-

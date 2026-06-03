@@ -11,7 +11,11 @@ export function getFriendlyErrorMessage(err: unknown): string {
   if (err instanceof Error) {
     const msg = err.message;
     // Detect OpenAI auth errors
-    if (msg.includes("401") || msg.includes("Incorrect API key") || msg.includes("invalid_api_key")) {
+    if (
+      msg.includes("401") ||
+      msg.includes("Incorrect API key") ||
+      msg.includes("invalid_api_key")
+    ) {
       return "AI is not configured. Set OPENAI_API_KEY or use mock mode.";
     }
     // Detect rate limit
@@ -48,5 +52,3 @@ export function getFriendlyErrorMessage(err: unknown): string {
 
   return "An unexpected error occurred.";
 }
-
-

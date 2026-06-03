@@ -15,9 +15,7 @@ export function getSiteUrl(): string {
   // Vercel preview deployments — strip any accidental protocol prefix and
   // trailing slashes so the result is always a clean https:// URL.
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    const bare = process.env.NEXT_PUBLIC_VERCEL_URL
-      .replace(/^https?:\/\//, "")
-      .replace(/\/+$/, "");
+    const bare = process.env.NEXT_PUBLIC_VERCEL_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "");
     return `https://${bare}`;
   }
 
@@ -35,4 +33,3 @@ export function getClientSiteUrl(): string {
   }
   return getSiteUrl();
 }
-

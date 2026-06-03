@@ -24,11 +24,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           rows={4}
           {...props}
         />
-        {error && <p id={errorId} className="mt-1 text-xs text-red-600" role="alert">{error}</p>}
+        {error && (
+          <p id={errorId} className="mt-1 text-xs text-red-600" role="alert">
+            {error}
+          </p>
+        )}
       </div>
     );
   },
 );
 
 Textarea.displayName = "Textarea";
-

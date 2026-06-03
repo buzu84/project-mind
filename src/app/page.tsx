@@ -35,17 +35,20 @@ const workflows = [
   {
     step: "01",
     title: "Add project context",
-    description: "Define your product — target users, goals, business model, constraints, and open questions.",
+    description:
+      "Define your product — target users, goals, business model, constraints, and open questions.",
   },
   {
     step: "02",
     title: "Build an evidence base",
-    description: "Upload feedback, research, or interviews. Documents are indexed for context-aware AI retrieval.",
+    description:
+      "Upload feedback, research, or interviews. Documents are indexed for context-aware AI retrieval.",
   },
   {
     step: "03",
     title: "Get structured AI outputs",
-    description: "Generate PRDs, roadmaps, decision reviews, and competitive analyses — grounded in your evidence, ready for review.",
+    description:
+      "Generate PRDs, roadmaps, decision reviews, and competitive analyses — grounded in your evidence, ready for review.",
   },
 ];
 
@@ -73,7 +76,7 @@ export default async function LandingPage() {
       <JsonLd data={homeBreadcrumbJsonLd} />
 
       {/* Nav */}
-      <nav className="flex flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6 max-w-7xl mx-auto">
+      <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6">
         <span className="text-xl font-bold text-brand-700">ProductMind</span>
         <div className="flex items-center gap-3 sm:gap-4">
           {user ? (
@@ -90,13 +93,13 @@ export default async function LandingPage() {
             <>
               <Link
                 href="/sign-in"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
               >
                 Log in
               </Link>
               <Link
                 href="/sign-up"
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
               >
                 Start free
               </Link>
@@ -107,131 +110,119 @@ export default async function LandingPage() {
 
       {/* Main content */}
       <main>
-      {/* Hero */}
-      <section className="mx-auto max-w-4xl px-4 sm:px-6 pt-20 sm:pt-24 pb-16 text-center">
-        <p className="mb-4 text-sm font-medium text-brand-600 tracking-wide uppercase">
-          AI-Powered Product Management
-        </p>
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-          From idea to roadmap,{" "}
-          <span className="text-brand-600">faster</span>
-        </h1>
-        <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-          ProductMind helps product managers turn ambiguous product thinking into
-          structured PRDs, prioritized roadmaps, and competitive insights —
-          grounded in your actual project context, not generic templates.
-        </p>
-        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-          <Link
-            href={ctaHref}
-            className="rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-700 transition"
-          >
-            {user ? "Go to Dashboard" : "Get started — it\u2019s free"}
-          </Link>
-          <Link
-            href="/#features"
-            className="rounded-lg border border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 hover:bg-gray-100 transition"
-          >
-            See how it works
-          </Link>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section
-        id="features"
-        className="mx-auto max-w-5xl px-6 py-20"
-      >
-        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-          What you can build with ProductMind
-        </h2>
-        <p className="mt-3 mb-12 text-center text-gray-500">
-          Real PM workflows, not toy demos
-        </p>
-        <div className="grid gap-8 sm:grid-cols-3">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-            >
-              <span className="text-3xl">{f.icon}</span>
-              <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-gray-100 bg-gray-50">
-        <div className="mx-auto max-w-4xl px-6 py-20">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-            How it works
-          </h2>
-          <p className="mt-3 mb-12 text-center text-gray-500">
-            Context in, structured decisions out
+        {/* Hero */}
+        <section className="mx-auto max-w-4xl px-4 pb-16 pt-20 text-center sm:px-6 sm:pt-24">
+          <p className="mb-4 text-sm font-medium uppercase tracking-wide text-brand-600">
+            AI-Powered Product Management
           </p>
-          <div className="grid gap-10 sm:grid-cols-3">
-            {workflows.map((w) => (
-              <div key={w.step} className="text-center sm:text-left">
-                <span className="text-sm font-bold text-brand-600">{w.step}</span>
-                <h3 className="mt-2 text-base font-semibold text-gray-900">{w.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{w.description}</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+            From idea to roadmap, <span className="text-brand-600">faster</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
+            ProductMind helps product managers turn ambiguous product thinking into structured PRDs,
+            prioritized roadmaps, and competitive insights — grounded in your actual project
+            context, not generic templates.
+          </p>
+          <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+            <Link
+              href={ctaHref}
+              className="rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-brand-700"
+            >
+              {user ? "Go to Dashboard" : "Get started — it\u2019s free"}
+            </Link>
+            <Link
+              href="/#features"
+              className="rounded-lg border border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 transition hover:bg-gray-100"
+            >
+              See how it works
+            </Link>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" className="mx-auto max-w-5xl px-6 py-20">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            What you can build with ProductMind
+          </h2>
+          <p className="mb-12 mt-3 text-center text-gray-500">Real PM workflows, not toy demos</p>
+          <div className="grid gap-8 sm:grid-cols-3">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+              >
+                <span className="text-3xl">{f.icon}</span>
+                <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.description}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Capabilities */}
-      <section className="mx-auto max-w-5xl px-6 py-20">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-          Everything inside the workspace
-        </h2>
-        <p className="mt-3 mb-12 text-center text-gray-500">
-          Each capability is project-scoped and regenerable
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {capabilities.map((c) => (
-            <div
-              key={c.label}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-4"
-            >
-              <p className="text-sm font-semibold text-gray-900">{c.label}</p>
-              <p className="mt-1 text-xs text-gray-500">{c.detail}</p>
+        {/* How it works */}
+        <section className="border-t border-gray-100 bg-gray-50">
+          <div className="mx-auto max-w-4xl px-6 py-20">
+            <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+              How it works
+            </h2>
+            <p className="mb-12 mt-3 text-center text-gray-500">
+              Context in, structured decisions out
+            </p>
+            <div className="grid gap-10 sm:grid-cols-3">
+              {workflows.map((w) => (
+                <div key={w.step} className="text-center sm:text-left">
+                  <span className="text-sm font-bold text-brand-600">{w.step}</span>
+                  <h3 className="mt-2 text-base font-semibold text-gray-900">{w.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-600">{w.description}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-3xl px-6 py-20">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-          Frequently Asked Questions
-        </h2>
-        <p className="mt-3 text-center text-gray-500">
-          Everything you need to know about ProductMind
-        </p>
-        <div className="mt-12 space-y-4">
-          {faqItems.map((item) => (
-            <details
-              key={item.question}
-              className="group rounded-xl border border-gray-200 bg-white"
-            >
-              <summary className="flex cursor-pointer items-center justify-between px-6 py-5 text-sm font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
-                {item.question}
-                <span className="ml-4 flex-shrink-0 text-gray-500 transition group-open:rotate-45">
-                  +
-                </span>
-              </summary>
-              <div className="px-6 pb-5 text-sm leading-relaxed text-gray-600">
-                {item.answer}
+        {/* Capabilities */}
+        <section className="mx-auto max-w-5xl px-6 py-20">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            Everything inside the workspace
+          </h2>
+          <p className="mb-12 mt-3 text-center text-gray-500">
+            Each capability is project-scoped and regenerable
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {capabilities.map((c) => (
+              <div key={c.label} className="rounded-lg border border-gray-200 bg-white px-4 py-4">
+                <p className="text-sm font-semibold text-gray-900">{c.label}</p>
+                <p className="mt-1 text-xs text-gray-500">{c.detail}</p>
               </div>
-            </details>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
+        {/* FAQ */}
+        <section id="faq" className="mx-auto max-w-3xl px-6 py-20">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            Frequently Asked Questions
+          </h2>
+          <p className="mt-3 text-center text-gray-500">
+            Everything you need to know about ProductMind
+          </p>
+          <div className="mt-12 space-y-4">
+            {faqItems.map((item) => (
+              <details
+                key={item.question}
+                className="group rounded-xl border border-gray-200 bg-white"
+              >
+                <summary className="flex cursor-pointer items-center justify-between px-6 py-5 text-sm font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+                  {item.question}
+                  <span className="ml-4 flex-shrink-0 text-gray-500 transition group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <div className="px-6 pb-5 text-sm leading-relaxed text-gray-600">{item.answer}</div>
+              </details>
+            ))}
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
@@ -239,17 +230,23 @@ export default async function LandingPage() {
         {/* Built with strip */}
         <div className="mx-auto max-w-6xl px-6 py-6">
           <p className="text-center text-xs text-gray-500">
-            Built with Next.js, TypeScript, Supabase, pgvector, and OpenAI ·
-            RAG retrieval for chat, roadmap &amp; reviews · Row-level security · Rate-limited API
+            Built with Next.js, TypeScript, Supabase, pgvector, and OpenAI · RAG retrieval for chat,
+            roadmap &amp; reviews · Row-level security · Rate-limited API
           </p>
         </div>
         <div className="border-t border-gray-100 py-6 text-sm text-gray-500">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 sm:flex-row sm:justify-between">
             <span>© {new Date().getFullYear()} ProductMind. All rights reserved.</span>
             <nav className="flex gap-4" aria-label="Legal">
-              <Link href="/privacy" className="hover:text-gray-700">Privacy</Link>
-              <Link href="/cookies" className="hover:text-gray-700">Cookies</Link>
-              <Link href="/terms" className="hover:text-gray-700">Terms</Link>
+              <Link href="/privacy" className="hover:text-gray-700">
+                Privacy
+              </Link>
+              <Link href="/cookies" className="hover:text-gray-700">
+                Cookies
+              </Link>
+              <Link href="/terms" className="hover:text-gray-700">
+                Terms
+              </Link>
             </nav>
           </div>
         </div>

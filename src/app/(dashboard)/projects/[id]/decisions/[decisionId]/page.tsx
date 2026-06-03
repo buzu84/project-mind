@@ -82,7 +82,7 @@ export default async function DecisionDetailPage({
     <div className="mx-auto max-w-5xl">
       <Link
         href={`/projects/${project.id}/decisions`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to Decisions
@@ -93,8 +93,14 @@ export default async function DecisionDetailPage({
         decision={toDecisionViewModel(decision)}
         options={(optionsRes.data ?? []).map(toOptionViewModel)}
         assumptions={(assumptionsRes.data ?? []).map(toAssumptionViewModel)}
-        recommendation={recommendationsRes.data?.[0] ? toRecommendationViewModel(recommendationsRes.data[0]) : null}
-        evidenceLinks={(linksRes.data ?? []).map((row: EvidenceLinkJoinRow) => toEvidenceLinkViewModel(row))}
+        recommendation={
+          recommendationsRes.data?.[0]
+            ? toRecommendationViewModel(recommendationsRes.data[0])
+            : null
+        }
+        evidenceLinks={(linksRes.data ?? []).map((row: EvidenceLinkJoinRow) =>
+          toEvidenceLinkViewModel(row),
+        )}
       />
     </div>
   );

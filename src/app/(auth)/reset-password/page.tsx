@@ -78,16 +78,15 @@ export default function ResetPasswordPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 shadow-lg shadow-brand-200">
             <IconSparkles className="h-6 w-6 text-white" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">
-            Set new password
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Choose a new password for your account
-          </p>
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">Set new password</h1>
+          <p className="mt-1 text-sm text-gray-500">Choose a new password for your account</p>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          <div
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
             {error}
           </div>
         )}
@@ -116,7 +115,12 @@ export default function ResetPasswordPage() {
               error={confirmError ?? undefined}
               required
             />
-            <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading || !isValid}>
+            <Button
+              type="submit"
+              className="w-full"
+              isLoading={isLoading}
+              disabled={isLoading || !isValid}
+            >
               Update Password
             </Button>
           </form>
@@ -131,4 +135,3 @@ export default function ResetPasswordPage() {
     </main>
   );
 }
-

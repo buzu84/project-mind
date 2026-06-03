@@ -1,6 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef, useId, useCallback, cloneElement, type ReactElement, type RefObject } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useId,
+  useCallback,
+  cloneElement,
+  type ReactElement,
+  type RefObject,
+} from "react";
 import { Button } from "./button";
 import { focusAfterPaint } from "@/lib/focus-utils";
 
@@ -35,17 +44,20 @@ export function ConfirmDialog({
 
   // Restore focus to trigger (or fallback) when dialog closes.
   // Uses double-rAF so focus runs after React has flushed the DOM update.
-  const restoreFocus = useCallback((confirmedAction: boolean) => {
-    focusAfterPaint(() => {
-      const trigger = triggerRef.current;
-      if (trigger && trigger.isConnected) return trigger;
-      // Trigger was removed (e.g. item deleted) — try fallback
-      if (confirmedAction && focusFallbackRef?.current?.isConnected) {
-        return focusFallbackRef.current;
-      }
-      return null;
-    });
-  }, [focusFallbackRef]);
+  const restoreFocus = useCallback(
+    (confirmedAction: boolean) => {
+      focusAfterPaint(() => {
+        const trigger = triggerRef.current;
+        if (trigger && trigger.isConnected) return trigger;
+        // Trigger was removed (e.g. item deleted) — try fallback
+        if (confirmedAction && focusFallbackRef?.current?.isConnected) {
+          return focusFallbackRef.current;
+        }
+        return null;
+      });
+    },
+    [focusFallbackRef],
+  );
 
   // Focus cancel button on open, handle Escape + focus trap
   useEffect(() => {
@@ -60,7 +72,7 @@ export function ConfirmDialog({
       }
       if (e.key === "Tab" && panelRef.current) {
         const focusable = panelRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
@@ -116,15 +128,28 @@ export function ConfirmDialog({
       {triggerEl}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descId}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
+        >
           <div
             className="fixed inset-0 bg-black/40"
             onClick={() => !loading && handleCancel()}
             aria-hidden="true"
           />
-          <div ref={panelRef} className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-xl">
-            <h3 id={titleId} className="text-base font-semibold text-gray-900">{title}</h3>
-            <p id={descId} className="mt-2 text-sm text-gray-600">{message}</p>
+          <div
+            ref={panelRef}
+            className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-xl"
+          >
+            <h3 id={titleId} className="text-base font-semibold text-gray-900">
+              {title}
+            </h3>
+            <p id={descId} className="mt-2 text-sm text-gray-600">
+              {message}
+            </p>
             <div className="mt-5 flex items-center justify-end gap-2">
               <Button
                 ref={cancelRef}

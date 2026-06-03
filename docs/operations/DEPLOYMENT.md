@@ -9,14 +9,14 @@ For incident troubleshooting, see [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md)
 
 ## Prerequisites
 
-| Tool | Version | Purpose |
-|---|---|---|
-| Node.js | 18+ | Runtime |
-| npm | 9+ | Package manager |
-| Git | any | Version control |
-| Supabase account | Free tier works | Database + Auth |
-| OpenAI account | API access required | AI features (GPT-4o + embeddings) |
-| Vercel account | Free tier works | Hosting |
+| Tool             | Version             | Purpose                           |
+| ---------------- | ------------------- | --------------------------------- |
+| Node.js          | 18+                 | Runtime                           |
+| npm              | 9+                  | Package manager                   |
+| Git              | any                 | Version control                   |
+| Supabase account | Free tier works     | Database + Auth                   |
+| OpenAI account   | API access required | AI features (GPT-4o + embeddings) |
+| Vercel account   | Free tier works     | Hosting                           |
 
 ---
 
@@ -57,12 +57,12 @@ ADMIN_EMAILS=your-email@example.com
 
 ### 3. Choose a development mode
 
-| Mode | Flags | What you need |
-|---|---|---|
-| **Full mock** (no external services) | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=false` | Nothing — placeholder env values are fine |
-| **Mock auth + real DB** | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=false`, `USE_REAL_AI=false` | Supabase project with migrations applied |
-| **Mock auth + real AI** | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=true` | Valid `OPENAI_API_KEY` |
-| **Full real** | `USE_MOCK_AUTH=false`, `USE_MOCK_DB=false`, `USE_REAL_AI=true` | Supabase project + OpenAI key + real email for auth |
+| Mode                                 | Flags                                                          | What you need                                       |
+| ------------------------------------ | -------------------------------------------------------------- | --------------------------------------------------- |
+| **Full mock** (no external services) | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=false`  | Nothing — placeholder env values are fine           |
+| **Mock auth + real DB**              | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=false`, `USE_REAL_AI=false` | Supabase project with migrations applied            |
+| **Mock auth + real AI**              | `USE_MOCK_AUTH=true`, `USE_MOCK_DB=true`, `USE_REAL_AI=true`   | Valid `OPENAI_API_KEY`                              |
+| **Full real**                        | `USE_MOCK_AUTH=false`, `USE_MOCK_DB=false`, `USE_REAL_AI=true` | Supabase project + OpenAI key + real email for auth |
 
 ### 4. Start the dev server
 
@@ -112,22 +112,22 @@ All migrations are in `supabase/migrations/`. Run them in order via **Supabase D
 
 ### Migration order
 
-| # | File | What it does |
-|---|---|---|
-| 1 | `000_consolidated.sql` | Core tables: projects, feedback, insights, document_chunks, etc. |
-| 2 | `001_schema.sql` | Additional schema elements |
-| 3 | `001_fix_rls_grants.sql` | Grants for authenticated/service_role |
-| 4 | `002_rls.sql` | Row Level Security policies |
-| 5 | `004_chunk_index.sql` | pgvector index + `match_document_chunks` RPC |
-| 6 | `005_feature_scoring.sql` | Feature ideas scoring tables |
-| 7 | `006_project_context.sql` | Project context table |
-| 8 | `20260428_create_multi_agent_reviews.sql` | Multi-agent review storage |
-| 9 | `20260428_create_roadmaps.sql` | Roadmap storage |
-| 10 | `20260429_create_ai_usage.sql` | AI usage tracking table |
-| 11 | `20260429_global_chat_messages.sql` | Global chat message history |
-| 12 | `20260504_decision_engine.sql` | Decision Engine `product_*` tables |
-| 13 | `20260505_decision_review_hardening.sql` | `generated_by` columns + triggers |
-| 14 | `20260520_decision_review_schema_alignment.sql` | Schema alignment for Decision Review service |
+| #   | File                                            | What it does                                                     |
+| --- | ----------------------------------------------- | ---------------------------------------------------------------- |
+| 1   | `000_consolidated.sql`                          | Core tables: projects, feedback, insights, document_chunks, etc. |
+| 2   | `001_schema.sql`                                | Additional schema elements                                       |
+| 3   | `001_fix_rls_grants.sql`                        | Grants for authenticated/service_role                            |
+| 4   | `002_rls.sql`                                   | Row Level Security policies                                      |
+| 5   | `004_chunk_index.sql`                           | pgvector index + `match_document_chunks` RPC                     |
+| 6   | `005_feature_scoring.sql`                       | Feature ideas scoring tables                                     |
+| 7   | `006_project_context.sql`                       | Project context table                                            |
+| 8   | `20260428_create_multi_agent_reviews.sql`       | Multi-agent review storage                                       |
+| 9   | `20260428_create_roadmaps.sql`                  | Roadmap storage                                                  |
+| 10  | `20260429_create_ai_usage.sql`                  | AI usage tracking table                                          |
+| 11  | `20260429_global_chat_messages.sql`             | Global chat message history                                      |
+| 12  | `20260504_decision_engine.sql`                  | Decision Engine `product_*` tables                               |
+| 13  | `20260505_decision_review_hardening.sql`        | `generated_by` columns + triggers                                |
+| 14  | `20260520_decision_review_schema_alignment.sql` | Schema alignment for Decision Review service                     |
 
 ### Migration safety notes
 
@@ -212,13 +212,13 @@ ADMIN_EMAILS                    → (optional) comma-separated admin emails
 
 The app validates environment variables at runtime (`src/lib/env.ts`). In production (`NODE_ENV=production`, not during build), these checks are enforced:
 
-| Condition | Error |
-|---|---|
-| `USE_MOCK_AUTH=true` | `[ENV] Mock auth is not allowed in production` |
-| `USE_MOCK_DB=true` | `[ENV] Mock DB is not allowed in production` |
-| `USE_REAL_AI=false` | `[ENV] USE_REAL_AI=false is not allowed in production` |
+| Condition                                   | Error                                                          |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| `USE_MOCK_AUTH=true`                        | `[ENV] Mock auth is not allowed in production`                 |
+| `USE_MOCK_DB=true`                          | `[ENV] Mock DB is not allowed in production`                   |
+| `USE_REAL_AI=false`                         | `[ENV] USE_REAL_AI=false is not allowed in production`         |
 | `NEXT_PUBLIC_SITE_URL` contains `localhost` | `[ENV] NEXT_PUBLIC_SITE_URL cannot be localhost in production` |
-| Any required env var missing | `[ENV] Missing required environment variable: <name>` |
+| Any required env var missing                | `[ENV] Missing required environment variable: <name>`          |
 
 These guards are skipped during `next build` (detected via `NEXT_PHASE`).
 
@@ -286,6 +286,7 @@ Run these after every production deployment:
 ### Application rollback
 
 Vercel supports instant rollback:
+
 1. Go to **Vercel → Project → Deployments**
 2. Find the previous successful deployment
 3. Click **⋮ → Promote to Production**
@@ -297,7 +298,8 @@ This is instant — no rebuild required.
 **Database changes are NOT rolled back by Vercel rollback.** If a migration was applied, the schema change persists.
 
 For database rollback:
-- Prepare reverse SQL *before* applying destructive migrations
+
+- Prepare reverse SQL _before_ applying destructive migrations
 - Test reverse migrations on a Supabase branch/dev project first
 - Additive migrations (ADD COLUMN) generally don't need rollback — the old code simply ignores the new columns
 
@@ -305,17 +307,17 @@ For database rollback:
 
 ## Common Deployment Failures
 
-| Issue | Cause | Fix |
-|---|---|---|
-| `[ENV] Missing required environment variable` | Env var not set in Vercel | Add it in Vercel → Settings → Environment Variables, then redeploy |
-| `[ENV] Mock auth is not allowed in production` | `USE_MOCK_AUTH=true` in production | Set to `false`, redeploy |
-| `[ENV] NEXT_PUBLIC_SITE_URL cannot be localhost` | Site URL pointing to localhost | Set to production URL, redeploy |
-| Email confirmation link fails | Supabase redirect URLs don't include `/auth/callback` for current domain | Add URL in Supabase Auth → URL Configuration |
-| 401 on AI calls | `OPENAI_API_KEY` missing or invalid | Verify/replace key in Vercel, redeploy |
-| RLS permission denied | Missing grants migration (`001_fix_rls_grants.sql`) | Run the migration in Supabase SQL Editor |
-| RAG returns no context | `match_document_chunks` RPC missing or wrong signature | Run `004_chunk_index.sql` migration |
-| Decision Review fails | Missing Decision Engine tables or `generated_by` columns | Run migrations 12, 13, 14 in order |
-| Build fails | TypeScript error or dependency issue | Run `npm run build` locally to reproduce, fix, push |
+| Issue                                            | Cause                                                                    | Fix                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `[ENV] Missing required environment variable`    | Env var not set in Vercel                                                | Add it in Vercel → Settings → Environment Variables, then redeploy |
+| `[ENV] Mock auth is not allowed in production`   | `USE_MOCK_AUTH=true` in production                                       | Set to `false`, redeploy                                           |
+| `[ENV] NEXT_PUBLIC_SITE_URL cannot be localhost` | Site URL pointing to localhost                                           | Set to production URL, redeploy                                    |
+| Email confirmation link fails                    | Supabase redirect URLs don't include `/auth/callback` for current domain | Add URL in Supabase Auth → URL Configuration                       |
+| 401 on AI calls                                  | `OPENAI_API_KEY` missing or invalid                                      | Verify/replace key in Vercel, redeploy                             |
+| RLS permission denied                            | Missing grants migration (`001_fix_rls_grants.sql`)                      | Run the migration in Supabase SQL Editor                           |
+| RAG returns no context                           | `match_document_chunks` RPC missing or wrong signature                   | Run `004_chunk_index.sql` migration                                |
+| Decision Review fails                            | Missing Decision Engine tables or `generated_by` columns                 | Run migrations 12, 13, 14 in order                                 |
+| Build fails                                      | TypeScript error or dependency issue                                     | Run `npm run build` locally to reproduce, fix, push                |
 
 ---
 
@@ -323,10 +325,10 @@ For database rollback:
 
 All AI API routes are rate-limited per authenticated user:
 
-| Tier | Routes | Limit |
-|---|---|---|
-| Standard | chat, global-chat, insights, prioritize, score-features | 20 requests / hour |
-| Heavy | PRD, roadmap, competitive-analysis, multi-agent-review, decision-analyze | 5 requests / 15 min |
+| Tier     | Routes                                                                   | Limit               |
+| -------- | ------------------------------------------------------------------------ | ------------------- |
+| Standard | chat, global-chat, insights, prioritize, score-features                  | 20 requests / hour  |
+| Heavy    | PRD, roadmap, competitive-analysis, multi-agent-review, decision-analyze | 5 requests / 15 min |
 
 - Rate-limited requests return HTTP 429 with `Retry-After` header
 - Admin users (emails in `ADMIN_EMAILS`) bypass all limits

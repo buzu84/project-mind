@@ -9,7 +9,6 @@ import { CONTEXT_SECTION_MAX, CONTEXT_QUALITY_HELPER } from "@/lib/validations/c
 import { saveProjectContext } from "./actions";
 import { focusAfterPaint } from "@/lib/focus-utils";
 
-
 interface ContextFormProps {
   projectId: string;
   initialData?: ProjectContext;
@@ -57,16 +56,16 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
     });
   }
 
-  const filledCount = initialData
-    ? CONTEXT_SECTIONS.filter((s) => initialData[s.key]).length
-    : 0;
+  const filledCount = initialData ? CONTEXT_SECTIONS.filter((s) => initialData[s.key]).length : 0;
 
   return (
     <form action={handleSubmit}>
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">Context completeness</span>
-          <span className="text-sm text-gray-500">{filledCount}/{CONTEXT_SECTIONS.length} sections</span>
+          <span className="text-sm text-gray-500">
+            {filledCount}/{CONTEXT_SECTIONS.length} sections
+          </span>
         </div>
         <div className="h-2 w-full rounded-full bg-gray-100">
           <div
@@ -96,12 +95,23 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
                   <div>
                     <span className="text-sm font-semibold text-gray-900">{section.label}</span>
                     {hasContent && (
-                      <span className="ml-2 inline-flex h-5 items-center rounded-full bg-brand-50 px-2 text-xs font-medium text-brand-700">Filled</span>
+                      <span className="ml-2 inline-flex h-5 items-center rounded-full bg-brand-50 px-2 text-xs font-medium text-brand-700">
+                        Filled
+                      </span>
                     )}
-                    {!isExpanded && <p className="mt-0.5 text-xs text-gray-400">{section.description}</p>}
+                    {!isExpanded && (
+                      <p className="mt-0.5 text-xs text-gray-400">{section.description}</p>
+                    )}
                   </div>
                 </div>
-                <svg className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <svg
+                  className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -121,7 +131,10 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
                   />
                   <div className="mt-1.5 flex items-center justify-between">
                     <p className="text-xs text-gray-400">{CONTEXT_QUALITY_HELPER}</p>
-                    <CharacterCounter current={(sectionValues[section.key] ?? "").length} max={CONTEXT_SECTION_MAX} />
+                    <CharacterCounter
+                      current={(sectionValues[section.key] ?? "").length}
+                      max={CONTEXT_SECTION_MAX}
+                    />
                   </div>
                 </div>
               )}
@@ -131,13 +144,20 @@ export function ContextForm({ projectId, initialData }: ContextFormProps) {
       </div>
 
       {result && (
-        <div ref={statusRef} tabIndex={-1} className={`mt-4 rounded-lg border px-4 py-3 text-sm focus:outline-none ${result.success ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`} role="status">
+        <div
+          ref={statusRef}
+          tabIndex={-1}
+          className={`mt-4 rounded-lg border px-4 py-3 text-sm focus:outline-none ${result.success ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`}
+          role="status"
+        >
           {result.success ? "Context saved successfully!" : result.error}
         </div>
       )}
 
       <div className="mt-6 flex justify-end">
-        <Button ref={saveButtonRef} type="submit" isLoading={isPending} disabled={isPending}>Save Context</Button>
+        <Button ref={saveButtonRef} type="submit" isLoading={isPending} disabled={isPending}>
+          Save Context
+        </Button>
       </div>
     </form>
   );

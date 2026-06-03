@@ -28,14 +28,14 @@ export function GlobalChatClient({ initialMessages }: GlobalChatClientProps) {
         AI Assistant
       </h1>
       <ChatShell
-      initialMessages={initialMessages}
-      apiEndpoint="/api/ai/global-chat"
-      buildRequestBody={(message) => ({ message })}
-      suggestions={suggestions}
-      emptyTitle="Chat with ProductMind AI"
-      emptyDescription="Ask anything about product strategy, features, market analysis, or product decisions. For project-specific advice, open a project's AI Chat."
-      placeholder="Ask anything about product management…"
-    />
+        initialMessages={initialMessages}
+        apiEndpoint="/api/ai/global-chat"
+        buildRequestBody={(message) => ({ message })}
+        suggestions={suggestions}
+        emptyTitle="Chat with ProductMind AI"
+        emptyDescription="Ask anything about product strategy, features, market analysis, or product decisions. For project-specific advice, open a project's AI Chat."
+        placeholder="Ask anything about product management…"
+      />
     </>
   );
 }

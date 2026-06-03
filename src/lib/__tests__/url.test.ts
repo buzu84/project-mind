@@ -123,4 +123,3 @@ describe("getClientSiteUrl", () => {
     expect(getClientSiteUrl()).toBe("https://productmind.app");
   });
 });
-

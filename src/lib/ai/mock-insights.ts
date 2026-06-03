@@ -59,10 +59,12 @@ export function generateMockInsights({
     {
       title: "Technical scalability needs early planning",
       type: "risk",
-      explanation: "If adoption grows faster than expected, technical debt from rapid MVP development could become a bottleneck. Architecture decisions made now will have long-term impact.",
+      explanation:
+        "If adoption grows faster than expected, technical debt from rapid MVP development could become a bottleneck. Architecture decisions made now will have long-term impact.",
       priority: "medium",
       confidence: "high",
-      suggested_action: "Allocate 20% of sprint capacity for technical debt reduction from sprint 3 onward.",
+      suggested_action:
+        "Allocate 20% of sprint capacity for technical debt reduction from sprint 3 onward.",
     },
     {
       title: "Collect user feedback from day one",
@@ -70,12 +72,14 @@ export function generateMockInsights({
       explanation: `Setting up feedback collection early ensures you can iterate based on real ${audience} needs rather than assumptions.`,
       priority: "high",
       confidence: "high",
-      suggested_action: "Integrate an in-app feedback widget and schedule bi-weekly user interviews.",
+      suggested_action:
+        "Integrate an in-app feedback widget and schedule bi-weekly user interviews.",
     },
     {
       title: "Product metrics framework is missing",
       type: "assumption",
-      explanation: "Without defined KPIs and tracking, it will be difficult to measure whether the product is succeeding. Many teams assume they know what to measure but miss critical metrics.",
+      explanation:
+        "Without defined KPIs and tracking, it will be difficult to measure whether the product is succeeding. Many teams assume they know what to measure but miss critical metrics.",
       priority: "medium",
       confidence: "high",
       suggested_action: "Define North Star metric plus 3-5 supporting metrics before launch.",
@@ -86,7 +90,8 @@ export function generateMockInsights({
       explanation: `Many ${audience} will access ${projectName} on mobile devices. A poor mobile experience is a common pain point in ${mkt}.`,
       priority: "medium",
       confidence: "medium",
-      suggested_action: "Ensure responsive design for core workflows; consider mobile-first for key features.",
+      suggested_action:
+        "Ensure responsive design for core workflows; consider mobile-first for key features.",
     },
     {
       title: "Plan a phased roadmap with clear milestones",
@@ -94,8 +99,8 @@ export function generateMockInsights({
       explanation: `A phased approach reduces risk and allows for learning. Ship the smallest valuable version of ${projectName} first, then iterate.`,
       priority: "high",
       confidence: "high",
-      suggested_action: "Use the Roadmap Generator to create a Now/Next/Later roadmap with 30/60/90-day milestones.",
+      suggested_action:
+        "Use the Roadmap Generator to create a Now/Next/Later roadmap with 30/60/90-day milestones.",
     },
   ];
 }
-

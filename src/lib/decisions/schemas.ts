@@ -51,7 +51,9 @@ export const createDecisionOptionSchema = z.object({
 });
 export type CreateDecisionOptionInput = z.infer<typeof createDecisionOptionSchema>;
 
-export const updateDecisionOptionSchema = createDecisionOptionSchema.omit({ decision_id: true }).partial();
+export const updateDecisionOptionSchema = createDecisionOptionSchema
+  .omit({ decision_id: true })
+  .partial();
 export type UpdateDecisionOptionInput = z.infer<typeof updateDecisionOptionSchema>;
 
 // ── Assumption ──────────────────────────────────────────────────────
@@ -122,4 +124,3 @@ export const createDecisionRecommendationSchema = z.object({
   confidence_score: confidenceScore,
 });
 export type CreateDecisionRecommendationInput = z.infer<typeof createDecisionRecommendationSchema>;
-

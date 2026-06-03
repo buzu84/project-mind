@@ -42,17 +42,19 @@ export default function PrdPage() {
   const [targetAudience, setTargetAudience] = useState("");
   const [descriptionTouched, setDescriptionTouched] = useState(false);
 
-  const descriptionTooShort = productDescription.length > 0 && productDescription.length < PRD_DESCRIPTION_MIN;
+  const descriptionTooShort =
+    productDescription.length > 0 && productDescription.length < PRD_DESCRIPTION_MIN;
   const descriptionError =
     descriptionTouched && descriptionTooShort
       ? `Description must be at least ${PRD_DESCRIPTION_MIN} characters.`
       : undefined;
 
-  const isFormValid = productName.trim().length > 0 && productDescription.trim().length >= PRD_DESCRIPTION_MIN;
+  const isFormValid =
+    productName.trim().length > 0 && productDescription.trim().length >= PRD_DESCRIPTION_MIN;
 
   useEffect(() => {
     fetch(`/api/decisions?projectId=${params.id}&type=PRD`)
-      .then((r) => r.ok ? r.json() : { decisions: [] })
+      .then((r) => (r.ok ? r.json() : { decisions: [] }))
       .then((d) => setRecentPrds(d.decisions ?? []))
       .catch(() => {});
   }, [params.id]);
@@ -79,7 +81,10 @@ export default function PrdPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : getFriendlyErrorMessage(data.error));
+      if (!res.ok)
+        throw new Error(
+          typeof data.error === "string" ? data.error : getFriendlyErrorMessage(data.error),
+        );
 
       if (data.id) {
         toast("PRD generated successfully!");
@@ -98,7 +103,7 @@ export default function PrdPage() {
     <div className="mx-auto max-w-3xl">
       <Link
         href={`/projects/${params.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         ← Back to Project
       </Link>
@@ -134,9 +139,7 @@ export default function PrdPage() {
             maxLength={PRD_DESCRIPTION_MAX}
           />
           <div className="mt-1 flex items-center justify-between">
-            <p className="text-xs text-gray-400">
-              {PRD_DESCRIPTION_QUALITY_HELPER}
-            </p>
+            <p className="text-xs text-gray-400">{PRD_DESCRIPTION_QUALITY_HELPER}</p>
             <CharacterCounter current={productDescription.length} max={PRD_DESCRIPTION_MAX} />
           </div>
         </div>
@@ -157,7 +160,10 @@ export default function PrdPage() {
       </form>
 
       {error && (
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -168,16 +174,14 @@ export default function PrdPage() {
           <div className="space-y-2">
             {recentPrds.map((prd) => (
               <Link key={prd.id} href={`/projects/${params.id}/prd/${prd.id}`}>
-                <Card className="flex items-center justify-between py-3 cursor-pointer hover:border-gray-300 hover:shadow-sm transition">
+                <Card className="flex cursor-pointer items-center justify-between py-3 transition hover:border-gray-300 hover:shadow-sm">
                   <div className="flex items-center gap-2">
                     <Badge variant="info">PRD</Badge>
                     <span className="text-sm font-medium text-gray-700">
                       {parseDecisionInputTitle(prd.input as Json | null) ?? "Untitled PRD"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {formatDate(prd.created_at)}
-                  </span>
+                  <span className="text-xs text-gray-400">{formatDate(prd.created_at)}</span>
                 </Card>
               </Link>
             ))}
@@ -187,4 +191,3 @@ export default function PrdPage() {
     </div>
   );
 }
-

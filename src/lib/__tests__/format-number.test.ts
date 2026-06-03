@@ -46,4 +46,3 @@ describe("formatNumber", () => {
     expect(formatNumber(42)).toBe(formatNumber(42));
   });
 });
-

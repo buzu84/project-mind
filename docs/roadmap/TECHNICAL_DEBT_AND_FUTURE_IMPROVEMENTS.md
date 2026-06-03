@@ -17,13 +17,13 @@ This document captures known non-blocking issues, future cleanup tasks, and prod
 
 These should be addressed soon after initial deployment:
 
-| Item | Why |
-|---|---|
-| **Persistent rate limiting** (Redis/Upstash) | Current in-memory limiter resets on serverless cold start. Acceptable for demo but insufficient for real multi-user usage. |
-| **Production monitoring** (Sentry or similar) | No error tracking beyond Vercel logs. Silent failures in AI workflows go unnoticed. |
-| **Automated tests for AI workflows** | Decision Review, PRD Generator, and other AI services have no automated tests. Manual testing only. |
-| **Decision Review integration tests** | Verify save/cleanup/re-analyze flow end-to-end in a test environment. |
-| **Editable AI outputs** | Users cannot edit generated recommendations, options, or assumptions in-app. This is the #1 product gap. See dedicated section below. |
+| Item                                          | Why                                                                                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Persistent rate limiting** (Redis/Upstash)  | Current in-memory limiter resets on serverless cold start. Acceptable for demo but insufficient for real multi-user usage.            |
+| **Production monitoring** (Sentry or similar) | No error tracking beyond Vercel logs. Silent failures in AI workflows go unnoticed.                                                   |
+| **Automated tests for AI workflows**          | Decision Review, PRD Generator, and other AI services have no automated tests. Manual testing only.                                   |
+| **Decision Review integration tests**         | Verify save/cleanup/re-analyze flow end-to-end in a test environment.                                                                 |
+| **Editable AI outputs**                       | Users cannot edit generated recommendations, options, or assumptions in-app. This is the #1 product gap. See dedicated section below. |
 
 ---
 
@@ -31,33 +31,33 @@ These should be addressed soon after initial deployment:
 
 ### Dead/legacy columns
 
-| Column | Table | Status | Notes |
-|---|---|---|---|
+| Column       | Table                              | Status                       | Notes                                                                                                                                                                                              |
+| ------------ | ---------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `next_steps` | `product_decision_recommendations` | **Dead** for Decision Review | Created in `20260504_decision_engine.sql`. Never written to by Decision Review service. Only Multi-Agent Review uses a `next_steps` field (different table). Can be dropped in a future migration. |
-| `type` | `product_assumptions` | **Duplicate** | Both `assumption_type` and `type` store the same value. `assumption_type` is canonical (original schema). `type` was added by the alignment migration. Can consolidate later. |
-| `result` | `product_assumptions` | **NULL by design** | Intended for post-validation outcomes ("confirmed", "invalidated"). NULL is correct for AI-generated assumptions since no validation tracking exists yet. |
+| `type`       | `product_assumptions`              | **Duplicate**                | Both `assumption_type` and `type` store the same value. `assumption_type` is canonical (original schema). `type` was added by the alignment migration. Can consolidate later.                      |
+| `result`     | `product_assumptions`              | **NULL by design**           | Intended for post-validation outcomes ("confirmed", "invalidated"). NULL is correct for AI-generated assumptions since no validation tracking exists yet.                                          |
 
 ### Active source of truth
 
-| Field | Column | Written by | Read by UI |
-|---|---|---|---|
-| Next steps | `next_validation_steps` | `decision-review-service.ts` | `decision-detail-client.tsx` |
-| Reasoning | `reasoning` (newline-joined string) | Service | UI (split back to array) |
-| Recommendation text | `recommendation` | Service | UI |
-| Confidence | `confidence_score` | Service | UI |
+| Field               | Column                              | Written by                   | Read by UI                   |
+| ------------------- | ----------------------------------- | ---------------------------- | ---------------------------- |
+| Next steps          | `next_validation_steps`             | `decision-review-service.ts` | `decision-detail-client.tsx` |
+| Reasoning           | `reasoning` (newline-joined string) | Service                      | UI (split back to array)     |
+| Recommendation text | `recommendation`                    | Service                      | UI                           |
+| Confidence          | `confidence_score`                  | Service                      | UI                           |
 
 ### Stored but not rendered
 
 These fields are generated by AI, stored in the database, but intentionally hidden from the UI to avoid clutter:
 
-| Field | Table | Rationale |
-|---|---|---|
-| `supporting_evidence` | `product_decision_recommendations` | Overlaps with the Evidence section |
+| Field                             | Table                              | Rationale                                                       |
+| --------------------------------- | ---------------------------------- | --------------------------------------------------------------- |
+| `supporting_evidence`             | `product_decision_recommendations` | Overlaps with the Evidence section                              |
 | `assumptions` (on recommendation) | `product_decision_recommendations` | String summaries that overlap with structured Assumptions cards |
-| `risks` (on recommendation) | `product_decision_recommendations` | Overlaps with option-level risk data |
-| `alternatives` | `product_decision_recommendations` | Low-value; recommendation text usually covers this |
-| `expected_impact` | `product_decision_options` | Often vague; adds clutter |
-| `risks` (on options) | `product_decision_options` | Redundant with cons |
+| `risks` (on recommendation)       | `product_decision_recommendations` | Overlaps with option-level risk data                            |
+| `alternatives`                    | `product_decision_recommendations` | Low-value; recommendation text usually covers this              |
+| `expected_impact`                 | `product_decision_options`         | Often vague; adds clutter                                       |
+| `risks` (on options)              | `product_decision_options`         | Redundant with cons                                             |
 
 These can be surfaced in a future "expanded view" or detail drawer without schema changes.
 
@@ -95,15 +95,18 @@ Editable AI outputs are a planned product direction. When implemented, the follo
 ## Evidence / Citation Improvements
 
 ### Current state
+
 - Evidence is retrieved via RAG (pgvector) and displayed as cards with source type and relevance score.
 - Citation IDs (`[1]`, `[2]`) are generated internally and used in AI prompts for grounding.
 - Citation IDs are sanitized against valid evidence before storage.
 
 ### Not yet implemented
+
 - **Inline citation rendering**: AI output text may contain `[1]`, `[2]` references but these are not rendered as clickable/linked citations in the UI.
 - **Citation mapping UI**: No visual link between a recommendation's text and the specific evidence chunk it references.
 
 ### Future work
+
 - Render citation IDs as linked references in recommendation/option text.
 - Map citation IDs to stable evidence records.
 - Consider a citation tooltip or sidebar panel.
@@ -113,42 +116,42 @@ Editable AI outputs are a planned product direction. When implemented, the follo
 
 ## RAG / Evidence Layer Improvements
 
-| Item | Notes |
-|---|---|
-| Retrieval quality tuning | Current similarity threshold (0.2 minimum) and lexical guard work but are not optimized. |
-| Better evidence ranking | Consider re-ranking retrieved chunks by relevance before injection. |
-| Richer source types | Currently supports feedback documents. Could add URLs, API imports, structured data. |
-| Retrieval observability | Current logging is dev-gated. Production observability is limited to AI usage tracking rows. |
-| Eval dataset | Build a small golden dataset to regression-test retrieval quality across prompt/model changes. |
-| Threshold tuning | The 0.2 MIN_PROMPT_SIMILARITY and lexical guard thresholds were set heuristically. |
+| Item                     | Notes                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
+| Retrieval quality tuning | Current similarity threshold (0.2 minimum) and lexical guard work but are not optimized.       |
+| Better evidence ranking  | Consider re-ranking retrieved chunks by relevance before injection.                            |
+| Richer source types      | Currently supports feedback documents. Could add URLs, API imports, structured data.           |
+| Retrieval observability  | Current logging is dev-gated. Production observability is limited to AI usage tracking rows.   |
+| Eval dataset             | Build a small golden dataset to regression-test retrieval quality across prompt/model changes. |
+| Threshold tuning         | The 0.2 MIN_PROMPT_SIMILARITY and lexical guard thresholds were set heuristically.             |
 
 ---
 
 ## AI Reliability Improvements
 
-| Item | Notes |
-|---|---|
-| Schema validation tests | Unit tests for Zod schemas against representative AI outputs. |
-| Normalization unit tests | Test `review-normalize.ts` with edge cases (snake_case, string numbers, alias types). |
-| Invalid JSON retry tests | Verify retry logic handles malformed JSON, partial responses, rate limit errors. |
-| Prompt versioning | Current `PROMPT_VERSION = "v1.1"` is tracked but not used for A/B testing or rollback. |
-| Model upgrade strategy | Document how to upgrade from GPT-4o to future models without breaking output parsing. |
-| Hallucination warnings | Flag claims that have no supporting citation IDs. |
+| Item                     | Notes                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| Schema validation tests  | Unit tests for Zod schemas against representative AI outputs.                          |
+| Normalization unit tests | Test `review-normalize.ts` with edge cases (snake_case, string numbers, alias types).  |
+| Invalid JSON retry tests | Verify retry logic handles malformed JSON, partial responses, rate limit errors.       |
+| Prompt versioning        | Current `PROMPT_VERSION = "v1.1"` is tracked but not used for A/B testing or rollback. |
+| Model upgrade strategy   | Document how to upgrade from GPT-4o to future models without breaking output parsing.  |
+| Hallucination warnings   | Flag claims that have no supporting citation IDs.                                      |
 
 ---
 
 ## Product UX Improvements
 
-| Item | Notes |
-|---|---|
-| Real screenshots on landing page | Current landing uses text-only feature cards. Add actual product screenshots or a demo GIF. |
-| AI tool empty states | Some tools show generic empty states. Add contextual guidance per tool. |
-| Templates / examples | Pre-built project templates to help users get started faster. |
-| Global AI Assistant clarity | Sidebar "AI Assistant" is general-purpose (no project context). This is documented in Getting Started but could be clearer in the assistant page itself. |
-| Decision Review expanded view | Surface hidden stored fields (supporting evidence, alternatives, expected impact) in an expandable/drawer UI. |
-| Mobile layout | Badge stacking on Decision Review option cards may need responsive tweaks. |
-| Plan / limits UI | Show remaining rate limit budget to users. |
-| Export / copy | ✅ "Copy Markdown" implemented for PRD, Competitive Analysis, Decision Review, Multi-Agent Review, Roadmap, and Insights. File download (.md) and PDF export remain future work. |
+| Item                             | Notes                                                                                                                                                                            |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Real screenshots on landing page | Current landing uses text-only feature cards. Add actual product screenshots or a demo GIF.                                                                                      |
+| AI tool empty states             | Some tools show generic empty states. Add contextual guidance per tool.                                                                                                          |
+| Templates / examples             | Pre-built project templates to help users get started faster.                                                                                                                    |
+| Global AI Assistant clarity      | Sidebar "AI Assistant" is general-purpose (no project context). This is documented in Getting Started but could be clearer in the assistant page itself.                         |
+| Decision Review expanded view    | Surface hidden stored fields (supporting evidence, alternatives, expected impact) in an expandable/drawer UI.                                                                    |
+| Mobile layout                    | Badge stacking on Decision Review option cards may need responsive tweaks.                                                                                                       |
+| Plan / limits UI                 | Show remaining rate limit budget to users.                                                                                                                                       |
+| Export / copy                    | ✅ "Copy Markdown" implemented for PRD, Competitive Analysis, Decision Review, Multi-Agent Review, Roadmap, and Insights. File download (.md) and PDF export remain future work. |
 
 ---
 
@@ -162,10 +165,10 @@ The dashboard "Recent AI Activity" feed was migrated from the legacy `decisions`
 
 ### Two-tier activity model
 
-| Layer | Source | Purpose | Audience |
-|---|---|---|---|
-| **Dashboard activity** | `ai_usage` filtered to user-facing features | Quick overview of recent AI actions | End user |
-| **Usage history** (`/usage`) | Full `ai_usage` table | Detailed operational log with tokens, cost, model | Power user / admin |
+| Layer                        | Source                                      | Purpose                                           | Audience           |
+| ---------------------------- | ------------------------------------------- | ------------------------------------------------- | ------------------ |
+| **Dashboard activity**       | `ai_usage` filtered to user-facing features | Quick overview of recent AI actions               | End user           |
+| **Usage history** (`/usage`) | Full `ai_usage` table                       | Detailed operational log with tokens, cost, model | Power user / admin |
 
 ### Filtering rationale
 
@@ -182,10 +185,10 @@ Dashboard activity excludes internal infrastructure events (`rag_search`, `query
 
 These are **intentionally different concepts**:
 
-| Table | Contains | Used by | Concept |
-|---|---|---|---|
+| Table       | Contains                                                                                  | Used by                                                                            | Concept                       |
+| ----------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------- |
 | `decisions` | Saved AI-generated artifacts (PRDs, competitive analyses) with full `input`/`output` JSON | Project detail "Generated Documents" section, individual PRD/analysis detail pages | **Saved outputs / documents** |
-| `ai_usage` | Operational telemetry (model, tokens, cost, latency, feature, status) | Dashboard "Recent AI Activity", `/usage` page | **Activity / usage tracking** |
+| `ai_usage`  | Operational telemetry (model, tokens, cost, latency, feature, status)                     | Dashboard "Recent AI Activity", `/usage` page                                      | **Activity / usage tracking** |
 
 The `decisions` table is a legacy artifact store — it holds user-facing generated content that can be revisited. The `ai_usage` table is a telemetry log — it records that an AI action happened, but does not store the generated content itself.
 
@@ -195,44 +198,44 @@ The `decisions` table is a legacy artifact store — it holds user-facing genera
 
 ## Infrastructure / Deployment Improvements
 
-| Item | Notes |
-|---|---|
-| Staging environment | No staging — dev deploys directly to production via Vercel. |
-| Migration pipeline | Migrations are applied manually via Supabase Dashboard / CLI. No automated pipeline. |
-| Production monitoring | Vercel logs only. No Sentry, Datadog, or equivalent. |
-| Error tracking | AI failures are logged to console (dev-gated) and AI usage table. No alerting. |
-| Backup / restore | Relies on Supabase's built-in backups. No documented restore procedure. |
-| Custom domain | DNS configuration via LH.pl → Vercel is pending. |
-| Env variable validation | `src/lib/env.ts` validates at startup. Covers critical variables. |
-| Deployment smoke tests | Manual checklist exists (`DEPLOYMENT.md`). No automated post-deploy verification. |
+| Item                    | Notes                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Staging environment     | No staging — dev deploys directly to production via Vercel.                          |
+| Migration pipeline      | Migrations are applied manually via Supabase Dashboard / CLI. No automated pipeline. |
+| Production monitoring   | Vercel logs only. No Sentry, Datadog, or equivalent.                                 |
+| Error tracking          | AI failures are logged to console (dev-gated) and AI usage table. No alerting.       |
+| Backup / restore        | Relies on Supabase's built-in backups. No documented restore procedure.              |
+| Custom domain           | DNS configuration via LH.pl → Vercel is pending.                                     |
+| Env variable validation | `src/lib/env.ts` validates at startup. Covers critical variables.                    |
+| Deployment smoke tests  | Manual checklist exists (`DEPLOYMENT.md`). No automated post-deploy verification.    |
 
 ---
 
 ## Security & Privacy Improvements
 
-| Item | Notes |
-|---|---|
-| Secret rotation playbook | No documented procedure for rotating API keys or service role keys. |
-| Dependency scanning | No automated CVE scanning (Dependabot, Snyk, etc.). |
-| Privacy / legal review | Current legal pages are MVP-appropriate. Formal legal review needed before commercial launch. |
-| Data retention policy | No automated data cleanup or retention limits. |
-| Audit logs | No audit trail for sensitive operations (account deletion, data export). |
-| Abuse protection | Rate limiting is in-memory only. No IP-based blocking or CAPTCHA. |
+| Item                     | Notes                                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Secret rotation playbook | No documented procedure for rotating API keys or service role keys.                           |
+| Dependency scanning      | No automated CVE scanning (Dependabot, Snyk, etc.).                                           |
+| Privacy / legal review   | Current legal pages are MVP-appropriate. Formal legal review needed before commercial launch. |
+| Data retention policy    | No automated data cleanup or retention limits.                                                |
+| Audit logs               | No audit trail for sensitive operations (account deletion, data export).                      |
+| Abuse protection         | Rate limiting is in-memory only. No IP-based blocking or CAPTCHA.                             |
 
 ---
 
 ## Testing Roadmap
 
-| Test type | Coverage | Priority |
-|---|---|---|
-| Unit tests — normalizers | `review-normalize.ts` alias mapping, snake→camel conversion | High |
-| Unit tests — Zod schemas | `review-schemas.ts` against valid/invalid AI outputs | High |
-| Service tests — Decision Review save flow | Insert-before-delete, cleanup, re-analyze idempotency | High |
-| RAG retrieval regression | Golden dataset of queries → expected chunk matches | Medium |
-| Playwright E2E — smoke tests | Login, create project, run Decision Review, verify results | Medium |
-| Auth redirect tests | Sign-up confirmation, password reset, OAuth callback | Medium |
-| Rate limit tests | Verify blocking after threshold, admin bypass | Low |
-| Cross-project isolation | Verify RLS prevents data leakage between users/projects | Medium |
+| Test type                                 | Coverage                                                    | Priority |
+| ----------------------------------------- | ----------------------------------------------------------- | -------- |
+| Unit tests — normalizers                  | `review-normalize.ts` alias mapping, snake→camel conversion | High     |
+| Unit tests — Zod schemas                  | `review-schemas.ts` against valid/invalid AI outputs        | High     |
+| Service tests — Decision Review save flow | Insert-before-delete, cleanup, re-analyze idempotency       | High     |
+| RAG retrieval regression                  | Golden dataset of queries → expected chunk matches          | Medium   |
+| Playwright E2E — smoke tests              | Login, create project, run Decision Review, verify results  | Medium   |
+| Auth redirect tests                       | Sign-up confirmation, password reset, OAuth callback        | Medium   |
+| Rate limit tests                          | Verify blocking after threshold, admin bypass               | Low      |
+| Cross-project isolation                   | Verify RLS prevents data leakage between users/projects     | Medium   |
 
 ---
 
@@ -273,4 +276,3 @@ These items are intentionally deferred and should not block MVP/demo deployment:
 ---
 
 _Last updated: May 2026_
-

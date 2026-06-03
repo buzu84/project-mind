@@ -16,5 +16,3 @@ export {
   type RetrieveEvidenceResult,
   type EvidenceCitation,
 } from "./types";
-
-

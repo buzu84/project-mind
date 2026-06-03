@@ -48,11 +48,14 @@ export function DeleteDocumentButton({
       variant="danger"
       onConfirm={handleDelete}
       trigger={
-        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+        >
           Delete
         </Button>
       }
     />
   );
 }
-

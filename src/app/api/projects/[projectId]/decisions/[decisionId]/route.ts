@@ -1,10 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  getDecisionById,
-  updateDecision,
-  deleteDecision,
-} from "@/lib/decisions/service";
+import { getDecisionById, updateDecision, deleteDecision } from "@/lib/decisions/service";
 import { updateDecisionSchema } from "@/lib/decisions/schemas";
 
 export const dynamic = "force-dynamic";
@@ -75,4 +71,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
-

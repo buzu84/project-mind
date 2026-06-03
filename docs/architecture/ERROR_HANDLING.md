@@ -30,14 +30,14 @@ Some validation errors include extra detail:
 
 ## Status Code Usage
 
-| Code | Meaning | Typical trigger |
-|---|---|---|
-| `400` | Invalid input | Zod validation failed, missing required query param |
-| `401` | Not authenticated | `getCurrentUser()` returned null |
-| `404` | Not found | Resource doesn't exist OR user doesn't own it |
-| `429` | Rate limited | AI rate limit exceeded |
-| `502` | Upstream failure | OpenAI returned error, timeout, or unparseable output |
-| `503` | Service unavailable | `OPENAI_API_KEY` not configured and mock mode off |
+| Code  | Meaning             | Typical trigger                                       |
+| ----- | ------------------- | ----------------------------------------------------- |
+| `400` | Invalid input       | Zod validation failed, missing required query param   |
+| `401` | Not authenticated   | `getCurrentUser()` returned null                      |
+| `404` | Not found           | Resource doesn't exist OR user doesn't own it         |
+| `429` | Rate limited        | AI rate limit exceeded                                |
+| `502` | Upstream failure    | OpenAI returned error, timeout, or unparseable output |
+| `503` | Service unavailable | `OPENAI_API_KEY` not configured and mock mode off     |
 
 ### Why 404 for ownership failures
 
@@ -75,7 +75,11 @@ This pattern appears at the top of every route handler. In mock auth mode (`USE_
 
 ```typescript
 const { data: project } = await supabase
-  .from("projects").select("id").eq("id", projectId).eq("user_id", user.id).single();
+  .from("projects")
+  .select("id")
+  .eq("id", projectId)
+  .eq("user_id", user.id)
+  .single();
 if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 ```
 
@@ -122,6 +126,7 @@ if (!rl.allowed) return rateLimitResponse(rl);
 ```
 
 The `rateLimitResponse()` function returns:
+
 ```
 HTTP 429
 Retry-After: <seconds>
@@ -178,6 +183,7 @@ if (!res.ok) {
 ```
 
 There is no global error boundary for API errors — each feature handles its own error display. Common patterns:
+
 - Toast notification for transient errors (AI failures, rate limits)
 - Inline form errors for validation failures
 - Redirect to sign-in for 401s
@@ -186,15 +192,15 @@ There is no global error boundary for API errors — each feature handles its ow
 
 ## Logging Strategy
 
-| What | Where | When |
-|---|---|---|
-| AI errors | `console.error("[feature] AI error:", msg)` | Every AI route catch block |
-| Rate limit blocks | `console.warn("[rate-limit] BLOCKED", info)` | On 429 |
-| Rate limit allows | `console.log("[rate-limit] allowed", info)` | Only when `DEBUG=true` |
-| DB errors | `console.error("[feature] DB error:", msg)` | On Supabase insert/update failures |
-| Usage tracking errors | `console.error("[AI_USAGE_TRACK_ERROR]", info)` | When usage tracking itself fails |
-| Decision Review diagnostics | `console.log("[decision-review] Evidence stats:", ...)` | Dev mode only |
-| Normalization mappings | `console.log("[normalize] assumption.type ...")` | Dev mode only |
+| What                        | Where                                                   | When                               |
+| --------------------------- | ------------------------------------------------------- | ---------------------------------- |
+| AI errors                   | `console.error("[feature] AI error:", msg)`             | Every AI route catch block         |
+| Rate limit blocks           | `console.warn("[rate-limit] BLOCKED", info)`            | On 429                             |
+| Rate limit allows           | `console.log("[rate-limit] allowed", info)`             | Only when `DEBUG=true`             |
+| DB errors                   | `console.error("[feature] DB error:", msg)`             | On Supabase insert/update failures |
+| Usage tracking errors       | `console.error("[AI_USAGE_TRACK_ERROR]", info)`         | When usage tracking itself fails   |
+| Decision Review diagnostics | `console.log("[decision-review] Evidence stats:", ...)` | Dev mode only                      |
+| Normalization mappings      | `console.log("[normalize] assumption.type ...")`        | Dev mode only                      |
 
 **Production logging:** On Vercel, all `console.log/warn/error` output is captured in Vercel Functions logs. There is no structured logging (Sentry, Datadog, etc.) — this is a known limitation documented in [TECHNICAL_DEBT_AND_FUTURE_IMPROVEMENTS.md](../roadmap/TECHNICAL_DEBT_AND_FUTURE_IMPROVEMENTS.md).
 
@@ -213,4 +219,3 @@ There is no global error boundary for API errors — each feature handles its ow
 5. **No circuit breaker.** If OpenAI is down, every AI request will attempt the call and fail individually. There is no mechanism to stop trying after repeated failures.
 
 6. **No streaming cancellation handling.** Chat SSE streams (`/api/ai/chat`, `/api/ai/global-chat`) do not handle client disconnection. If the user navigates away mid-stream, the server continues processing the OpenAI response and saves the full message to the database. No partial messages are created, but the OpenAI tokens are consumed regardless.
-

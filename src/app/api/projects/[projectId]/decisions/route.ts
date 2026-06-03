@@ -1,17 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  createDecision,
-  listDecisionsByProject,
-} from "@/lib/decisions/service";
+import { createDecision, listDecisionsByProject } from "@/lib/decisions/service";
 import { createDecisionSchema } from "@/lib/decisions/schemas";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { projectId: string } },
-) {
+export async function GET(_req: NextRequest, { params }: { params: { projectId: string } }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -27,10 +21,7 @@ export async function GET(
   return NextResponse.json({ decisions: result.data });
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { projectId: string } },
-) {
+export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -54,4 +45,3 @@ export async function POST(
 
   return NextResponse.json({ decision: result.data }, { status: 201 });
 }
-

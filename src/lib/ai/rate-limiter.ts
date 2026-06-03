@@ -24,7 +24,10 @@ function getAdminEmailsFromEnv(): Set<string> {
   const raw = process.env.ADMIN_EMAILS ?? "";
   if (!raw) return new Set();
   return new Set(
-    raw.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
+    raw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
   );
 }
 
@@ -44,8 +47,8 @@ export type RateLimitTier = "admin" | "free";
 /** Future-ready: add "pro" tier with higher limits here. */
 const TIER_LIMITS = {
   free: {
-    standard: { limit: 20, windowMs: 60 * 60 * 1000 },        // 20 / hour
-    heavy:    { limit: 5,  windowMs: 15 * 60 * 1000 },         // 5 / 15 min
+    standard: { limit: 20, windowMs: 60 * 60 * 1000 }, // 20 / hour
+    heavy: { limit: 5, windowMs: 15 * 60 * 1000 }, // 5 / 15 min
   },
   // pro: { standard: { limit: 100, windowMs: ... }, heavy: { limit: 20, windowMs: ... } },
 } as const;
@@ -167,7 +170,11 @@ export function createRateLimiter(options: RateLimiterOptions = {}): RateLimiter
       // Return fresh object for admin to prevent mutation
       const result = admin
         ? { allowed: true, remaining: 999, resetInSeconds: 0 }
-        : checkRateLimit(`ai:${user.id}`, TIER_LIMITS.free.standard.limit, TIER_LIMITS.free.standard.windowMs);
+        : checkRateLimit(
+            `ai:${user.id}`,
+            TIER_LIMITS.free.standard.limit,
+            TIER_LIMITS.free.standard.windowMs,
+          );
       logRateLimitDecision("standard", user, admin, result);
       return result;
     },
@@ -177,7 +184,11 @@ export function createRateLimiter(options: RateLimiterOptions = {}): RateLimiter
       // Return fresh object for admin to prevent mutation
       const result = admin
         ? { allowed: true, remaining: 999, resetInSeconds: 0 }
-        : checkRateLimit(`ai-heavy:${user.id}`, TIER_LIMITS.free.heavy.limit, TIER_LIMITS.free.heavy.windowMs);
+        : checkRateLimit(
+            `ai-heavy:${user.id}`,
+            TIER_LIMITS.free.heavy.limit,
+            TIER_LIMITS.free.heavy.windowMs,
+          );
       logRateLimitDecision("heavy", user, admin, result);
       return result;
     },
@@ -202,17 +213,12 @@ export function checkHeavyAILimit(user: AppUser): RateLimitResult {
 
 /** Build a 429 JSON response */
 export function rateLimitResponse(result: RateLimitResult) {
-  return new Response(
-    JSON.stringify({ error: "Rate limit reached. Please try again later." }),
-    {
-      status: 429,
-      headers: {
-        "Content-Type": "application/json",
-        "Retry-After": String(result.resetInSeconds),
-        "X-RateLimit-Remaining": "0",
-      },
+  return new Response(JSON.stringify({ error: "Rate limit reached. Please try again later." }), {
+    status: 429,
+    headers: {
+      "Content-Type": "application/json",
+      "Retry-After": String(result.resetInSeconds),
+      "X-RateLimit-Remaining": "0",
     },
-  );
+  });
 }
-
-

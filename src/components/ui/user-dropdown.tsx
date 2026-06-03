@@ -63,10 +63,10 @@ export function UserDropdown({ user }: UserDropdownProps) {
             width={36}
             height={36}
             unoptimized
-            className="h-9 w-9 rounded-full ring-2 ring-gray-200 hover:ring-brand-300 transition"
+            className="h-9 w-9 rounded-full ring-2 ring-gray-200 transition hover:ring-brand-300"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 ring-2 ring-gray-200 hover:ring-brand-300 transition cursor-pointer">
+          <div className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 ring-2 ring-gray-200 transition hover:ring-brand-300">
             {initial}
           </div>
         )}
@@ -74,18 +74,18 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
       {open && (
         <div
-          className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl border border-gray-200 bg-white py-1 shadow-lg z-50"
+          className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
           role="menu"
         >
           {/* User info */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+          <div className="border-b border-gray-100 px-4 py-3">
+            <p className="truncate text-sm font-medium text-gray-900">{user.name}</p>
+            <p className="truncate text-xs text-gray-500">{user.email}</p>
           </div>
 
           <Link
             href="/dashboard"
-            className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+            className="block px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
             role="menuitem"
             onClick={() => setOpen(false)}
           >
@@ -93,7 +93,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
           </Link>
           <Link
             href="/projects"
-            className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+            className="block px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
             role="menuitem"
             onClick={() => setOpen(false)}
           >
@@ -101,17 +101,17 @@ export function UserDropdown({ user }: UserDropdownProps) {
           </Link>
           <Link
             href="/settings"
-            className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+            className="block px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
             role="menuitem"
             onClick={() => setOpen(false)}
           >
             Settings
           </Link>
 
-          <div className="border-t border-gray-100 mt-1 pt-1">
+          <div className="mt-1 border-t border-gray-100 pt-1">
             <button
               onClick={handleSignOut}
-              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition"
+              className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50"
               role="menuitem"
             >
               Sign out
@@ -122,4 +122,3 @@ export function UserDropdown({ user }: UserDropdownProps) {
     </div>
   );
 }
-

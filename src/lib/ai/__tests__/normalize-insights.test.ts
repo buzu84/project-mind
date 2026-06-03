@@ -190,9 +190,7 @@ describe("normalizeInsightsFromAI", () => {
   });
 
   it("falls back to 'opportunity' when type is missing", () => {
-    const { insights } = normalizeInsightsFromAI(
-      JSON.stringify([{ title: "A", content: "t" }]),
-    );
+    const { insights } = normalizeInsightsFromAI(JSON.stringify([{ title: "A", content: "t" }]));
     expect(insights[0].type).toBe("opportunity");
   });
 
@@ -217,9 +215,9 @@ describe("normalizeInsightsFromAI", () => {
   it("skips items with no title and no content", () => {
     const { insights, rawParsedCount } = normalizeInsightsFromAI(
       JSON.stringify([
-        { type: "risk" },                          // no title or content
+        { type: "risk" }, // no title or content
         { title: "Valid", content: "Has content" }, // valid
-        {},                                         // empty
+        {}, // empty
       ]),
     );
     expect(rawParsedCount).toBe(3);
@@ -236,11 +234,15 @@ describe("normalizeInsightsFromAI", () => {
 
   it("uses explanation as title when title is missing", () => {
     const { insights } = normalizeInsightsFromAI(
-      JSON.stringify([{ explanation: "This is a long explanation that serves as both title and content" }]),
+      JSON.stringify([
+        { explanation: "This is a long explanation that serves as both title and content" },
+      ]),
     );
     expect(insights).toHaveLength(1);
     expect(insights[0].title.length).toBeLessThanOrEqual(200);
-    expect(insights[0].content).toBe("This is a long explanation that serves as both title and content");
+    expect(insights[0].content).toBe(
+      "This is a long explanation that serves as both title and content",
+    );
   });
 
   it("truncates title to 200 characters", () => {
@@ -292,4 +294,3 @@ describe("normalizeInsightsFromAI", () => {
     expect(insights[0].title).toBe("Valid");
   });
 });
-

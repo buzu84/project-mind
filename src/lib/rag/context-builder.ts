@@ -33,19 +33,116 @@ export interface RetrievalQualityStats {
 // ── Lexical relevance guard ─────────────────────────────────────────
 
 const STOPWORDS = new Set([
-  "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
-  "have", "has", "had", "do", "does", "did", "will", "would", "shall",
-  "should", "may", "might", "must", "can", "could",
-  "i", "me", "my", "we", "our", "you", "your", "he", "she", "it", "they",
-  "them", "this", "that", "these", "those", "what", "which", "who", "whom",
-  "how", "when", "where", "why",
-  "in", "on", "at", "to", "for", "of", "with", "by", "from", "about",
-  "into", "through", "during", "before", "after", "above", "below",
-  "and", "but", "or", "nor", "not", "no", "so", "if", "then",
-  "get", "got", "give", "gave", "tell", "told", "said", "say",
-  "just", "also", "very", "much", "more", "most", "some", "any", "all",
-  "each", "every", "both", "few", "many", "such", "own", "same", "than",
-  "too", "only", "other", "new", "old", "over", "out", "up", "down",
+  "a",
+  "an",
+  "the",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "will",
+  "would",
+  "shall",
+  "should",
+  "may",
+  "might",
+  "must",
+  "can",
+  "could",
+  "i",
+  "me",
+  "my",
+  "we",
+  "our",
+  "you",
+  "your",
+  "he",
+  "she",
+  "it",
+  "they",
+  "them",
+  "this",
+  "that",
+  "these",
+  "those",
+  "what",
+  "which",
+  "who",
+  "whom",
+  "how",
+  "when",
+  "where",
+  "why",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "of",
+  "with",
+  "by",
+  "from",
+  "about",
+  "into",
+  "through",
+  "during",
+  "before",
+  "after",
+  "above",
+  "below",
+  "and",
+  "but",
+  "or",
+  "nor",
+  "not",
+  "no",
+  "so",
+  "if",
+  "then",
+  "get",
+  "got",
+  "give",
+  "gave",
+  "tell",
+  "told",
+  "said",
+  "say",
+  "just",
+  "also",
+  "very",
+  "much",
+  "more",
+  "most",
+  "some",
+  "any",
+  "all",
+  "each",
+  "every",
+  "both",
+  "few",
+  "many",
+  "such",
+  "own",
+  "same",
+  "than",
+  "too",
+  "only",
+  "other",
+  "new",
+  "old",
+  "over",
+  "out",
+  "up",
+  "down",
 ]);
 
 /**
@@ -53,16 +150,66 @@ const STOPWORDS = new Set([
  * These appear in broad questions and should not trigger the lexical guard.
  */
 const DOMAIN_GENERIC_TERMS = new Set([
-  "points", "users", "user", "feedback", "project", "product", "feature",
-  "features", "problem", "problems", "issue", "issues", "pain", "pains",
-  "main", "data", "context", "report", "reports", "result", "results",
-  "metric", "metrics", "review", "reviews", "insight", "insights",
-  "summary", "analysis", "roadmap", "decision", "decisions",
-  "goals", "target", "market", "customer", "customers", "onboarding",
-  "growth", "retention", "churn", "conversion", "experience", "design",
-  "research", "survey", "interview", "testing", "launch", "release",
-  "priority", "priorities", "requirement", "requirements", "strategy",
-  "competitor", "competitors", "performance", "value", "score",
+  "points",
+  "users",
+  "user",
+  "feedback",
+  "project",
+  "product",
+  "feature",
+  "features",
+  "problem",
+  "problems",
+  "issue",
+  "issues",
+  "pain",
+  "pains",
+  "main",
+  "data",
+  "context",
+  "report",
+  "reports",
+  "result",
+  "results",
+  "metric",
+  "metrics",
+  "review",
+  "reviews",
+  "insight",
+  "insights",
+  "summary",
+  "analysis",
+  "roadmap",
+  "decision",
+  "decisions",
+  "goals",
+  "target",
+  "market",
+  "customer",
+  "customers",
+  "onboarding",
+  "growth",
+  "retention",
+  "churn",
+  "conversion",
+  "experience",
+  "design",
+  "research",
+  "survey",
+  "interview",
+  "testing",
+  "launch",
+  "release",
+  "priority",
+  "priorities",
+  "requirement",
+  "requirements",
+  "strategy",
+  "competitor",
+  "competitors",
+  "performance",
+  "value",
+  "score",
 ]);
 
 /**
@@ -115,10 +262,7 @@ function normalizeForMatch(text: string): string {
  * Check if chunk content contains at least one of the distinctive terms.
  * Normalizes hyphens/spaces so "xylophone-pasta-maker" matches "xylophone pasta maker".
  */
-function chunkMatchesDistinctiveTerms(
-  chunkContent: string,
-  distinctiveTerms: string[],
-): boolean {
+function chunkMatchesDistinctiveTerms(chunkContent: string, distinctiveTerms: string[]): boolean {
   const normalizedContent = normalizeForMatch(chunkContent);
   return distinctiveTerms.some((term) => {
     const normalizedTerm = normalizeForMatch(term);
@@ -223,12 +367,10 @@ export async function retrieveRelevantContext(
       retrievedChunks: rawResults.length,
       usedChunks: lexicalFiltered.length,
       discardedChunks: deduplicated.length - lexicalFiltered.length,
-      minSimilarityUsed: lexicalFiltered.length > 0
-        ? Math.min(...lexicalFiltered.map((r) => r.similarity))
-        : null,
-      maxSimilarityUsed: lexicalFiltered.length > 0
-        ? Math.max(...lexicalFiltered.map((r) => r.similarity))
-        : null,
+      minSimilarityUsed:
+        lexicalFiltered.length > 0 ? Math.min(...lexicalFiltered.map((r) => r.similarity)) : null,
+      maxSimilarityUsed:
+        lexicalFiltered.length > 0 ? Math.max(...lexicalFiltered.map((r) => r.similarity)) : null,
       hasRelevantContext: lexicalFiltered.length > 0,
       lexicalGuardApplied,
       lexicalMatched,
@@ -237,10 +379,13 @@ export async function retrieveRelevantContext(
 
     if (isDev) {
       // eslint-disable-next-line no-console
-      console.log("[rag] Quality filter:", JSON.stringify({
-        ...stats,
-        distinctiveTerms: distinctiveTerms.length > 0 ? distinctiveTerms : undefined,
-      }));
+      console.log(
+        "[rag] Quality filter:",
+        JSON.stringify({
+          ...stats,
+          distinctiveTerms: distinctiveTerms.length > 0 ? distinctiveTerms : undefined,
+        }),
+      );
     }
 
     if (lexicalFiltered.length === 0) {
@@ -255,7 +400,7 @@ export async function retrieveRelevantContext(
     for (const result of lexicalFiltered) {
       // Sanitize content to mitigate prompt injection
       const sanitized = result.content
-        .replace(/---+/g, "—")  // prevent fake section headers
+        .replace(/---+/g, "—") // prevent fake section headers
         .replace(/^(system|assistant|user)\s*:/gim, "[$1]:"); // neutralize role markers
       const entry = `\n[similarity: ${result.similarity.toFixed(2)}]\n${sanitized}`;
       if (entry.length > budget) break;

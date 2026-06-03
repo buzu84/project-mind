@@ -132,18 +132,14 @@ describe("getFriendlyErrorMessage — security sanitization", () => {
 describe("getFriendlyErrorMessage — friendly message priority", () => {
   it("returns friendly auth message even when error contains a secret", () => {
     const secret = "sk-leaked_secret_key_1234";
-    const result = getFriendlyErrorMessage(
-      new Error(`401 Unauthorized: ${secret}`),
-    );
+    const result = getFriendlyErrorMessage(new Error(`401 Unauthorized: ${secret}`));
     expect(result).toContain("AI is not configured");
     expect(result).not.toContain(secret);
   });
 
   it("returns friendly rate-limit message even when error contains a secret", () => {
     const secret = "sk-ratelimit_secret_key_1234";
-    const result = getFriendlyErrorMessage(
-      new Error(`429 Too Many Requests for key ${secret}`),
-    );
+    const result = getFriendlyErrorMessage(new Error(`429 Too Many Requests for key ${secret}`));
     expect(result).toContain("rate limit");
     expect(result).not.toContain(secret);
   });

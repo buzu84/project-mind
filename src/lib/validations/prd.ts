@@ -28,9 +28,11 @@ export const prdSchema = z.object({
   targetAudience: z
     .string()
     .trim()
-    .max(PRD_TARGET_AUDIENCE_MAX, `Target audience must be under ${PRD_TARGET_AUDIENCE_MAX} characters.`)
+    .max(
+      PRD_TARGET_AUDIENCE_MAX,
+      `Target audience must be under ${PRD_TARGET_AUDIENCE_MAX} characters.`,
+    )
     .optional(),
 });
 
 export type PrdFormData = z.infer<typeof prdSchema>;
-

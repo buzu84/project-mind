@@ -101,9 +101,7 @@ describe("formatEvidenceForPrompt", () => {
   });
 
   it("formats a single candidate with citation label, source, and similarity", () => {
-    const result = formatEvidenceForPrompt([
-      makeCandidate({ similarityScore: 0.91 }),
-    ]);
+    const result = formatEvidenceForPrompt([makeCandidate({ similarityScore: 0.91 })]);
 
     expect(result).toContain("[1]");
     expect(result).toContain('feedback: "User Survey Q3"');
@@ -112,9 +110,7 @@ describe("formatEvidenceForPrompt", () => {
   });
 
   it("uses sourceType alone when sourceTitle is missing", () => {
-    const result = formatEvidenceForPrompt([
-      makeCandidate({ sourceTitle: null }),
-    ]);
+    const result = formatEvidenceForPrompt([makeCandidate({ sourceTitle: null })]);
 
     // Should show just the type, not: feedback: "null"
     expect(result).toContain("(feedback,");
@@ -204,5 +200,3 @@ describe("formatEvidenceForPrompt", () => {
     expect(result).toBe(formatEvidenceForPrompt([candidate]));
   });
 });
-
-

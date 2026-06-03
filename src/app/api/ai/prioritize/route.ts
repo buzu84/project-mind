@@ -31,12 +31,19 @@ export async function POST(req: Request) {
   const { projectId, features, criteria } = parsed.data;
   const supabase = createClient();
 
-  const { data: project } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", user.id).single();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const systemPrompt = `You are a senior product strategist. Prioritize the given features using a RICE framework (Reach, Impact, Confidence, Effort). Return a JSON array sorted by priority score descending. Each item: { "name": string, "reach": 1-10, "impact": 1-10, "confidence": 1-10, "effort": 1-10, "score": number, "rationale": string }. Wrap the JSON in a markdown code block.`;
 
-  const featureList = features.map((f) => `- ${f.name}${f.description ? `: ${f.description}` : ""}`).join("\n");
+  const featureList = features
+    .map((f) => `- ${f.name}${f.description ? `: ${f.description}` : ""}`)
+    .join("\n");
   const userPrompt = `Features:\n${featureList}${criteria ? `\n\nAdditional criteria: ${criteria}` : ""}`;
 
   const startTime = Date.now();
@@ -57,7 +64,12 @@ export async function POST(req: Request) {
 
     const { data: decision } = await supabase
       .from("decisions")
-      .insert({ type: "PRIORITIZATION", input: parsed.data as object, output: { content: result.content }, project_id: projectId })
+      .insert({
+        type: "PRIORITIZATION",
+        input: parsed.data as object,
+        output: { content: result.content },
+        project_id: projectId,
+      })
       .select("id")
       .single();
 

@@ -10,34 +10,72 @@ import type { AIModelPricing, AICostBreakdown, AIProvider } from "./usage-types"
 
 const MODEL_PRICING: AIModelPricing[] = [
   // GPT-4o
-  { provider: "openai", model: "gpt-4o", inputCostPer1MTokens: 2.50, outputCostPer1MTokens: 10.00 },
-  { provider: "openai", model: "gpt-4o-2024-08-06", inputCostPer1MTokens: 2.50, outputCostPer1MTokens: 10.00 },
+  { provider: "openai", model: "gpt-4o", inputCostPer1MTokens: 2.5, outputCostPer1MTokens: 10.0 },
+  {
+    provider: "openai",
+    model: "gpt-4o-2024-08-06",
+    inputCostPer1MTokens: 2.5,
+    outputCostPer1MTokens: 10.0,
+  },
   // GPT-4o mini
-  { provider: "openai", model: "gpt-4o-mini", inputCostPer1MTokens: 0.15, outputCostPer1MTokens: 0.60 },
-  { provider: "openai", model: "gpt-4o-mini-2024-07-18", inputCostPer1MTokens: 0.15, outputCostPer1MTokens: 0.60 },
+  {
+    provider: "openai",
+    model: "gpt-4o-mini",
+    inputCostPer1MTokens: 0.15,
+    outputCostPer1MTokens: 0.6,
+  },
+  {
+    provider: "openai",
+    model: "gpt-4o-mini-2024-07-18",
+    inputCostPer1MTokens: 0.15,
+    outputCostPer1MTokens: 0.6,
+  },
   // GPT-4 Turbo
-  { provider: "openai", model: "gpt-4-turbo", inputCostPer1MTokens: 10.00, outputCostPer1MTokens: 30.00 },
+  {
+    provider: "openai",
+    model: "gpt-4-turbo",
+    inputCostPer1MTokens: 10.0,
+    outputCostPer1MTokens: 30.0,
+  },
   // GPT-3.5 Turbo
-  { provider: "openai", model: "gpt-3.5-turbo", inputCostPer1MTokens: 0.50, outputCostPer1MTokens: 1.50 },
+  {
+    provider: "openai",
+    model: "gpt-3.5-turbo",
+    inputCostPer1MTokens: 0.5,
+    outputCostPer1MTokens: 1.5,
+  },
   // Embeddings
-  { provider: "openai", model: "text-embedding-3-small", inputCostPer1MTokens: 0.02, outputCostPer1MTokens: 0 },
-  { provider: "openai", model: "text-embedding-3-large", inputCostPer1MTokens: 0.13, outputCostPer1MTokens: 0 },
-  { provider: "openai", model: "text-embedding-ada-002", inputCostPer1MTokens: 0.10, outputCostPer1MTokens: 0 },
+  {
+    provider: "openai",
+    model: "text-embedding-3-small",
+    inputCostPer1MTokens: 0.02,
+    outputCostPer1MTokens: 0,
+  },
+  {
+    provider: "openai",
+    model: "text-embedding-3-large",
+    inputCostPer1MTokens: 0.13,
+    outputCostPer1MTokens: 0,
+  },
+  {
+    provider: "openai",
+    model: "text-embedding-ada-002",
+    inputCostPer1MTokens: 0.1,
+    outputCostPer1MTokens: 0,
+  },
 ];
 
 // Fallback pricing for unknown models
 const FALLBACK_PRICING: AIModelPricing = {
   provider: "openai",
   model: "unknown",
-  inputCostPer1MTokens: 5.00,
-  outputCostPer1MTokens: 15.00,
+  inputCostPer1MTokens: 5.0,
+  outputCostPer1MTokens: 15.0,
 };
 
 function findPricing(provider: AIProvider, model: string): AIModelPricing {
   return (
-    MODEL_PRICING.find(
-      (p) => p.provider === provider && p.model === model,
-    ) ??
+    MODEL_PRICING.find((p) => p.provider === provider && p.model === model) ??
     // Try partial match (e.g. "gpt-4o-2025-01-01" matches "gpt-4o").
     // Sort candidates by model name length descending so "gpt-4o-mini"
     // is preferred over "gpt-4o" for "gpt-4o-mini-2025-…" inputs.
@@ -70,4 +108,3 @@ export function calculateAICost({
     currency: "USD",
   };
 }
-

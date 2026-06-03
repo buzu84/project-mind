@@ -145,7 +145,10 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
         </div>
 
         {error && (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          <div
+            className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
+          >
             {error}
           </div>
         )}
@@ -170,7 +173,10 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
               </div>
             </div>
             <div>
-              <label htmlFor={`source-${doc.id}`} className="mb-1 block text-sm font-medium text-gray-700">
+              <label
+                htmlFor={`source-${doc.id}`}
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
                 Source
               </label>
               <select
@@ -180,7 +186,9 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               >
                 {SOURCES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -209,7 +217,12 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
             <Button type="button" variant="secondary" size="sm" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" isLoading={isPending} disabled={isPending || !isEditValid}>
+            <Button
+              type="submit"
+              size="sm"
+              isLoading={isPending}
+              disabled={isPending || !isEditValid}
+            >
               Save Changes
             </Button>
           </div>
@@ -221,23 +234,27 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
   return (
     <Card className="group">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 ref={cardHeadingRef} tabIndex={-1} className="text-sm font-semibold text-gray-900 truncate focus:outline-none">{doc.title}</h4>
+            <h4
+              ref={cardHeadingRef}
+              tabIndex={-1}
+              className="truncate text-sm font-semibold text-gray-900 focus:outline-none"
+            >
+              {doc.title}
+            </h4>
             {doc.source && (
               <Badge variant={SOURCE_BADGES[doc.source] ?? "default"}>
                 {SOURCE_LABELS[doc.source] ?? doc.source}
               </Badge>
             )}
           </div>
-          <p className="mt-1.5 text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">
+          <p className="mt-1.5 line-clamp-3 whitespace-pre-wrap text-sm text-gray-600">
             {doc.content}
           </p>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
             <IconClock className="h-3 w-3" />
-            <time dateTime={toISOString(doc.created_at)}>
-              {formatDate(doc.created_at)}
-            </time>
+            <time dateTime={toISOString(doc.created_at)}>{formatDate(doc.created_at)}</time>
           </div>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2 sm:ml-4">
@@ -245,7 +262,7 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
             ref={editTriggerRef}
             type="button"
             onClick={startEditing}
-            className="text-xs text-gray-400 hover:text-brand-600 transition sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+            className="rounded text-xs text-gray-400 transition hover:text-brand-600 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:opacity-0 sm:group-hover:opacity-100"
             aria-label={`Edit ${doc.title}`}
           >
             Edit
@@ -256,4 +273,3 @@ export function FeedbackDocCard({ doc, projectId }: FeedbackDocCardProps) {
     </Card>
   );
 }
-

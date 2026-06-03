@@ -12,9 +12,7 @@ const MAX_SNIPPET_LENGTH = 300;
 /**
  * Create numbered citations from evidence candidates.
  */
-export function createEvidenceCitations(
-  candidates: EvidenceCandidate[],
-): EvidenceCitation[] {
+export function createEvidenceCitations(candidates: EvidenceCandidate[]): EvidenceCitation[] {
   return candidates.map((c, i) => ({
     citationId: `[${i + 1}]`,
     chunkId: c.chunkId,
@@ -35,33 +33,23 @@ export function createEvidenceCitations(
  * Each chunk is labeled with a citation ID, source type, and title
  * so the LLM can reference them in its output.
  */
-export function formatEvidenceForPrompt(
-  candidates: EvidenceCandidate[],
-): string {
+export function formatEvidenceForPrompt(candidates: EvidenceCandidate[]): string {
   if (candidates.length === 0) return "";
 
-  const lines: string[] = [
-    "\n--- Retrieved Evidence ---",
-  ];
+  const lines: string[] = ["\n--- Retrieved Evidence ---"];
 
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     const label = `[${i + 1}]`;
-    const source = c.sourceTitle
-      ? `${c.sourceType}: "${c.sourceTitle}"`
-      : c.sourceType;
+    const source = c.sourceTitle ? `${c.sourceType}: "${c.sourceTitle}"` : c.sourceType;
 
     // Sanitize content to mitigate prompt injection
     const sanitized = c.content
       .replace(/---+/g, "—")
       .replace(/^(system|assistant|user)\s*:/gim, "[$1]:");
 
-    lines.push(
-      `\n${label} (${source}, similarity: ${c.similarityScore.toFixed(2)})`,
-      sanitized,
-    );
+    lines.push(`\n${label} (${source}, similarity: ${c.similarityScore.toFixed(2)})`, sanitized);
   }
 
   return lines.join("\n");
 }
-

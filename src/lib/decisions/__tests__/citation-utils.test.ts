@@ -45,9 +45,7 @@ function makeRisk(overrides: Partial<Risk> = {}): Risk {
   };
 }
 
-function makeReviewOutput(
-  overrides: Partial<DecisionReviewOutput> = {}
-): DecisionReviewOutput {
+function makeReviewOutput(overrides: Partial<DecisionReviewOutput> = {}): DecisionReviewOutput {
   return {
     summary: "Test decision analysis summary",
     confidenceScore: 75,
@@ -94,13 +92,15 @@ describe("sanitizeCitationIds", () => {
   it("preserves order of valid citation IDs", () => {
     const validIds = new Set(["[1]", "[2]", "[5]"]);
     const input = makeReviewOutput({
-      assumptions: [makeAssumption({
-        statement: "Test",
-        type: "market",
-        riskLevel: "low",
-        evidenceStatus: "strong",
-        supportingCitationIds: ["[5]", "[99]", "[2]", "[1]"],
-      })],
+      assumptions: [
+        makeAssumption({
+          statement: "Test",
+          type: "market",
+          riskLevel: "low",
+          evidenceStatus: "strong",
+          supportingCitationIds: ["[5]", "[99]", "[2]", "[1]"],
+        }),
+      ],
     });
 
     const result = sanitizeCitationIds(input, validIds);
@@ -122,30 +122,36 @@ describe("sanitizeCitationIds", () => {
   it("preserves undefined supportingCitationIds", () => {
     const validIds = new Set(["[1]"]);
     const input = makeReviewOutput({
-      assumptions: [makeAssumption({
-        statement: "Test",
-        type: "technical",
-        riskLevel: "high",
-        evidenceStatus: "unsupported",
-        supportingCitationIds: undefined,
-      })],
-      options: [makeOption({
-        title: "Option",
-        description: "Desc",
-        pros: ["Pro"],
-        cons: ["Con"],
-        risks: ["Risk"],
-        effortEstimate: "low",
-        reversibility: "high",
-        confidenceScore: 50,
-        supportingCitationIds: undefined,
-      })],
-      risks: [makeRisk({
-        title: "Risk",
-        description: "Desc",
-        severity: "medium",
-        supportingCitationIds: undefined,
-      })],
+      assumptions: [
+        makeAssumption({
+          statement: "Test",
+          type: "technical",
+          riskLevel: "high",
+          evidenceStatus: "unsupported",
+          supportingCitationIds: undefined,
+        }),
+      ],
+      options: [
+        makeOption({
+          title: "Option",
+          description: "Desc",
+          pros: ["Pro"],
+          cons: ["Con"],
+          risks: ["Risk"],
+          effortEstimate: "low",
+          reversibility: "high",
+          confidenceScore: 50,
+          supportingCitationIds: undefined,
+        }),
+      ],
+      risks: [
+        makeRisk({
+          title: "Risk",
+          description: "Desc",
+          severity: "medium",
+          supportingCitationIds: undefined,
+        }),
+      ],
     });
 
     const result = sanitizeCitationIds(input, validIds);
@@ -322,13 +328,15 @@ describe("sanitizeCitationIds", () => {
   it("preserves duplicate valid citation IDs and order while removing invalid duplicates", () => {
     const validIds = new Set(["[1]", "[2]"]);
     const input = makeReviewOutput({
-      assumptions: [makeAssumption({
-        statement: "Test",
-        type: "growth",
-        riskLevel: "medium",
-        evidenceStatus: "moderate",
-        supportingCitationIds: ["[1]", "[99]", "[1]", "[99]", "[2]"],
-      })],
+      assumptions: [
+        makeAssumption({
+          statement: "Test",
+          type: "growth",
+          riskLevel: "medium",
+          evidenceStatus: "moderate",
+          supportingCitationIds: ["[1]", "[99]", "[1]", "[99]", "[2]"],
+        }),
+      ],
     });
 
     const result = sanitizeCitationIds(input, validIds);

@@ -6,20 +6,14 @@ import { Card } from "@/components/ui/card";
 import { IconArrowLeft } from "@/components/icons";
 import { EditProjectForm } from "./edit-form";
 
-export default async function EditProjectPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditProjectPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const supabase = createClient();
   const { data: project } = await supabase
     .from("projects")
-    .select(
-      "id, name, description, target_users, market, business_model, goals"
-    )
+    .select("id, name, description, target_users, market, business_model, goals")
     .eq("id", params.id)
     .eq("user_id", user.id)
     .single();
@@ -30,7 +24,7 @@ export default async function EditProjectPage({
     <div className="mx-auto max-w-3xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -38,12 +32,9 @@ export default async function EditProjectPage({
 
       <Card>
         <h1 className="text-lg font-semibold text-gray-900">Edit Project</h1>
-        <p className="mt-1 mb-6 text-sm text-gray-500">
-          Update your project details below.
-        </p>
+        <p className="mb-6 mt-1 text-sm text-gray-500">Update your project details below.</p>
         <EditProjectForm project={project} />
       </Card>
     </div>
   );
 }
-

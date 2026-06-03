@@ -51,10 +51,7 @@ export default async function DashboardPage() {
       ])
       .order("created_at", { ascending: false })
       .limit(8),
-    supabase
-      .from("projects")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id),
+    supabase.from("projects").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     getMonthlyUsageSummary(user.id, supabase),
   ]);
 
@@ -92,9 +89,10 @@ export default async function DashboardPage() {
     },
     {
       label: "Total Tokens",
-      value: usageSummary.totalTokens > 1000
-        ? `${(usageSummary.totalTokens / 1000).toFixed(1)}k`
-        : usageSummary.totalTokens,
+      value:
+        usageSummary.totalTokens > 1000
+          ? `${(usageSummary.totalTokens / 1000).toFixed(1)}k`
+          : usageSummary.totalTokens,
       icon: IconTrendingUp,
       color: "text-emerald-600 bg-emerald-50",
     },
@@ -128,7 +126,8 @@ export default async function DashboardPage() {
             <div className="flex-1">
               <p className="text-sm font-semibold text-brand-900">New to ProductMind?</p>
               <p className="text-xs text-brand-700">
-                Learn the recommended workflow and how to get the best AI outputs from your project context.
+                Learn the recommended workflow and how to get the best AI outputs from your project
+                context.
               </p>
             </div>
             <span className="hidden flex-shrink-0 text-xs font-medium text-brand-700 sm:block">
@@ -142,9 +141,7 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label} className="flex items-center gap-4 py-5">
-            <div
-              className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.color}`}
-            >
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.color}`}>
               <stat.icon className="h-5 w-5" />
             </div>
             <div>
@@ -159,9 +156,7 @@ export default async function DashboardPage() {
         {/* Recent projects */}
         <Card className="lg:col-span-3">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">
-              Recent Projects
-            </h2>
+            <h2 className="text-base font-semibold text-gray-900">Recent Projects</h2>
             <Link
               href="/projects"
               className="text-xs font-medium text-brand-600 hover:text-brand-700"
@@ -197,9 +192,7 @@ export default async function DashboardPage() {
                       {project.name[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {project.name}
-                      </p>
+                      <p className="text-sm font-medium text-gray-900">{project.name}</p>
                       <p className="text-xs text-gray-500">
                         Updated{" "}
                         <time dateTime={toISOString(project.updated_at)}>
@@ -218,13 +211,8 @@ export default async function DashboardPage() {
         {/* Recent activity — user-facing AI actions from ai_usage, excluding internal infrastructure events */}
         <Card className="lg:col-span-2">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">
-              Recent AI Activity
-            </h2>
-            <Link
-              href="/usage"
-              className="text-xs font-medium text-brand-600 hover:text-brand-700"
-            >
+            <h2 className="text-base font-semibold text-gray-900">Recent AI Activity</h2>
+            <Link href="/usage" className="text-xs font-medium text-brand-600 hover:text-brand-700">
               View all →
             </Link>
           </div>
@@ -268,9 +256,7 @@ export default async function DashboardPage() {
         {/* AI Usage This Month */}
         <Card className="mb-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">
-              AI Usage This Month
-            </h2>
+            <h2 className="text-base font-semibold text-gray-900">AI Usage This Month</h2>
             {usageSummary.allMock && usageSummary.totalRequests > 0 && (
               <Badge variant="warning">Mock Mode</Badge>
             )}
@@ -298,9 +284,7 @@ export default async function DashboardPage() {
                 <p className="text-xs text-gray-500">Estimated Cost</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {usageSummary.totalRequests}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{usageSummary.totalRequests}</p>
                 <p className="text-xs text-gray-500">AI Requests</p>
               </div>
               <div>
@@ -312,8 +296,8 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-2xl font-bold text-gray-900">
                   {usageSummary.topFeature
-                    ? FEATURE_LABELS[usageSummary.topFeature as AIUsageFeature] ??
-                      usageSummary.topFeature
+                    ? (FEATURE_LABELS[usageSummary.topFeature as AIUsageFeature] ??
+                      usageSummary.topFeature)
                     : "—"}
                 </p>
                 <p className="text-xs text-gray-500">Top Feature</p>
@@ -322,9 +306,7 @@ export default async function DashboardPage() {
           )}
         </Card>
 
-        <h2 className="mb-4 text-base font-semibold text-gray-900">
-          Quick Actions
-        </h2>
+        <h2 className="mb-4 text-base font-semibold text-gray-900">Quick Actions</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             {
@@ -358,12 +340,8 @@ export default async function DashboardPage() {
                     <action.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {action.label}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {action.description}
-                    </p>
+                    <p className="text-sm font-semibold text-gray-900">{action.label}</p>
+                    <p className="text-xs text-gray-500">{action.description}</p>
                   </div>
                 </div>
               </Card>

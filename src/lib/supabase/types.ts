@@ -6,11 +6,4 @@
  *
  * The generated file is `./database.types.ts` — do not edit it manually.
  */
-export type {
-  Database,
-  Json,
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-  Enums,
-} from "./database.types";
+export type { Database, Json, Tables, TablesInsert, TablesUpdate, Enums } from "./database.types";

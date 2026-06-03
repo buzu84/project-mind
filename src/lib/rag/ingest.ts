@@ -22,7 +22,6 @@ export async function ingestDocument(
     return { chunksCreated: 0 };
   }
 
-
   // Generate embeddings for all chunks
   const embeddings = await generateEmbeddings(
     chunks.map((c) => c.content),

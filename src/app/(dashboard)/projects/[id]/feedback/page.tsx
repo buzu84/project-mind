@@ -8,13 +8,12 @@ import { FeedbackForm } from "./feedback-form";
 import { FeedbackDocCard } from "./feedback-doc-card";
 import type { Tables } from "@/lib/supabase/types";
 
-type FeedbackDocumentRow = Pick<Tables<"feedback_documents">, "id" | "title" | "content" | "source" | "created_at">;
+type FeedbackDocumentRow = Pick<
+  Tables<"feedback_documents">,
+  "id" | "title" | "content" | "source" | "created_at"
+>;
 
-export default async function FeedbackPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function FeedbackPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -41,7 +40,7 @@ export default async function FeedbackPage({
     <div className="mx-auto max-w-4xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -52,10 +51,13 @@ export default async function FeedbackPage({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold text-gray-900">Feedback & Research</h1>
-              <Badge variant="info">{docs.length} document{docs.length !== 1 ? "s" : ""}</Badge>
+              <Badge variant="info">
+                {docs.length} document{docs.length !== 1 ? "s" : ""}
+              </Badge>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              Add customer feedback, interview notes, and research for <strong>{project.name}</strong>. The AI uses these when answering your questions.
+              Add customer feedback, interview notes, and research for{" "}
+              <strong>{project.name}</strong>. The AI uses these when answering your questions.
             </p>
           </div>
         </div>

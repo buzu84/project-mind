@@ -10,10 +10,10 @@ It uses an **in-memory sliding-window** algorithm. There is no Redis, no databas
 
 Two tiers exist. Every AI route calls one of two exported functions:
 
-| Function | Limit | Window | Used by |
-|---|---|---|---|
-| `checkStandardAILimit(user)` | 20 requests | 1 hour | `chat`, `global-chat`, `insights`, `score-features`, `prioritize` |
-| `checkHeavyAILimit(user)` | 5 requests | 15 minutes | `prd`, `competitive-analysis`, `roadmap`, `multi-agent-review`, `decisions/analyze` |
+| Function                     | Limit       | Window     | Used by                                                                             |
+| ---------------------------- | ----------- | ---------- | ----------------------------------------------------------------------------------- |
+| `checkStandardAILimit(user)` | 20 requests | 1 hour     | `chat`, `global-chat`, `insights`, `score-features`, `prioritize`                   |
+| `checkHeavyAILimit(user)`    | 5 requests  | 15 minutes | `prd`, `competitive-analysis`, `roadmap`, `multi-agent-review`, `decisions/analyze` |
 
 The key is `ai:{userId}` for standard and `ai-heavy:{userId}` for heavy. The two tiers are independent — using up heavy requests does not affect the standard counter.
 
@@ -83,6 +83,7 @@ On Vercel, each serverless function invocation may run in a different container 
 ### No per-IP or unauthenticated limiting
 
 Rate limiting only applies to authenticated users. There is no protection against:
+
 - Unauthenticated request floods (mitigated by auth check returning 401 before any expensive work)
 - Credential stuffing on auth endpoints (delegated to Supabase's built-in rate limiting)
 
@@ -103,6 +104,7 @@ The comment at the top of `rate-limiter.ts` documents this explicitly.
 ## Logging
 
 Rate limit decisions are logged:
+
 - **Blocked requests** → `console.warn("[rate-limit] BLOCKED", { email, userId, feature, ... })`
 - **Allowed requests** → logged only when `DEBUG=true` is set
 - **Test environment** → no logging

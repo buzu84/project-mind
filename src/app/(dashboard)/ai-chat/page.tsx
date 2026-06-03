@@ -16,7 +16,9 @@ export default async function AIChatPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 
-  const initialMessages = ((rawMessages ?? []) as Array<{ id: string; role: string; content: string; created_at: string }>).map((m) => ({
+  const initialMessages = (
+    (rawMessages ?? []) as Array<{ id: string; role: string; content: string; created_at: string }>
+  ).map((m) => ({
     id: m.id,
     role: m.role as "user" | "assistant",
     content: m.content,
@@ -24,11 +26,9 @@ export default async function AIChatPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-3xl h-full flex flex-col">
+    <div className="mx-auto flex h-full max-w-3xl flex-col">
       <div className="mb-4 flex items-center justify-end">
-        <span className="text-xs text-gray-400">
-          {initialMessages.length} messages
-        </span>
+        <span className="text-xs text-gray-400">{initialMessages.length} messages</span>
       </div>
 
       <GlobalChatClient initialMessages={initialMessages} />

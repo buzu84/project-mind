@@ -9,9 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
  * A fresh `vi.resetModules()` + dynamic `import()` is the only way to
  * get a clean module with both flags reset.
  */
-async function importValidateEnv(
-  overrides: Record<string, string | undefined> = {},
-) {
+async function importValidateEnv(overrides: Record<string, string | undefined> = {}) {
   vi.resetModules();
 
   // Apply overrides — undefined means delete
@@ -294,4 +292,3 @@ describe("validateEnv — validation cache", () => {
     expect(() => mod2.validateEnv()).toThrow(/OPENAI_API_KEY/);
   });
 });
-

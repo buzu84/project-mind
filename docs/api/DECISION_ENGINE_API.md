@@ -8,14 +8,14 @@ The Decision Engine is a CRUD + AI analysis system for structured product decisi
 
 All routes require authentication and verify project ownership.
 
-| Route | Method | Purpose |
-|---|---|---|
-| `/api/projects/[projectId]/decisions` | `GET` | List all decisions for a project |
-| `/api/projects/[projectId]/decisions` | `POST` | Create a new decision |
-| `/api/projects/[projectId]/decisions/[decisionId]` | `GET` | Get decision with all child records |
-| `/api/projects/[projectId]/decisions/[decisionId]` | `PATCH` | Update decision fields |
-| `/api/projects/[projectId]/decisions/[decisionId]` | `DELETE` | Delete decision and all children |
-| `/api/projects/[projectId]/decisions/[decisionId]/analyze` | `POST` | Run AI-powered analysis (Heavy rate limit) |
+| Route                                                      | Method   | Purpose                                    |
+| ---------------------------------------------------------- | -------- | ------------------------------------------ |
+| `/api/projects/[projectId]/decisions`                      | `GET`    | List all decisions for a project           |
+| `/api/projects/[projectId]/decisions`                      | `POST`   | Create a new decision                      |
+| `/api/projects/[projectId]/decisions/[decisionId]`         | `GET`    | Get decision with all child records        |
+| `/api/projects/[projectId]/decisions/[decisionId]`         | `PATCH`  | Update decision fields                     |
+| `/api/projects/[projectId]/decisions/[decisionId]`         | `DELETE` | Delete decision and all children           |
+| `/api/projects/[projectId]/decisions/[decisionId]/analyze` | `POST`   | Run AI-powered analysis (Heavy rate limit) |
 
 ---
 
@@ -33,17 +33,17 @@ product_decisions
 
 ### Enum Constants (`src/lib/decisions/constants.ts`)
 
-| Enum | Values |
-|---|---|
-| `DECISION_CATEGORIES` | `product`, `technical`, `growth`, `ux`, `business`, `strategy`, `other` |
-| `DECISION_STATUSES` | `draft`, `under_review`, `accepted`, `rejected`, `revisit` |
-| `ASSUMPTION_TYPES` | `market`, `user`, `technical`, `growth`, `pricing`, `ux`, `business`, `other` |
-| `RISK_LEVELS` | `low`, `medium`, `high` |
-| `EVIDENCE_STATUSES` | `unsupported`, `weak`, `moderate`, `strong` |
-| `EFFORT_ESTIMATES` | `low`, `medium`, `high`, `unknown` |
-| `REVERSIBILITY_LEVELS` | `low`, `medium`, `high`, `unknown` |
+| Enum                    | Values                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| `DECISION_CATEGORIES`   | `product`, `technical`, `growth`, `ux`, `business`, `strategy`, `other`                       |
+| `DECISION_STATUSES`     | `draft`, `under_review`, `accepted`, `rejected`, `revisit`                                    |
+| `ASSUMPTION_TYPES`      | `market`, `user`, `technical`, `growth`, `pricing`, `ux`, `business`, `other`                 |
+| `RISK_LEVELS`           | `low`, `medium`, `high`                                                                       |
+| `EVIDENCE_STATUSES`     | `unsupported`, `weak`, `moderate`, `strong`                                                   |
+| `EFFORT_ESTIMATES`      | `low`, `medium`, `high`, `unknown`                                                            |
+| `REVERSIBILITY_LEVELS`  | `low`, `medium`, `high`, `unknown`                                                            |
 | `EVIDENCE_SOURCE_TYPES` | `feedback`, `document`, `research`, `competitor`, `metric`, `manual`, `ai_generated`, `other` |
-| `LINK_TYPES` | `supports`, `contradicts`, `informs`, `weakens`, `validates`, `invalidates` |
+| `LINK_TYPES`            | `supports`, `contradicts`, `informs`, `weakens`, `validates`, `invalidates`                   |
 
 ---
 
@@ -70,6 +70,7 @@ Required: `title` (3-200 chars), `problem_statement` (10-5000 chars).
 Optional: `category` (defaults to `"other"`), `status` (defaults to `"draft"`), `context_summary`, `confidence_score`, `selected_option_id`.
 
 **Response** (201):
+
 ```json
 { "decision": { "id": "uuid", "title": "...", ... } }
 ```
@@ -117,13 +118,13 @@ The analyze endpoint delegates to `analyzeDecision()` in `src/lib/decisions/deci
 
 ### What it produces
 
-| Table | Records | Content |
-|---|---|---|
-| `product_decision_options` | 3-4 | Options with title, description, pros, cons, effort, reversibility, confidence |
-| `product_assumptions` | 1-15 | Assumptions with type, risk level, evidence status, validation method |
-| `product_evidence` | 0-N | Evidence records from RAG retrieval with relevance scores |
-| `product_decision_evidence_links` | 0-N | Links between evidence and the decision |
-| `product_decision_recommendations` | 1 | Recommendation with reasoning, next steps, confidence score |
+| Table                              | Records | Content                                                                        |
+| ---------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| `product_decision_options`         | 3-4     | Options with title, description, pros, cons, effort, reversibility, confidence |
+| `product_assumptions`              | 1-15    | Assumptions with type, risk level, evidence status, validation method          |
+| `product_evidence`                 | 0-N     | Evidence records from RAG retrieval with relevance scores                      |
+| `product_decision_evidence_links`  | 0-N     | Links between evidence and the decision                                        |
+| `product_decision_recommendations` | 1       | Recommendation with reasoning, next steps, confidence score                    |
 
 ### AI Output Validation Pipeline
 
@@ -178,14 +179,14 @@ The route returns the full result from `analyzeDecision()`:
 
 ### Error handling
 
-| Error | Status | Cause |
-|---|---|---|
-| `"Unauthorized"` | 401 | No session |
-| `"Invalid parameters."` | 400 | projectId or decisionId not valid UUIDs |
-| Rate limit | 429 | Heavy tier (5/15min) exceeded |
-| `"...not found"` / `"access denied"` | 404 | Decision doesn't exist or isn't owned by user |
-| `"...not configured"` | 503 | `OPENAI_API_KEY` missing |
-| `"Could not analyze decision..."` | 502 | OpenAI failure or validation failure after retry |
+| Error                                | Status | Cause                                            |
+| ------------------------------------ | ------ | ------------------------------------------------ |
+| `"Unauthorized"`                     | 401    | No session                                       |
+| `"Invalid parameters."`              | 400    | projectId or decisionId not valid UUIDs          |
+| Rate limit                           | 429    | Heavy tier (5/15min) exceeded                    |
+| `"...not found"` / `"access denied"` | 404    | Decision doesn't exist or isn't owned by user    |
+| `"...not configured"`                | 503    | `OPENAI_API_KEY` missing                         |
+| `"Could not analyze decision..."`    | 502    | OpenAI failure or validation failure after retry |
 
 ---
 
@@ -193,14 +194,14 @@ The route returns the full result from `analyzeDecision()`:
 
 Some database columns are written by the AI but intentionally hidden from the UI:
 
-| Field | Table | Status | Why hidden |
-|---|---|---|---|
-| `supporting_evidence` | `product_decision_recommendations` | Stored, not rendered | Overlaps with Evidence section |
-| `alternatives` | `product_decision_recommendations` | Stored, not rendered | Recommendation text covers this |
-| `risks` (on recommendation) | `product_decision_recommendations` | Stored, not rendered | Overlaps with option-level risk data |
-| `expected_impact` | `product_decision_options` | Stored, not rendered | Often vague |
-| `next_steps` | `product_decision_recommendations` | **Dead column** | Never written by Decision Review; `next_validation_steps` is used instead |
-| `type` + `assumption_type` | `product_assumptions` | **Duplicate** | Both store the same value; `assumption_type` is canonical |
+| Field                       | Table                              | Status               | Why hidden                                                                |
+| --------------------------- | ---------------------------------- | -------------------- | ------------------------------------------------------------------------- |
+| `supporting_evidence`       | `product_decision_recommendations` | Stored, not rendered | Overlaps with Evidence section                                            |
+| `alternatives`              | `product_decision_recommendations` | Stored, not rendered | Recommendation text covers this                                           |
+| `risks` (on recommendation) | `product_decision_recommendations` | Stored, not rendered | Overlaps with option-level risk data                                      |
+| `expected_impact`           | `product_decision_options`         | Stored, not rendered | Often vague                                                               |
+| `next_steps`                | `product_decision_recommendations` | **Dead column**      | Never written by Decision Review; `next_validation_steps` is used instead |
+| `type` + `assumption_type`  | `product_assumptions`              | **Duplicate**        | Both store the same value; `assumption_type` is canonical                 |
 
 See [TECHNICAL_DEBT_AND_FUTURE_IMPROVEMENTS.md](../roadmap/TECHNICAL_DEBT_AND_FUTURE_IMPROVEMENTS.md) for cleanup plan.
 
@@ -208,17 +209,17 @@ See [TECHNICAL_DEBT_AND_FUTURE_IMPROVEMENTS.md](../roadmap/TECHNICAL_DEBT_AND_FU
 
 ## Key Files
 
-| File | Role |
-|---|---|
-| `src/app/api/projects/[projectId]/decisions/route.ts` | List + Create route handlers |
-| `src/app/api/projects/[projectId]/decisions/[decisionId]/route.ts` | Get + Update + Delete route handlers |
-| `src/app/api/projects/[projectId]/decisions/[decisionId]/analyze/route.ts` | AI analysis route handler (thin) |
-| `src/lib/decisions/service.ts` | CRUD service layer with ownership checks |
-| `src/lib/decisions/schemas.ts` | Zod validation schemas for all entities |
-| `src/lib/decisions/constants.ts` | Enum definitions (single source of truth) |
-| `src/lib/decisions/decision-review-service.ts` | AI analysis orchestrator |
-| `src/lib/decisions/review-schemas.ts` | Zod schema for AI output validation |
-| `src/lib/decisions/review-normalize.ts` | AI output normalization (enum aliases, key mapping) |
+| File                                                                       | Role                                                |
+| -------------------------------------------------------------------------- | --------------------------------------------------- |
+| `src/app/api/projects/[projectId]/decisions/route.ts`                      | List + Create route handlers                        |
+| `src/app/api/projects/[projectId]/decisions/[decisionId]/route.ts`         | Get + Update + Delete route handlers                |
+| `src/app/api/projects/[projectId]/decisions/[decisionId]/analyze/route.ts` | AI analysis route handler (thin)                    |
+| `src/lib/decisions/service.ts`                                             | CRUD service layer with ownership checks            |
+| `src/lib/decisions/schemas.ts`                                             | Zod validation schemas for all entities             |
+| `src/lib/decisions/constants.ts`                                           | Enum definitions (single source of truth)           |
+| `src/lib/decisions/decision-review-service.ts`                             | AI analysis orchestrator                            |
+| `src/lib/decisions/review-schemas.ts`                                      | Zod schema for AI output validation                 |
+| `src/lib/decisions/review-normalize.ts`                                    | AI output normalization (enum aliases, key mapping) |
 
 ---
 
@@ -233,4 +234,3 @@ See [TECHNICAL_DEBT_AND_FUTURE_IMPROVEMENTS.md](../roadmap/TECHNICAL_DEBT_AND_FU
 4. **`product_decision_agent_reviews` table is unused.** It exists in the schema but no code writes to it. It was reserved for future multi-agent Decision Review (distinct from the existing `/api/ai/multi-agent-review` which stores results differently).
 
 5. **No streaming.** The analyze endpoint is synchronous — the client waits for the full result. OpenAI calls can take 5-15 seconds. The UI shows a loading spinner during this time.
-

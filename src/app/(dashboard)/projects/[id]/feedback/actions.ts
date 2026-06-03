@@ -8,8 +8,6 @@ import type { ActionResult } from "@/lib/validations/project";
 import { feedbackSchema } from "@/lib/validations/feedback";
 import { ingestDocument, removeDocumentChunks } from "@/lib/rag";
 
-
-
 export async function createFeedbackDocument(
   projectId: string,
   formData: FormData,
@@ -176,4 +174,3 @@ export async function updateFeedbackDocument(
     return { success: false, error: "Could not update feedback. Please try again." };
   }
 }
-

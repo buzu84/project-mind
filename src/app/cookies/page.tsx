@@ -61,7 +61,9 @@ export default function CookiePolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">3. Analytics &amp; marketing cookies</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              3. Analytics &amp; marketing cookies
+            </h2>
             <p className="mt-2">
               We do <strong>not</strong> currently use any analytics, tracking, advertising, or
               marketing cookies. If we introduce optional cookies in the future, we will update this
@@ -90,7 +92,7 @@ export default function CookiePolicyPage() {
           </section>
         </div>
 
-        <div className="mt-12 border-t border-gray-200 pt-6 flex gap-4">
+        <div className="mt-12 flex gap-4 border-t border-gray-200 pt-6">
           <Link href="/privacy" className="text-sm font-medium text-brand-600 hover:text-brand-700">
             Privacy Policy
           </Link>
@@ -102,4 +104,3 @@ export default function CookiePolicyPage() {
     </div>
   );
 }
-

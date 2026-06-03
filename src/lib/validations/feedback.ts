@@ -36,7 +36,10 @@ export const feedbackSchema = z.object({
     .string()
     .trim()
     .min(FEEDBACK_CONTENT_MIN, `Content must be at least ${FEEDBACK_CONTENT_MIN} characters.`)
-    .max(FEEDBACK_CONTENT_MAX, `Content must be under ${FEEDBACK_CONTENT_MAX.toLocaleString()} characters.`),
+    .max(
+      FEEDBACK_CONTENT_MAX,
+      `Content must be under ${FEEDBACK_CONTENT_MAX.toLocaleString()} characters.`,
+    ),
   source: z
     .enum(VALID_SOURCES)
     .optional()
@@ -44,4 +47,3 @@ export const feedbackSchema = z.object({
 });
 
 export type FeedbackFormData = z.infer<typeof feedbackSchema>;
-

@@ -6,11 +6,7 @@ import { IconArrowLeft } from "@/components/icons";
 import { RoadmapClient } from "./roadmap-client";
 import { parseRoadmapRow } from "@/lib/validation/json-parsers";
 
-export default async function RoadmapPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function RoadmapPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -27,7 +23,9 @@ export default async function RoadmapPage({
 
   const { data: roadmap } = await supabase
     .from("roadmaps")
-    .select("id, project_id, title, now_items, next_items, later_items, plan_30_days, plan_60_days, plan_90_days, risks, dependencies, success_metrics, is_mock, created_at")
+    .select(
+      "id, project_id, title, now_items, next_items, later_items, plan_30_days, plan_60_days, plan_90_days, risks, dependencies, success_metrics, is_mock, created_at",
+    )
     .eq("project_id", project.id)
     .maybeSingle();
 
@@ -35,7 +33,7 @@ export default async function RoadmapPage({
     <div className="mx-auto max-w-6xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -49,4 +47,3 @@ export default async function RoadmapPage({
     </div>
   );
 }
-

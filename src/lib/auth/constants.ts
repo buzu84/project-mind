@@ -24,8 +24,7 @@ export const DEV_USER: AppUser = {
 export function isDevMode(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   // Check both prefixed (client-safe) and non-prefixed (server-only) env vars
-  const mockAuth =
-    process.env.NEXT_PUBLIC_USE_MOCK_AUTH ?? process.env.USE_MOCK_AUTH;
+  const mockAuth = process.env.NEXT_PUBLIC_USE_MOCK_AUTH ?? process.env.USE_MOCK_AUTH;
   return mockAuth === "true";
 }
 
@@ -37,4 +36,3 @@ export function isMockDb(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   return process.env.USE_MOCK_DB === "true";
 }
-

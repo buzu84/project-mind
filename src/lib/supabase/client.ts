@@ -20,8 +20,10 @@ export function createClient() {
       auth: {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-        signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: errResult }),
-        signInWithOAuth: () => Promise.resolve({ data: { provider: "", url: "" }, error: errResult }),
+        signInWithPassword: () =>
+          Promise.resolve({ data: { user: null, session: null }, error: errResult }),
+        signInWithOAuth: () =>
+          Promise.resolve({ data: { provider: "", url: "" }, error: errResult }),
         signOut: () => Promise.resolve({ error: null }),
         resend: () => Promise.resolve({ data: null, error: errResult }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),

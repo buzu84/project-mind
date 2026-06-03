@@ -18,11 +18,7 @@ export interface Insight extends Omit<InsightRow, "metadata"> {
   metadata: ParsedInsightMetadata | null;
 }
 
-export default async function InsightsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function InsightsPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -47,7 +43,7 @@ export default async function InsightsPage({
     <div className="mx-auto max-w-5xl">
       <Link
         href={`/projects/${project.id}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to {project.name}
@@ -56,10 +52,19 @@ export default async function InsightsPage({
       <InsightsClient
         projectId={project.id}
         projectName={project.name}
-        initialInsights={(insights ?? []).map((row: { id: string; type: string; title: string; content: string; metadata: Json | null; created_at: string }) => ({
-          ...row,
-          metadata: parseInsightMetadata(row.metadata),
-        }))}
+        initialInsights={(insights ?? []).map(
+          (row: {
+            id: string;
+            type: string;
+            title: string;
+            content: string;
+            metadata: Json | null;
+            created_at: string;
+          }) => ({
+            ...row,
+            metadata: parseInsightMetadata(row.metadata),
+          }),
+        )}
       />
     </div>
   );

@@ -60,7 +60,9 @@ function makeAssumption(overrides: Partial<AssumptionViewModel> = {}): Assumptio
   };
 }
 
-function makeRecommendation(overrides: Partial<RecommendationViewModel> = {}): RecommendationViewModel {
+function makeRecommendation(
+  overrides: Partial<RecommendationViewModel> = {},
+): RecommendationViewModel {
   return {
     recommendation: "Proceed with incremental migration.",
     confidence_score: 80,
@@ -139,7 +141,9 @@ describe("DecisionDetailClient", () => {
     });
 
     // Decision title as heading
-    expect(screen.getByRole("heading", { level: 1, name: /Should we migrate to Next 15\?/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /Should we migrate to Next 15\?/ }),
+    ).toBeInTheDocument();
 
     // Recommendation section heading and body
     expect(screen.getByRole("heading", { name: /Recommendation/ })).toBeInTheDocument();
@@ -168,10 +172,26 @@ describe("DecisionDetailClient", () => {
         context_summary: null,
         confidence_score: null,
       }),
-      options: [makeOption({ description: null, effort_estimate: null, reversibility: null, confidence_score: null })],
+      options: [
+        makeOption({
+          description: null,
+          effort_estimate: null,
+          reversibility: null,
+          confidence_score: null,
+        }),
+      ],
       assumptions: [makeAssumption({ evidence_status: null, validation_method: null })],
       recommendation: makeRecommendation({ confidence_score: null }),
-      evidenceLinks: [makeEvidenceLink({ evidence: { title: null, claim: "Some claim", source_type: "interview", relevance_score: null } })],
+      evidenceLinks: [
+        makeEvidenceLink({
+          evidence: {
+            title: null,
+            claim: "Some claim",
+            source_type: "interview",
+            relevance_score: null,
+          },
+        }),
+      ],
     });
 
     // No literal "undefined" or "null" in visible text
@@ -241,4 +261,3 @@ describe("DecisionDetailClient", () => {
     expect(screen.getByText("product")).toBeInTheDocument();
   });
 });
-

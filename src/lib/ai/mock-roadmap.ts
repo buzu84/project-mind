@@ -33,9 +33,7 @@ interface MockRoadmapInput {
   goals?: string | null;
 }
 
-export async function generateMockRoadmap(
-  input: MockRoadmapInput,
-): Promise<GeneratedRoadmap> {
+export async function generateMockRoadmap(input: MockRoadmapInput): Promise<GeneratedRoadmap> {
   // Simulate network delay so loading state is visible
   await new Promise((resolve) => setTimeout(resolve, 1200));
 
@@ -94,7 +92,8 @@ export async function generateMockRoadmap(
       },
       {
         title: "Performance and reliability hardening",
-        description: "Optimize load times, add error monitoring, and ensure 99.9% uptime before scaling user base.",
+        description:
+          "Optimize load times, add error monitoring, and ensure 99.9% uptime before scaling user base.",
         priority: "medium",
         confidence: "high",
       },
@@ -136,7 +135,8 @@ export async function generateMockRoadmap(
       },
       {
         title: "Week 2-3: Internal testing",
-        description: "Run internal dogfooding sessions. Fix critical bugs and UX friction points identified by the team.",
+        description:
+          "Run internal dogfooding sessions. Fix critical bugs and UX friction points identified by the team.",
         priority: "high",
         confidence: "high",
       },
@@ -178,7 +178,8 @@ export async function generateMockRoadmap(
       },
       {
         title: "Post-launch optimization",
-        description: "Monitor activation, retention, and conversion funnels. Run experiments to improve each by 10%+.",
+        description:
+          "Monitor activation, retention, and conversion funnels. Run experiments to improve each by 10%+.",
         priority: "high",
         confidence: "medium",
       },
@@ -198,7 +199,8 @@ export async function generateMockRoadmap(
       },
       {
         title: "Technical scalability gaps",
-        description: "Architecture may not handle 10x growth without re-engineering. Identify bottlenecks before scaling.",
+        description:
+          "Architecture may not handle 10x growth without re-engineering. Identify bottlenecks before scaling.",
         priority: "medium",
       },
       {
@@ -211,7 +213,8 @@ export async function generateMockRoadmap(
     dependencies: [
       {
         title: "Analytics infrastructure",
-        description: "Event tracking and dashboards must be in place before beta launch to measure impact of changes.",
+        description:
+          "Event tracking and dashboards must be in place before beta launch to measure impact of changes.",
       },
       {
         title: "Feedback pipeline",
@@ -219,7 +222,8 @@ export async function generateMockRoadmap(
       },
       {
         title: "Design system and component library",
-        description: "Consistent UI components are needed to ship new features quickly without design debt.",
+        description:
+          "Consistent UI components are needed to ship new features quickly without design debt.",
       },
     ],
 
@@ -230,7 +234,8 @@ export async function generateMockRoadmap(
       },
       {
         title: "Week-1 retention > 30%",
-        description: "Percentage of users who return within 7 days of first use. Indicates product-market fit signal.",
+        description:
+          "Percentage of users who return within 7 days of first use. Indicates product-market fit signal.",
       },
       {
         title: "NPS > 40",
@@ -243,4 +248,3 @@ export async function generateMockRoadmap(
     ],
   };
 }
-

@@ -91,4 +91,3 @@ describe("toISOString", () => {
     expect(toISOString("not-a-date")).toBe("");
   });
 });
-

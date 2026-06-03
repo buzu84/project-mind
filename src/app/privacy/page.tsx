@@ -29,8 +29,8 @@ export default function PrivacyPolicyPage() {
             <p className="mt-2">
               When you create an account, we store your email address, display name, and an optional
               avatar URL. When you use the product, we store your projects, feedback documents,
-              AI-generated artifacts (PRDs, roadmaps, insights, decision analyses, etc.), and AI usage
-              metrics (feature used, token counts, timestamps — not prompt content).
+              AI-generated artifacts (PRDs, roadmaps, insights, decision analyses, etc.), and AI
+              usage metrics (feature used, token counts, timestamps — not prompt content).
             </p>
           </section>
 
@@ -48,10 +48,15 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-lg font-semibold text-gray-900">3. AI processing</h2>
             <p className="mt-2">
               ProductMind uses OpenAI&apos;s API to power AI features such as chat, PRD generation,
-              decision review, and competitive analysis. When you trigger an AI feature, the app sends
-              relevant context (project details, feedback snippets, your prompt) to OpenAI. OpenAI
-              processes this data under their{" "}
-              <a href="https://openai.com/policies/api-data-usage-policies" target="_blank" rel="noopener noreferrer" className="font-medium text-brand-600 hover:text-brand-700 underline">
+              decision review, and competitive analysis. When you trigger an AI feature, the app
+              sends relevant context (project details, feedback snippets, your prompt) to OpenAI.
+              OpenAI processes this data under their{" "}
+              <a
+                href="https://openai.com/policies/api-data-usage-policies"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-brand-600 underline hover:text-brand-700"
+              >
                 API data usage policy
               </a>
               , which states that API inputs and outputs are not used to train their models.
@@ -69,7 +74,12 @@ export default function PrivacyPolicyPage() {
               ProductMind uses only <strong>strictly necessary cookies</strong> for authentication
               and session management (powered by Supabase Auth). We do not use analytics cookies,
               tracking pixels, or marketing cookies. See our{" "}
-              <Link href="/cookies" className="font-medium text-brand-600 hover:text-brand-700 underline">Cookie Policy</Link>{" "}
+              <Link
+                href="/cookies"
+                className="font-medium text-brand-600 underline hover:text-brand-700"
+              >
+                Cookie Policy
+              </Link>{" "}
               for details.
             </p>
           </section>
@@ -77,9 +87,15 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">5. Third-party services</h2>
             <ul className="mt-2 list-inside list-disc space-y-1">
-              <li><strong>Supabase</strong> — authentication, database, and infrastructure</li>
-              <li><strong>OpenAI</strong> — AI-powered analysis and generation</li>
-              <li><strong>Vercel</strong> — hosting and deployment</li>
+              <li>
+                <strong>Supabase</strong> — authentication, database, and infrastructure
+              </li>
+              <li>
+                <strong>OpenAI</strong> — AI-powered analysis and generation
+              </li>
+              <li>
+                <strong>Vercel</strong> — hosting and deployment
+              </li>
             </ul>
             <p className="mt-2">
               Each provider processes data under their own privacy policies. We encourage you to
@@ -107,8 +123,8 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">8. Beta disclaimer</h2>
             <p className="mt-2">
-              ProductMind is currently in beta. Privacy practices may evolve as the product develops.
-              Material changes to this policy will be communicated via the app or email.
+              ProductMind is currently in beta. Privacy practices may evolve as the product
+              develops. Material changes to this policy will be communicated via the app or email.
             </p>
           </section>
 

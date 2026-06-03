@@ -83,4 +83,3 @@ export interface EvidenceCitation {
   snippet: string;
   similarityScore: number;
 }
-

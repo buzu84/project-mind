@@ -19,4 +19,3 @@ export function MinLengthHint({ current, min }: MinLengthHintProps) {
     </p>
   );
 }
-

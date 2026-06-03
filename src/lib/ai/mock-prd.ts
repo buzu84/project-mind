@@ -97,4 +97,3 @@ Users currently face challenges that ${productName} aims to solve. The core prob
 *This PRD was generated in mock mode for development purposes.*
 *Generated for: ${productName}*`;
 }
-

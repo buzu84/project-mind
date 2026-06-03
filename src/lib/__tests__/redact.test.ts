@@ -101,4 +101,3 @@ describe("redactSecrets", () => {
     expect(result).toContain("invalid_request_error");
   });
 });
-

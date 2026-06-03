@@ -27,19 +27,20 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">1. Acceptance</h2>
             <p className="mt-2">
-              By accessing or using ProductMind, you agree to be bound by these Terms of Service.
-              If you do not agree, do not use the service.
+              By accessing or using ProductMind, you agree to be bound by these Terms of Service. If
+              you do not agree, do not use the service.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900">2. Service description</h2>
             <p className="mt-2">
-              ProductMind is an AI-powered product decision assistant currently in <strong>beta</strong>.
-              It provides tools for generating PRDs, competitive analyses, roadmaps, feature
-              prioritization, decision reviews, and strategic insights using artificial intelligence.
-              The service is provided for informational and productivity purposes and is not a
-              substitute for professional business, legal, or financial advice.
+              ProductMind is an AI-powered product decision assistant currently in{" "}
+              <strong>beta</strong>. It provides tools for generating PRDs, competitive analyses,
+              roadmaps, feature prioritization, decision reviews, and strategic insights using
+              artificial intelligence. The service is provided for informational and productivity
+              purposes and is not a substitute for professional business, legal, or financial
+              advice.
             </p>
           </section>
 
@@ -82,9 +83,9 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">6. Data ownership</h2>
             <p className="mt-2">
-              You retain ownership of all data you input into ProductMind. We do not claim
-              ownership of your projects, feedback, or other content. AI-generated outputs are
-              provided for your use within the service.
+              You retain ownership of all data you input into ProductMind. We do not claim ownership
+              of your projects, feedback, or other content. AI-generated outputs are provided for
+              your use within the service.
             </p>
           </section>
 
@@ -92,7 +93,8 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-gray-900">7. Service limits</h2>
             <p className="mt-2">
               AI features are subject to rate limits to ensure fair usage and service stability.
-              Current limits are displayed in the app. Limits may be adjusted during the beta period.
+              Current limits are displayed in the app. Limits may be adjusted during the beta
+              period.
             </p>
           </section>
 
@@ -107,10 +109,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">9. Limitation of liability</h2>
             <p className="mt-2">
-              ProductMind is provided &quot;as is&quot; and &quot;as available&quot; without warranties
-              of any kind, express or implied. We are not liable for any damages arising from the use
-              of the service, reliance on AI-generated content, data loss, service interruptions, or
-              any decisions made based on outputs from the platform.
+              ProductMind is provided &quot;as is&quot; and &quot;as available&quot; without
+              warranties of any kind, express or implied. We are not liable for any damages arising
+              from the use of the service, reliance on AI-generated content, data loss, service
+              interruptions, or any decisions made based on outputs from the platform.
             </p>
           </section>
 

@@ -138,11 +138,7 @@ const pdCategoryLabels: Record<string, string> = {
   other: "Other",
 };
 
-export default async function ProjectDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
@@ -154,7 +150,7 @@ export default async function ProjectDetailPage({
     supabase
       .from("projects")
       .select(
-        "*, decisions(id, type, input, created_at), feature_ideas(count), messages(count), insights(count)"
+        "*, decisions(id, type, input, created_at), feature_ideas(count), messages(count), insights(count)",
       )
       .eq("id", projectId)
       .eq("user_id", user.id)
@@ -174,13 +170,9 @@ export default async function ProjectDetailPage({
   const productDecisions = productDecisionsResult.data;
 
   const decisions =
-    (project.decisions as { id: string; type: string; input: unknown; created_at: string }[]) ??
-    [];
-  const featureCount =
-    (project.feature_ideas as { count: number }[])?.[0]?.count ?? 0;
-  const insightCount =
-    (project.insights as { count: number }[])?.[0]?.count ?? 0;
-
+    (project.decisions as { id: string; type: string; input: unknown; created_at: string }[]) ?? [];
+  const featureCount = (project.feature_ideas as { count: number }[])?.[0]?.count ?? 0;
+  const insightCount = (project.insights as { count: number }[])?.[0]?.count ?? 0;
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://productmind.app";
   const breadcrumb = createBreadcrumbJsonLd([
@@ -202,7 +194,7 @@ export default async function ProjectDetailPage({
 
       <Link
         href="/projects"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700"
       >
         <IconArrowLeft className="h-4 w-4" />
         Back to projects
@@ -211,9 +203,9 @@ export default async function ProjectDetailPage({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 break-words">{project.name}</h1>
+          <h1 className="break-words text-2xl font-bold text-gray-900">{project.name}</h1>
           {project.description && (
-            <p className="mt-1 text-sm text-gray-500 break-words">{project.description}</p>
+            <p className="mt-1 break-words text-sm text-gray-500">{project.description}</p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="info">{decisions.length} decisions</Badge>
@@ -224,7 +216,7 @@ export default async function ProjectDetailPage({
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href={`/projects/${project.id}/edit`}
-            className="inline-flex items-center justify-center gap-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus-visible:ring-gray-400 h-8 px-3 text-xs rounded-md"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
           >
             <IconSettings className="h-3.5 w-3.5" />
             Edit
@@ -258,7 +250,9 @@ export default async function ProjectDetailPage({
           {tools.map((tool) => (
             <Link key={tool.href} href={`/projects/${project.id}/${tool.href}`}>
               <Card className="group h-full cursor-pointer transition hover:border-gray-300 hover:shadow-md">
-                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition ${tool.color}`}>
+                <div
+                  className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition ${tool.color}`}
+                >
                   <tool.icon className="h-5 w-5" />
                 </div>
                 <p className="text-sm font-semibold text-gray-900">{tool.label}</p>
@@ -279,7 +273,7 @@ export default async function ProjectDetailPage({
           <h3 className="text-base font-semibold text-gray-900">Recent Decisions</h3>
           <Link
             href={`/projects/${project.id}/decisions`}
-            className="inline-flex items-center justify-center gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 text-brand-600 hover:bg-gray-100 focus-visible:ring-gray-400 h-8 px-3 text-xs rounded-md"
+            className="inline-flex h-8 items-center justify-center gap-1 rounded-md px-3 text-xs font-medium text-brand-600 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
           >
             View all
             <IconChevronRight className="h-3.5 w-3.5" />
@@ -297,35 +291,45 @@ export default async function ProjectDetailPage({
           </Card>
         ) : (
           <div className="space-y-2">
-            {productDecisions.map((pd: { id: string; title: string; category: string; status: string; updated_at: string }) => (
-              <Link key={pd.id} href={`/projects/${project.id}/decisions`}>
-                <Card className="flex flex-col gap-3 py-4 cursor-pointer hover:border-gray-300 hover:shadow-md transition sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50">
-                      <IconScale className="h-4 w-4 text-cyan-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <Badge variant={pdStatusBadge[pd.status] ?? "default"}>
-                          {pdStatusLabels[pd.status] ?? pd.status}
-                        </Badge>
-                        <Badge>{pdCategoryLabels[pd.category] ?? pd.category}</Badge>
+            {productDecisions.map(
+              (pd: {
+                id: string;
+                title: string;
+                category: string;
+                status: string;
+                updated_at: string;
+              }) => (
+                <Link key={pd.id} href={`/projects/${project.id}/decisions`}>
+                  <Card className="flex cursor-pointer flex-col gap-3 py-4 transition hover:border-gray-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50">
+                        <IconScale className="h-4 w-4 text-cyan-600" />
                       </div>
-                      <p className="mt-1 text-sm font-medium text-gray-700 break-words">{pd.title}</p>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant={pdStatusBadge[pd.status] ?? "default"}>
+                            {pdStatusLabels[pd.status] ?? pd.status}
+                          </Badge>
+                          <Badge>{pdCategoryLabels[pd.category] ?? pd.category}</Badge>
+                        </div>
+                        <p className="mt-1 break-words text-sm font-medium text-gray-700">
+                          {pd.title}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
-                    <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <IconClock className="h-3 w-3" />
-                      <time dateTime={toISOString(pd.updated_at)}>
-                        {formatDate(pd.updated_at)}
-                      </time>
-                    </span>
-                    <IconChevronRight className="h-4 w-4 text-gray-300" />
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                    <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
+                      <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <IconClock className="h-3 w-3" />
+                        <time dateTime={toISOString(pd.updated_at)}>
+                          {formatDate(pd.updated_at)}
+                        </time>
+                      </span>
+                      <IconChevronRight className="h-4 w-4 text-gray-300" />
+                    </div>
+                  </Card>
+                </Link>
+              ),
+            )}
           </div>
         )}
       </div>
@@ -333,7 +337,9 @@ export default async function ProjectDetailPage({
       {/* Generated Documents — saved PRDs, competitive analyses, etc. from the decisions table */}
       <div className="mt-10">
         <h3 className="mb-1 text-base font-semibold text-gray-900">Generated Documents</h3>
-        <p className="mb-4 text-xs text-gray-400">PRDs and competitive analyses generated for this project.</p>
+        <p className="mb-4 text-xs text-gray-400">
+          PRDs and competitive analyses generated for this project.
+        </p>
         {decisions.length === 0 ? (
           <Card className="flex flex-col items-center justify-center py-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
@@ -356,14 +362,16 @@ export default async function ProjectDetailPage({
 
               const title =
                 d.type === "PRD"
-                  ? parseDecisionInputTitle(d.input as Json | null) ?? "Untitled PRD"
+                  ? (parseDecisionInputTitle(d.input as Json | null) ?? "Untitled PRD")
                   : d.type === "COMPETITIVE_ANALYSIS"
-                    ? parseDecisionInputTitle(d.input as Json | null) ?? "Untitled Analysis"
-                    : decisionTypeLabels[d.type] ?? d.type;
+                    ? (parseDecisionInputTitle(d.input as Json | null) ?? "Untitled Analysis")
+                    : (decisionTypeLabels[d.type] ?? d.type);
 
               const inner = (
-                <Card className={`flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between${href ? " cursor-pointer hover:border-gray-300 hover:shadow-md transition" : ""}`}>
-                  <div className="flex items-start gap-3 min-w-0">
+                <Card
+                  className={`flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between${href ? "cursor-pointer transition hover:border-gray-300 hover:shadow-md" : ""}`}
+                >
+                  <div className="flex min-w-0 items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50">
                       <IconSparkles className="h-4 w-4 text-gray-400" />
                     </div>
@@ -373,15 +381,13 @@ export default async function ProjectDetailPage({
                           {decisionTypeLabels[d.type]}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-sm font-medium text-gray-700 break-words">{title}</p>
+                      <p className="mt-1 break-words text-sm font-medium text-gray-700">{title}</p>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
-                     <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-400">
                       <IconClock className="h-3 w-3" />
-                      <time dateTime={toISOString(d.created_at)}>
-                        {formatDate(d.created_at)}
-                      </time>
+                      <time dateTime={toISOString(d.created_at)}>{formatDate(d.created_at)}</time>
                     </span>
                     {href && <IconChevronRight className="h-4 w-4 text-gray-300" />}
                   </div>
@@ -389,7 +395,9 @@ export default async function ProjectDetailPage({
               );
 
               return href ? (
-                <Link key={d.id} href={href}>{inner}</Link>
+                <Link key={d.id} href={href}>
+                  {inner}
+                </Link>
               ) : (
                 <div key={d.id}>{inner}</div>
               );

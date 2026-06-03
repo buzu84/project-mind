@@ -19,7 +19,6 @@ import {
 } from "@/lib/validations/decision";
 import type { ProductDecision } from "./decisions-client";
 
-
 const categoryLabels: Record<string, string> = {
   product: "Product",
   technical: "Technical",
@@ -169,7 +168,10 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="decision-category" className="mb-1 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="decision-category"
+            className="mb-1 block text-sm font-medium text-gray-700"
+          >
             Category
           </label>
           <select
@@ -179,11 +181,15 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             {DECISION_CATEGORIES.map((c) => (
-              <option key={c} value={c}>{categoryLabels[c] ?? c}</option>
+              <option key={c} value={c}>
+                {categoryLabels[c] ?? c}
+              </option>
             ))}
           </select>
           {fieldErrors.category && (
-            <p className="mt-1 text-xs text-red-600" role="alert">{fieldErrors.category[0]}</p>
+            <p className="mt-1 text-xs text-red-600" role="alert">
+              {fieldErrors.category[0]}
+            </p>
           )}
         </div>
 
@@ -198,11 +204,15 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             {DECISION_STATUSES.map((s) => (
-              <option key={s} value={s}>{statusLabels[s] ?? s}</option>
+              <option key={s} value={s}>
+                {statusLabels[s] ?? s}
+              </option>
             ))}
           </select>
           {fieldErrors.status && (
-            <p className="mt-1 text-xs text-red-600" role="alert">{fieldErrors.status[0]}</p>
+            <p className="mt-1 text-xs text-red-600" role="alert">
+              {fieldErrors.status[0]}
+            </p>
           )}
         </div>
       </div>
@@ -221,7 +231,8 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
           rows={4}
         />
         <div className="mt-1 flex items-center justify-between gap-2">
-          {problemStatement.trim().length > 0 && problemStatement.trim().length < DECISION_PROBLEM_QUALITY_MIN ? (
+          {problemStatement.trim().length > 0 &&
+          problemStatement.trim().length < DECISION_PROBLEM_QUALITY_MIN ? (
             <p className="text-xs text-amber-600">{DECISION_PROBLEM_QUALITY_HELPER}</p>
           ) : (
             <span />
@@ -260,4 +271,3 @@ export function DecisionForm({ projectId, decision, onSuccess, onCancel }: Decis
     </form>
   );
 }
-

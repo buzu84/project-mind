@@ -74,4 +74,3 @@ export const FEATURE_LABELS: Record<AIUsageFeature, string> = {
   rag_search: "RAG Search",
   other: "Other",
 };
-

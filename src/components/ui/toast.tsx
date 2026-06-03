@@ -34,7 +34,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {/* Toast container — aria-live for screen reader announcements */}
       <div
-        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"
+        className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col gap-2"
         role="status"
         aria-live="polite"
         aria-atomic="false"

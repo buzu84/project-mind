@@ -27,7 +27,7 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
       }
       if (e.key === "Tab" && panelRef.current) {
         const focusable = panelRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
@@ -81,10 +81,7 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
       aria-labelledby="delete-account-title"
     >
       <div ref={panelRef} className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-        <h2
-          id="delete-account-title"
-          className="text-lg font-semibold text-red-600"
-        >
+        <h2 id="delete-account-title" className="text-lg font-semibold text-red-600">
           Delete Account
         </h2>
 
@@ -93,7 +90,7 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
             This action is <strong className="text-red-600">permanent and irreversible</strong>.
           </p>
           <p>All your data will be deleted immediately, including:</p>
-          <ul className="list-disc pl-5 space-y-1 text-gray-500">
+          <ul className="list-disc space-y-1 pl-5 text-gray-500">
             <li>All projects and project context</li>
             <li>Feedback documents and research</li>
             <li>AI insights, roadmaps, and PRDs</li>
@@ -106,10 +103,7 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
         </div>
 
         <div className="mt-5">
-          <label
-            htmlFor="delete-confirm"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="delete-confirm" className="block text-sm font-medium text-gray-700">
             Type <span className="font-mono font-bold text-red-600">DELETE</span> to confirm
           </label>
           <input
@@ -126,17 +120,16 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
         </div>
 
         {errorMsg && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          <div
+            className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
+          >
             {errorMsg}
           </div>
         )}
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={status === "loading"}
-          >
+          <Button variant="secondary" onClick={onClose} disabled={status === "loading"}>
             Cancel
           </Button>
           <Button

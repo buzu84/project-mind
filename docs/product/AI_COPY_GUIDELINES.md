@@ -45,32 +45,31 @@ ProductMind does not display inline citations, footnotes, or source references i
 
 ## AI Chat vs Global AI Assistant
 
-| | AI Chat (per project) | Global AI Assistant |
-|---|---|---|
-| Context | Project metadata + RAG from feedback | None |
-| Message store | `messages` (project-scoped) | `global_chat_messages` (user-scoped) |
-| OK to call "context-aware" | ✅ Yes | ❌ No |
-| OK to call "project-specific" | ✅ Yes | ❌ No |
+|                               | AI Chat (per project)                | Global AI Assistant                  |
+| ----------------------------- | ------------------------------------ | ------------------------------------ |
+| Context                       | Project metadata + RAG from feedback | None                                 |
+| Message store                 | `messages` (project-scoped)          | `global_chat_messages` (user-scoped) |
+| OK to call "context-aware"    | ✅ Yes                               | ❌ No                                |
+| OK to call "project-specific" | ✅ Yes                               | ❌ No                                |
 
 ## Don't overclaim
 
-| Term | Rule |
-|---|---|
-| "editable" | ❌ No — AI outputs are view-only |
-| "export" | ❌ No — no export feature exists |
-| "copy" (as feature) | ❌ No — no copy-to-clipboard button |
-| "team" / "collaboration" | ❌ No — single-user only |
-| "real-time" | ❌ No — no WebSocket/live features |
-| "production-ready" (for outputs) | ❌ No — AI drafts require review |
-| "secure" / "compliant" | ⚠️ Say "RLS-protected" or "row-level security." Don't claim compliance certifications. |
-| "accurate" | ❌ Don't guarantee accuracy of AI outputs |
-| "autonomous" / "agent" | ❌ No — all operations are user-initiated |
-| "memory" | ⚠️ Chat has message history, but no cross-session learning or user preference memory |
-| "OAuth" | ❌ No OAuth providers configured — email/password only |
+| Term                             | Rule                                                                                   |
+| -------------------------------- | -------------------------------------------------------------------------------------- |
+| "editable"                       | ❌ No — AI outputs are view-only                                                       |
+| "export"                         | ❌ No — no export feature exists                                                       |
+| "copy" (as feature)              | ❌ No — no copy-to-clipboard button                                                    |
+| "team" / "collaboration"         | ❌ No — single-user only                                                               |
+| "real-time"                      | ❌ No — no WebSocket/live features                                                     |
+| "production-ready" (for outputs) | ❌ No — AI drafts require review                                                       |
+| "secure" / "compliant"           | ⚠️ Say "RLS-protected" or "row-level security." Don't claim compliance certifications. |
+| "accurate"                       | ❌ Don't guarantee accuracy of AI outputs                                              |
+| "autonomous" / "agent"           | ❌ No — all operations are user-initiated                                              |
+| "memory"                         | ⚠️ Chat has message history, but no cross-session learning or user preference memory   |
+| "OAuth"                          | ❌ No OAuth providers configured — email/password only                                 |
 
 For term definitions, see the canonical [GLOSSARY](../GLOSSARY.md).
 
 ---
 
-*Last updated: 2026-05-24*
-
+_Last updated: 2026-05-24_

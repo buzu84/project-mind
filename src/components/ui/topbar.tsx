@@ -53,9 +53,7 @@ export function TopBar({ user }: TopBarProps) {
         <h2 className="text-lg font-semibold text-gray-900">{pageTitle}</h2>
       </div>
 
-      <div className="flex items-center gap-2">
-        {user && <UserDropdown user={user} />}
-      </div>
+      <div className="flex items-center gap-2">{user && <UserDropdown user={user} />}</div>
     </header>
   );
 }

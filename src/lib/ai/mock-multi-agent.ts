@@ -143,4 +143,3 @@ export async function generateMockMultiAgentReview(input: MockInput): Promise<Mo
 
   return { pm, cto, ux, growth, consensus };
 }
-

@@ -71,9 +71,9 @@ describe("parseAnalysisInput", () => {
   });
 
   it("parses valid input", () => {
-    expect(
-      parseAnalysisInput({ productName: "X", industry: "SaaS", competitors: "A, B" }),
-    ).toEqual({ productName: "X", industry: "SaaS", competitors: "A, B" });
+    expect(parseAnalysisInput({ productName: "X", industry: "SaaS", competitors: "A, B" })).toEqual(
+      { productName: "X", industry: "SaaS", competitors: "A, B" },
+    );
   });
 
   it("accepts empty object", () => {
@@ -156,9 +156,7 @@ describe("parseRoadmapRow", () => {
 
   it("parses valid roadmap items in arrays", () => {
     const result = parseRoadmapRow({
-      now_items: [
-        { title: "Feature A", description: "Build it", priority: "high" },
-      ],
+      now_items: [{ title: "Feature A", description: "Build it", priority: "high" }],
     });
     expect(result.now_items).toEqual([
       { title: "Feature A", description: "Build it", priority: "high" },
@@ -167,12 +165,7 @@ describe("parseRoadmapRow", () => {
 
   it("filters out completely invalid items", () => {
     const result = parseRoadmapRow({
-      now_items: [
-        { title: "Good", description: "Valid" },
-        42,
-        null,
-        "bad",
-      ],
+      now_items: [{ title: "Good", description: "Valid" }, 42, null, "bad"],
     });
     expect(result.now_items).toHaveLength(1);
     expect(result.now_items[0].title).toBe("Good");
@@ -329,4 +322,3 @@ describe("parseJsonStringArray", () => {
     expect(parseJsonStringArray(["a", 1, null, "b", true, {}, "c"])).toEqual(["a", "b", "c"]);
   });
 });
-

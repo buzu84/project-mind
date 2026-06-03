@@ -16,10 +16,18 @@ function InlineMarkdown({ text }: { text: string }) {
     <>
       {parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**")) {
-          return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>;
+          return (
+            <strong key={i} className="font-semibold text-gray-900">
+              {part.slice(2, -2)}
+            </strong>
+          );
         }
         if (part.startsWith("`") && part.endsWith("`")) {
-          return <code key={i} className="rounded bg-gray-100 px-1 py-0.5 text-xs font-mono">{part.slice(1, -1)}</code>;
+          return (
+            <code key={i} className="rounded bg-gray-100 px-1 py-0.5 font-mono text-xs">
+              {part.slice(1, -1)}
+            </code>
+          );
         }
         return <span key={i}>{part}</span>;
       })}
@@ -39,16 +47,24 @@ function ChatMarkdown({ text }: { text: string }) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    if (!trimmed) { i++; continue; }
+    if (!trimmed) {
+      i++;
+      continue;
+    }
 
     // Headings
     const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
-      const cls = level <= 2
-        ? "text-sm font-semibold text-gray-900 mt-3 mb-1"
-        : "text-sm font-medium text-gray-800 mt-2 mb-0.5";
-      elements.push(<p key={key++} className={cls}><InlineMarkdown text={headingMatch[2]} /></p>);
+      const cls =
+        level <= 2
+          ? "text-sm font-semibold text-gray-900 mt-3 mb-1"
+          : "text-sm font-medium text-gray-800 mt-2 mb-0.5";
+      elements.push(
+        <p key={key++} className={cls}>
+          <InlineMarkdown text={headingMatch[2]} />
+        </p>,
+      );
       i++;
       continue;
     }
@@ -70,11 +86,14 @@ function ChatMarkdown({ text }: { text: string }) {
       elements.push(
         <ul key={key++} className="my-1 space-y-0.5 pl-4">
           {items.map((item, j) => (
-            <li key={j} className="list-disc text-sm text-gray-600 leading-relaxed marker:text-gray-400">
+            <li
+              key={j}
+              className="list-disc text-sm leading-relaxed text-gray-600 marker:text-gray-400"
+            >
               <InlineMarkdown text={item} />
             </li>
           ))}
-        </ul>
+        </ul>,
       );
       continue;
     }
@@ -89,11 +108,14 @@ function ChatMarkdown({ text }: { text: string }) {
       elements.push(
         <ol key={key++} className="my-1 space-y-0.5 pl-4">
           {items.map((item, j) => (
-            <li key={j} className="list-decimal text-sm text-gray-600 leading-relaxed marker:text-gray-400">
+            <li
+              key={j}
+              className="list-decimal text-sm leading-relaxed text-gray-600 marker:text-gray-400"
+            >
               <InlineMarkdown text={item} />
             </li>
           ))}
-        </ol>
+        </ol>,
       );
       continue;
     }
@@ -102,7 +124,7 @@ function ChatMarkdown({ text }: { text: string }) {
     elements.push(
       <p key={key++} className="text-sm leading-relaxed text-gray-600">
         <InlineMarkdown text={trimmed} />
-      </p>
+      </p>,
     );
     i++;
   }
@@ -236,15 +258,18 @@ export function ChatShell({
 
             if (typeof parsed === "string") {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, content: m.content + parsed } : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + parsed } : m)),
               );
             } else if ("done" in parsed && parsed.done) {
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId
-                    ? { ...m, id: parsed.id ?? assistantId, createdAt: parsed.createdAt, source: parsed.source as "real" | "mock" | undefined }
+                    ? {
+                        ...m,
+                        id: parsed.id ?? assistantId,
+                        createdAt: parsed.createdAt,
+                        source: parsed.source as "real" | "mock" | undefined,
+                      }
                     : m,
                 ),
               );
@@ -297,15 +322,17 @@ export function ChatShell({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-1">
         {/* Visually-hidden live region: announces only completion, not every streamed token */}
-        <div className="sr-only" aria-live="polite" aria-atomic="true">{srAnnouncement}</div>
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {srAnnouncement}
+        </div>
         {visibleMessages.length === 0 && !isStreaming && (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
               <IconSparkles className="h-7 w-7 text-brand-600" />
             </div>
             <h3 className="mt-4 text-base font-semibold text-gray-900">{emptyTitle}</h3>
             <p className="mt-1 max-w-sm text-sm text-gray-500">{emptyDescription}</p>
-            <div className="mt-8 grid gap-2 sm:grid-cols-2 w-full max-w-lg">
+            <div className="mt-8 grid w-full max-w-lg gap-2 sm:grid-cols-2">
               {suggestions.map((text) => (
                 <button
                   key={text}
@@ -325,32 +352,39 @@ export function ChatShell({
               <div key={msg.id} className="flex gap-3">
                 {msg.role === "assistant" ? (
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50">
-                    <IconSparkles className={`h-4 w-4 text-brand-600 ${msg.id.startsWith("streaming-") ? "animate-pulse" : ""}`} />
+                    <IconSparkles
+                      className={`h-4 w-4 text-brand-600 ${msg.id.startsWith("streaming-") ? "animate-pulse" : ""}`}
+                    />
                   </div>
                 ) : (
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100">
                     <IconUser className="h-4 w-4 text-gray-500" />
                   </div>
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
                       {msg.role === "assistant" ? "ProductMind AI" : "You"}
                     </span>
-                    {!msg.id.startsWith("streaming-") && !msg.id.startsWith("user-") && msg.createdAt && (
-                      <span className="text-xs text-gray-400">
-                        {formatTime(msg.createdAt)}
-                      </span>
-                    )}
+                    {!msg.id.startsWith("streaming-") &&
+                      !msg.id.startsWith("user-") &&
+                      msg.createdAt && (
+                        <span className="text-xs text-gray-400">{formatTime(msg.createdAt)}</span>
+                      )}
                   </div>
                   <div className="mt-1 break-words">
                     {msg.role === "assistant" ? (
                       <ChatMarkdown text={msg.content} />
                     ) : (
-                      <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{msg.content}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-600">
+                        {msg.content}
+                      </p>
                     )}
                     {msg.id.startsWith("streaming-") && isStreaming && (
-                      <span className="inline-block w-1.5 h-4 ml-0.5 bg-brand-500 animate-pulse rounded-sm align-text-bottom" aria-hidden="true" />
+                      <span
+                        className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-brand-500 align-text-bottom"
+                        aria-hidden="true"
+                      />
                     )}
                   </div>
                 </div>
@@ -363,9 +397,16 @@ export function ChatShell({
 
       {/* Error */}
       {error && (
-        <div className="mx-1 mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700" role="alert">
+        <div
+          className="mx-1 mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700"
+          role="alert"
+        >
           {error}
-          <button onClick={() => setError(null)} className="ml-2 font-medium underline hover:no-underline" aria-label="Dismiss error">
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 font-medium underline hover:no-underline"
+            aria-label="Dismiss error"
+          >
             Dismiss
           </button>
         </div>
@@ -400,4 +441,3 @@ export function ChatShell({
     </div>
   );
 }
-

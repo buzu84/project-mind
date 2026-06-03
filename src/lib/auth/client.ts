@@ -31,10 +31,7 @@ export function useCurrentUser(initialUser?: AppUser | null): {
         setUser({
           id: data.user.id,
           email: data.user.email ?? "",
-          name:
-            data.user.user_metadata?.full_name ??
-            data.user.email?.split("@")[0] ??
-            "",
+          name: data.user.user_metadata?.full_name ?? data.user.email?.split("@")[0] ?? "",
           avatar_url: data.user.user_metadata?.avatar_url ?? null,
         });
       }

@@ -138,7 +138,10 @@ describe("ConfirmDialog", () => {
     const user = userEvent.setup();
     let resolveConfirm: () => void;
     const onConfirm = vi.fn(
-      () => new Promise<void>((resolve) => { resolveConfirm = resolve; }),
+      () =>
+        new Promise<void>((resolve) => {
+          resolveConfirm = resolve;
+        }),
     );
     renderDialog({ onConfirm });
     await user.click(screen.getByRole("button", { name: "Open" }));
@@ -186,7 +189,10 @@ describe("ConfirmDialog", () => {
     const user = userEvent.setup();
     let resolveConfirm: () => void;
     const onConfirm = vi.fn(
-      () => new Promise<void>((resolve) => { resolveConfirm = resolve; }),
+      () =>
+        new Promise<void>((resolve) => {
+          resolveConfirm = resolve;
+        }),
     );
     renderDialog({ onConfirm });
     await user.click(screen.getByRole("button", { name: "Open" }));
@@ -212,7 +218,10 @@ describe("ConfirmDialog", () => {
     const user = userEvent.setup();
     let resolveConfirm: () => void;
     const onConfirm = vi.fn(
-      () => new Promise<void>((resolve) => { resolveConfirm = resolve; }),
+      () =>
+        new Promise<void>((resolve) => {
+          resolveConfirm = resolve;
+        }),
     );
     renderDialog({ onConfirm });
     await user.click(screen.getByRole("button", { name: "Open" }));
@@ -271,18 +280,10 @@ describe("ConfirmDialog", () => {
 
   it("uses default title and confirmLabel when not provided", async () => {
     const user = userEvent.setup();
-    render(
-      <ConfirmDialog
-        message="Really?"
-        onConfirm={vi.fn()}
-        trigger={<button>Go</button>}
-      />,
-    );
+    render(<ConfirmDialog message="Really?" onConfirm={vi.fn()} trigger={<button>Go</button>} />);
     await user.click(screen.getByRole("button", { name: "Go" }));
 
     expect(screen.getByText("Are you sure?")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
   });
 });
-
-

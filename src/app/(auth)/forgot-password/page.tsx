@@ -43,11 +43,13 @@ function ForgotPasswordForm() {
 
   if (success) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center" role="status">
+      <div
+        className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center"
+        role="status"
+      >
         <h3 className="text-base font-semibold text-emerald-800">Check your email</h3>
         <p className="mt-2 text-sm text-emerald-700">
-          We sent a password reset link to <strong>{email}</strong>.
-          Click it to set a new password.
+          We sent a password reset link to <strong>{email}</strong>. Click it to set a new password.
         </p>
         <Link
           href="/sign-in"
@@ -62,7 +64,10 @@ function ForgotPasswordForm() {
   return (
     <>
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -83,7 +88,12 @@ function ForgotPasswordForm() {
             required
             error={emailError ?? undefined}
           />
-          <Button type="submit" className="w-full" isLoading={isLoading} disabled={isLoading || !email.includes("@")}>
+          <Button
+            type="submit"
+            className="w-full"
+            isLoading={isLoading}
+            disabled={isLoading || !email.includes("@")}
+          >
             Send Reset Link
           </Button>
         </form>
@@ -107,12 +117,8 @@ export default function ForgotPasswordPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 shadow-lg shadow-brand-200">
             <IconSparkles className="h-6 w-6 text-white" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">
-            Reset password
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            We&apos;ll email you a reset link
-          </p>
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">Reset password</h1>
+          <p className="mt-1 text-sm text-gray-500">We&apos;ll email you a reset link</p>
         </div>
 
         <Suspense fallback={<div className="h-48 animate-pulse rounded-xl bg-gray-100" />}>
@@ -122,4 +128,3 @@ export default function ForgotPasswordPage() {
     </main>
   );
 }
-

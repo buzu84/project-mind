@@ -21,7 +21,10 @@ interface InsightsClientProps {
   initialInsights: Insight[];
 }
 
-const TYPE_CONFIG: Record<string, { label: string; icon: string; variant: "info" | "success" | "warning" | "danger" | "default" }> = {
+const TYPE_CONFIG: Record<
+  string,
+  { label: string; icon: string; variant: "info" | "success" | "warning" | "danger" | "default" }
+> = {
   risk: { label: "Risk", icon: "\u26A0\uFE0F", variant: "danger" },
   opportunity: { label: "Opportunity", icon: "\u{1F4A1}", variant: "success" },
   next_action: { label: "Next Action", icon: "\u{1F3AF}", variant: "info" },
@@ -109,10 +112,9 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
     setError(null);
 
     try {
-      const res = await fetch(
-        `/api/ai/insights?projectId=${encodeURIComponent(projectId)}`,
-        { method: "DELETE" },
-      );
+      const res = await fetch(`/api/ai/insights?projectId=${encodeURIComponent(projectId)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to delete insights");
@@ -144,16 +146,20 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">AI Insights</h1>
+            <h1
+              ref={sectionHeadingRef}
+              tabIndex={-1}
+              className="text-2xl font-bold text-gray-900 focus:outline-none"
+            >
+              AI Insights
+            </h1>
             <p className="mt-1 text-sm text-gray-500">
               Strategic analysis and recommendations for <strong>{projectName}</strong>
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {insights.length > 0 && (
-              <CopyMarkdownButton
-                getMarkdown={() => insightsToMarkdown(insights, projectName)}
-              />
+              <CopyMarkdownButton getMarkdown={() => insightsToMarkdown(insights, projectName)} />
             )}
             <Button
               ref={generateButtonRef}
@@ -181,7 +187,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
                   variant="ghost"
                   size="sm"
                   disabled={isDeleting || isGenerating}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   {isDeleting ? "Deleting\u2026" : "Delete Insights"}
                 </Button>
@@ -193,16 +199,22 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
 
       {/* Error */}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div
+          className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
       {/* Generating state */}
       {isGenerating && (
-        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center" role="status">
+        <div
+          className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-6 text-center"
+          role="status"
+        >
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-            <IconSparkles className="h-6 w-6 text-brand-600 animate-pulse" aria-hidden="true" />
+            <IconSparkles className="h-6 w-6 animate-pulse text-brand-600" aria-hidden="true" />
           </div>
           <p className="text-sm font-medium text-brand-900">Analyzing your project...</p>
           <p className="mt-1 text-xs text-brand-600">
@@ -219,7 +231,8 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
           </div>
           <h3 className="mt-4 text-base font-semibold text-gray-900">No insights yet</h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
-            Click &ldquo;Generate AI Insights&rdquo; to analyze your project and get strategic recommendations.
+            Click &ldquo;Generate AI Insights&rdquo; to analyze your project and get strategic
+            recommendations.
           </p>
           <Button onClick={generateInsights} className="mt-6 gap-2" disabled={isGenerating}>
             <IconSparkles className="h-4 w-4" />
@@ -263,7 +276,11 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
           {/* Insights grid */}
           <div className="grid gap-4 sm:grid-cols-2">
             {filteredInsights.map((insight) => {
-              const config = TYPE_CONFIG[insight.type] ?? { label: insight.type, icon: "\u{1F4CB}", variant: "default" as const };
+              const config = TYPE_CONFIG[insight.type] ?? {
+                label: insight.type,
+                icon: "\u{1F4CB}",
+                variant: "default" as const,
+              };
               const meta = insight.metadata;
               const priority = meta?.priority ?? "medium";
               const confidence = meta?.confidence ?? "medium";
@@ -275,9 +292,7 @@ export function InsightsClient({ projectId, projectName, initialInsights }: Insi
                       <span className="text-lg">{config.icon}</span>
                       <Badge variant={config.variant}>{config.label}</Badge>
                     </div>
-                    <Badge variant={PRIORITY_VARIANT[priority] ?? "default"}>
-                      {priority}
-                    </Badge>
+                    <Badge variant={PRIORITY_VARIANT[priority] ?? "default"}>{priority}</Badge>
                   </div>
 
                   <h4 className="mt-3 text-sm font-semibold text-gray-900">{insight.title}</h4>

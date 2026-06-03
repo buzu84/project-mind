@@ -32,7 +32,9 @@ export async function POST(req: Request) {
   const supabase = createClient();
 
   // Save user message
-  await supabase.from("global_chat_messages").insert({ user_id: user.id, role: "user", content: message });
+  await supabase
+    .from("global_chat_messages")
+    .insert({ user_id: user.id, role: "user", content: message });
 
   // Load conversation history
   const { data: historyRaw } = await supabase
@@ -55,7 +57,9 @@ export async function POST(req: Request) {
   if (!isReal) {
     const mockResponse = `Great question! Here's my perspective:\n\n**Key considerations:**\n- Start by defining clear success metrics tied to business outcomes\n- Validate assumptions with real user data before committing resources\n- Consider both short-term wins and long-term strategic value\n\n**Recommended approach:**\n1. Map the problem space thoroughly\n2. Identify the highest-impact opportunity\n3. Build a lightweight prototype to test\n4. Measure results against your success criteria\n5. Iterate based on learnings\n\n*For project-specific advice with full context, use the AI Chat within a project.*\n\n*[Mock response — set USE_REAL_AI=true for real AI]*`;
 
-    await supabase.from("global_chat_messages").insert({ user_id: user.id, role: "assistant", content: mockResponse });
+    await supabase
+      .from("global_chat_messages")
+      .insert({ user_id: user.id, role: "assistant", content: mockResponse });
 
     void trackAIUsage({
       userId: user.id,
@@ -75,19 +79,29 @@ export async function POST(req: Request) {
       start(controller) {
         const interval = setInterval(() => {
           if (i >= words.length) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, id: `mock-${Date.now()}`, source: "mock" })}\n\n`));
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ done: true, id: `mock-${Date.now()}`, source: "mock" })}\n\n`,
+              ),
+            );
             controller.close();
             clearInterval(interval);
             return;
           }
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify((i === 0 ? "" : " ") + words[i])}\n\n`));
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify((i === 0 ? "" : " ") + words[i])}\n\n`),
+          );
           i++;
         }, 15);
       },
     });
 
     return new Response(readable, {
-      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   }
 
@@ -128,7 +142,10 @@ export async function POST(req: Request) {
             .select("id, created_at")
             .single();
 
-          const estimatedPromptTokens = Math.ceil(SYSTEM_PROMPT.length / 4 + (history ?? []).reduce((s: number, m: any) => s + m.content.length, 0) / 4);
+          const estimatedPromptTokens = Math.ceil(
+            SYSTEM_PROMPT.length / 4 +
+              (history ?? []).reduce((s: number, m: any) => s + m.content.length, 0) / 4,
+          );
           const estimatedCompletionTokens = Math.ceil(fullContent.length / 4);
           void trackAIUsage({
             userId: user.id,
@@ -141,13 +158,18 @@ export async function POST(req: Request) {
             metadata: { project_scoped: false, estimated: true, streaming: true },
           });
 
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, id: saved?.id ?? `chat-${Date.now()}`, createdAt: saved?.created_at, source: "real" })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ done: true, id: saved?.id ?? `chat-${Date.now()}`, createdAt: saved?.created_at, source: "real" })}\n\n`,
+            ),
+          );
           controller.close();
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : "Stream failed";
-          const friendlyMsg = errorMsg.includes("401") || errorMsg.includes("API key")
-            ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
-            : "Could not generate response. Please try again.";
+          const friendlyMsg =
+            errorMsg.includes("401") || errorMsg.includes("API key")
+              ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
+              : "Could not generate response. Please try again.";
           void trackAIUsageError({
             userId: user.id,
             feature: "chat",
@@ -163,13 +185,18 @@ export async function POST(req: Request) {
     });
 
     return new Response(readable, {
-      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "OpenAI request failed";
-    const friendly = msg.includes("401") || msg.includes("API key")
-      ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
-      : "Could not generate response. Please try again.";
+    const friendly =
+      msg.includes("401") || msg.includes("API key")
+        ? "AI is not configured. Add OPENAI_API_KEY or use mock mode."
+        : "Could not generate response. Please try again.";
     void trackAIUsageError({
       userId: user.id,
       feature: "chat",
@@ -181,4 +208,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: friendly }, { status: 502 });
   }
 }
-

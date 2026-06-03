@@ -8,12 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, toISOString } from "@/lib/format-date";
 import { CreateProjectForm } from "./create-project-form";
-import {
-  IconChevronRight,
-  IconClock,
-  IconDocument,
-  IconProjects,
-} from "@/components/icons";
+import { IconChevronRight, IconClock, IconDocument, IconProjects } from "@/components/icons";
 
 // Supabase SDK doesn't infer aggregate / nested-select return types.
 interface ProjectListItem {
@@ -39,7 +34,6 @@ export default async function ProjectsPage() {
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
-
   const list = (projects ?? []) as ProjectListItem[];
 
   return (
@@ -53,9 +47,7 @@ export default async function ProjectsPage() {
               {list.length !== 1 ? "s" : ""}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage and organize your product projects
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Manage and organize your product projects</p>
         </div>
       </div>
 
@@ -68,29 +60,27 @@ export default async function ProjectsPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
             <IconProjects className="h-7 w-7 text-gray-400" />
           </div>
-          <h2 className="mt-4 text-base font-semibold text-gray-900">
-            No projects yet
-          </h2>
+          <h2 className="mt-4 text-base font-semibold text-gray-900">No projects yet</h2>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
-            Create your first project above to start generating PRDs, prioritizing
-            features, and analyzing competition.
+            Create your first project above to start generating PRDs, prioritizing features, and
+            analyzing competition.
           </p>
         </div>
       ) : (
         <div className="mt-6 space-y-3">
           {list.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`}>
-              <Card className="group flex flex-col gap-3 py-4 transition hover:border-brand-200 hover:shadow-md cursor-pointer sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3 min-w-0">
+              <Card className="group flex cursor-pointer flex-col gap-3 py-4 transition hover:border-brand-200 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-sm font-bold text-brand-600">
                     {project.name[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-brand-700 transition break-words">
+                    <p className="break-words text-sm font-semibold text-gray-900 transition group-hover:text-brand-700">
                       {project.name}
                     </p>
                     {project.description && (
-                      <p className="mt-0.5 text-xs text-gray-500 line-clamp-1 break-words">
+                      <p className="mt-0.5 line-clamp-1 break-words text-xs text-gray-500">
                         {project.description}
                       </p>
                     )}
@@ -117,12 +107,10 @@ export default async function ProjectsPage() {
       )}
 
       {process.env.NODE_ENV === "development" && (
-        <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-xs text-gray-500 font-mono">
-          <span className="font-semibold text-gray-500">Dev:</span>{" "}
-          auth={mockAuth ? "mock" : "real"} |{" "}
-          db={mockDb ? "mock (in-memory)" : "real Supabase"} |{" "}
-          user={user.id} |{" "}
-          projects={list.length}
+        <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 font-mono text-xs text-gray-500">
+          <span className="font-semibold text-gray-500">Dev:</span> auth=
+          {mockAuth ? "mock" : "real"} | db={mockDb ? "mock (in-memory)" : "real Supabase"} | user=
+          {user.id} | projects={list.length}
         </div>
       )}
     </div>

@@ -8,13 +8,13 @@ Locale-dependent APIs like `toLocaleDateString()`, `toLocaleString()`, and `Intl
 
 ## Approved helpers
 
-| Helper | Location | Example output |
-|---|---|---|
-| `formatDate(date)` | `src/lib/format-date.ts` | `May 20, 2026` |
-| `formatDateTime(date)` | `src/lib/format-date.ts` | `May 20, 2026, 12:49 PM` |
-| `formatTime(date)` | `src/lib/format-date.ts` | `12:49 PM` |
-| `toISOString(date)` | `src/lib/format-date.ts` | `2026-05-20T12:49:00.000Z` |
-| `formatNumber(n)` | `src/lib/format-number.ts` | `12,345` |
+| Helper                 | Location                   | Example output             |
+| ---------------------- | -------------------------- | -------------------------- |
+| `formatDate(date)`     | `src/lib/format-date.ts`   | `May 20, 2026`             |
+| `formatDateTime(date)` | `src/lib/format-date.ts`   | `May 20, 2026, 12:49 PM`   |
+| `formatTime(date)`     | `src/lib/format-date.ts`   | `12:49 PM`                 |
+| `toISOString(date)`    | `src/lib/format-date.ts`   | `2026-05-20T12:49:00.000Z` |
+| `formatNumber(n)`      | `src/lib/format-number.ts` | `12,345`                   |
 
 All helpers use **explicit `"en-US"` locale** and **`"UTC"` timezone** (for dates), ensuring identical output on server and client.
 
@@ -28,17 +28,17 @@ UTC is chosen because it is the only timezone guaranteed to be identical on ever
 
 ```ts
 // ❌ Banned — locale depends on runtime
-date.toLocaleDateString()
-date.toLocaleString()
-date.toLocaleTimeString()
-number.toLocaleString()
-new Intl.DateTimeFormat()          // without explicit locale + timeZone
-new Intl.NumberFormat()            // without explicit locale
+date.toLocaleDateString();
+date.toLocaleString();
+date.toLocaleTimeString();
+number.toLocaleString();
+new Intl.DateTimeFormat(); // without explicit locale + timeZone
+new Intl.NumberFormat(); // without explicit locale
 
 // ✅ Safe
-formatDate(date)
-formatNumber(value)
-number.toLocaleString("en-US")     // explicit locale is OK
+formatDate(date);
+formatNumber(value);
+number.toLocaleString("en-US"); // explicit locale is OK
 ```
 
 ## Safe patterns (no action needed)
@@ -54,6 +54,7 @@ number.toLocaleString("en-US")     // explicit locale is OK
 **Do NOT** use `suppressHydrationWarning` as a fix for formatting mismatches. Fix the root cause instead.
 
 **Acceptable uses** (must include a comment explaining why):
+
 - Content that is intentionally different between server and client (e.g., relative timestamps like "2 minutes ago" that update on the client)
 
 ## Accessibility
@@ -61,9 +62,7 @@ number.toLocaleString("en-US")     // explicit locale is OK
 When displaying dates/times to users, prefer the `<time>` element:
 
 ```tsx
-<time dateTime={toISOString(item.created_at)}>
-  {formatDate(item.created_at)}
-</time>
+<time dateTime={toISOString(item.created_at)}>{formatDate(item.created_at)}</time>
 ```
 
 ## Examples
@@ -72,21 +71,18 @@ When displaying dates/times to users, prefer the `<time>` element:
 
 ```tsx
 // ❌ Before
-<span>{new Date(item.created_at).toLocaleDateString()}</span>
+<span>{new Date(item.created_at).toLocaleDateString()}</span>;
 
 // ✅ After
 import { formatDate, toISOString } from "@/lib/format-date";
-<time dateTime={toISOString(item.created_at)}>
-  {formatDate(item.created_at)}
-</time>
+<time dateTime={toISOString(item.created_at)}>{formatDate(item.created_at)}</time>;
 ```
 
 ```tsx
 // ❌ Before
-<td>{row.tokens.toLocaleString()}</td>
+<td>{row.tokens.toLocaleString()}</td>;
 
 // ✅ After
 import { formatNumber } from "@/lib/format-number";
-<td>{formatNumber(row.tokens)}</td>
+<td>{formatNumber(row.tokens)}</td>;
 ```
-

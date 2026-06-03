@@ -14,7 +14,18 @@ import { formatDate, toISOString } from "@/lib/format-date";
 import { focusAfterPaint } from "@/lib/focus-utils";
 import type { Tables } from "@/lib/supabase/types";
 
-export type ProductDecision = Pick<Tables<"product_decisions">, "id" | "title" | "category" | "status" | "problem_statement" | "context_summary" | "confidence_score" | "created_at" | "updated_at"> & {
+export type ProductDecision = Pick<
+  Tables<"product_decisions">,
+  | "id"
+  | "title"
+  | "category"
+  | "status"
+  | "problem_statement"
+  | "context_summary"
+  | "confidence_score"
+  | "created_at"
+  | "updated_at"
+> & {
   latest_recommendation_at: string | null;
 };
 
@@ -103,10 +114,9 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
   async function handleAnalyze(decisionId: string) {
     setAnalyzingId(decisionId);
     try {
-      const res = await fetch(
-        `/api/projects/${projectId}/decisions/${decisionId}/analyze`,
-        { method: "POST" },
-      );
+      const res = await fetch(`/api/projects/${projectId}/decisions/${decisionId}/analyze`, {
+        method: "POST",
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Analysis failed.");
@@ -128,7 +138,11 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
           projectId={projectId}
           decision={editingDecision}
           onSuccess={editingDecision ? handleUpdated : handleCreated}
-          onCancel={() => { setShowForm(false); setEditingDecision(null); focusAfterPaint(() => newDecisionButtonRef.current); }}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingDecision(null);
+            focusAfterPaint(() => newDecisionButtonRef.current);
+          }}
         />
       </div>
     );
@@ -139,12 +153,22 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 ref={sectionHeadingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus:outline-none">Decisions</h1>
+          <h1
+            ref={sectionHeadingRef}
+            tabIndex={-1}
+            className="text-2xl font-bold text-gray-900 focus:outline-none"
+          >
+            Decisions
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
             Track product, technical, UX, growth and business decisions.
           </p>
         </div>
-        <Button ref={newDecisionButtonRef} onClick={() => setShowForm(true)} className="gap-1.5 whitespace-nowrap shrink-0">
+        <Button
+          ref={newDecisionButtonRef}
+          onClick={() => setShowForm(true)}
+          className="shrink-0 gap-1.5 whitespace-nowrap"
+        >
           <IconPlus className="h-4 w-4" />
           New Decision
         </Button>
@@ -158,7 +182,8 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
           </div>
           <p className="mt-4 text-sm font-semibold text-gray-900">No decisions yet</p>
           <p className="mt-1 max-w-sm text-xs text-gray-500">
-            Create your first product decision to start tracking strategic choices, assumptions and recommendations.
+            Create your first product decision to start tracking strategic choices, assumptions and
+            recommendations.
           </p>
           <Button onClick={() => setShowForm(true)} size="sm" className="mt-5 gap-1.5">
             <IconPlus className="h-3.5 w-3.5" />
@@ -169,70 +194,76 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
         <div className="mt-6 space-y-3">
           {decisions.map((d) => {
             const hasAnalysis = d.latest_recommendation_at !== null;
-            const isStale = hasAnalysis &&
-              new Date(d.updated_at).getTime() - new Date(d.latest_recommendation_at!).getTime() > STALE_BUFFER_MS;
+            const isStale =
+              hasAnalysis &&
+              new Date(d.updated_at).getTime() - new Date(d.latest_recommendation_at!).getTime() >
+                STALE_BUFFER_MS;
 
             return (
-            <Card key={d.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <Link href={`/projects/${projectId}/decisions/${d.id}`} className="min-w-0 flex-1 hover:opacity-80 transition">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-900 truncate">{d.title}</span>
-                  <Badge variant={statusBadgeVariant[d.status] ?? "default"}>
-                    {statusLabels[d.status] ?? d.status}
-                  </Badge>
-                  <Badge>{categoryLabels[d.category] ?? d.category}</Badge>
-                  {d.confidence_score != null && (
-                    <span className="text-xs text-gray-400">{d.confidence_score}%</span>
+              <Card
+                key={d.id}
+                className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <Link
+                  href={`/projects/${projectId}/decisions/${d.id}`}
+                  className="min-w-0 flex-1 transition hover:opacity-80"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="truncate text-sm font-semibold text-gray-900">{d.title}</span>
+                    <Badge variant={statusBadgeVariant[d.status] ?? "default"}>
+                      {statusLabels[d.status] ?? d.status}
+                    </Badge>
+                    <Badge>{categoryLabels[d.category] ?? d.category}</Badge>
+                    {d.confidence_score != null && (
+                      <span className="text-xs text-gray-400">{d.confidence_score}%</span>
+                    )}
+                    {isStale && (
+                      <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+                        Outdated
+                      </span>
+                    )}
+                  </div>
+                  {d.problem_statement && (
+                    <p className="mt-1 line-clamp-1 text-xs text-gray-500">{d.problem_statement}</p>
                   )}
-                  {isStale && (
-                    <span className="text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-                      Outdated
-                    </span>
-                  )}
+                </Link>
+                <div className="flex flex-wrap items-center gap-2 sm:ml-4 sm:flex-shrink-0 sm:flex-nowrap">
+                  <span className="flex items-center gap-1 text-xs text-gray-400">
+                    <IconClock className="h-3 w-3" />
+                    <time dateTime={toISOString(d.updated_at)}>{formatDate(d.updated_at)}</time>
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={analyzingId === d.id}
+                    onClick={() => handleAnalyze(d.id)}
+                    className="gap-1"
+                  >
+                    <IconSparkles className="h-3.5 w-3.5" />
+                    {analyzingId === d.id ? "Analyzing…" : hasAnalysis ? "Re-Analyze" : "Analyze"}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingDecision(d)}>
+                    Edit
+                  </Button>
+                  <ConfirmDialog
+                    title="Delete decision?"
+                    message="This will delete this decision and related decision engine records. This action cannot be undone."
+                    confirmLabel="Delete"
+                    variant="danger"
+                    onConfirm={() => handleDelete(d.id)}
+                    focusFallbackRef={newDecisionButtonRef}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      >
+                        Delete
+                      </Button>
+                    }
+                  />
                 </div>
-                {d.problem_statement && (
-                  <p className="mt-1 text-xs text-gray-500 line-clamp-1">{d.problem_statement}</p>
-                )}
-              </Link>
-              <div className="flex flex-wrap items-center gap-2 sm:ml-4 sm:flex-nowrap sm:flex-shrink-0">
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <IconClock className="h-3 w-3" />
-                  <time dateTime={toISOString(d.updated_at)}>
-                    {formatDate(d.updated_at)}
-                  </time>
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={analyzingId === d.id}
-                  onClick={() => handleAnalyze(d.id)}
-                  className="gap-1"
-                >
-                  <IconSparkles className="h-3.5 w-3.5" />
-                  {analyzingId === d.id ? "Analyzing…" : hasAnalysis ? "Re-Analyze" : "Analyze"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingDecision(d)}
-                >
-                  Edit
-                </Button>
-                <ConfirmDialog
-                  title="Delete decision?"
-                  message="This will delete this decision and related decision engine records. This action cannot be undone."
-                  confirmLabel="Delete"
-                  variant="danger"
-                  onConfirm={() => handleDelete(d.id)}
-                  focusFallbackRef={newDecisionButtonRef}
-                  trigger={
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      Delete
-                    </Button>
-                  }
-                />
-              </div>
-            </Card>
+              </Card>
             );
           })}
         </div>
@@ -240,4 +271,3 @@ export function DecisionsClient({ projectId, initialDecisions }: DecisionsClient
     </div>
   );
 }
-

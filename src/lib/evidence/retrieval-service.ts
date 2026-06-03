@@ -40,9 +40,7 @@ export async function retrieveEvidence(
   const minSimilarity = input.minSimilarity ?? config.minSimilarity;
 
   // Build effective query: prepend intent hint if configured
-  const effectiveQuery = config.queryPrefix
-    ? `${config.queryPrefix} ${query}`
-    : query;
+  const effectiveQuery = config.queryPrefix ? `${config.queryPrefix} ${query}` : query;
 
   // ── 1. Verify project ownership ──────────────────────────────────
   const supabase = createClient();
@@ -119,22 +117,22 @@ export async function retrieveEvidence(
     // (threshold degradation in vector-search may have returned lower-quality chunks)
     .filter((result) => result.similarity >= minSimilarity)
     .map((result) => {
-    const docId = chunkToDoc.get(result.id) ?? null;
-    const docMeta = docId ? docMetaMap.get(docId) : null;
+      const docId = chunkToDoc.get(result.id) ?? null;
+      const docMeta = docId ? docMetaMap.get(docId) : null;
 
-    // Infer source type from feedback_documents.source field
-    const sourceType = inferSourceType(docMeta?.source ?? null);
+      // Infer source type from feedback_documents.source field
+      const sourceType = inferSourceType(docMeta?.source ?? null);
 
-    return {
-      chunkId: result.id,
-      sourceType,
-      sourceId: docId,
-      sourceTitle: docMeta?.title ?? null,
-      content: result.content,
-      similarityScore: result.similarity,
-      metadata: docMeta?.source ? { originalSource: docMeta.source } : undefined,
-    };
-  });
+      return {
+        chunkId: result.id,
+        sourceType,
+        sourceId: docId,
+        sourceTitle: docMeta?.title ?? null,
+        content: result.content,
+        similarityScore: result.similarity,
+        metadata: docMeta?.source ? { originalSource: docMeta.source } : undefined,
+      };
+    });
 
   // ── 6. Apply post-filters ────────────────────────────────────────
   if (filters?.sourceTypes && filters.sourceTypes.length > 0) {
@@ -172,12 +170,12 @@ function inferSourceType(source: string | null): EvidenceSourceType {
   const lower = source.toLowerCase();
   if (lower.includes("competitor") || lower.includes("competitive")) return "competitor";
   if (lower.includes("research") || lower.includes("study")) return "research";
-  if (lower.includes("metric") || lower.includes("analytics") || lower.includes("data")) return "metric";
-  if (lower.includes("document") || lower.includes("doc") || lower.includes("spec")) return "document";
-  if (lower.includes("interview") || lower.includes("feedback") || lower.includes("survey")) return "feedback";
+  if (lower.includes("metric") || lower.includes("analytics") || lower.includes("data"))
+    return "metric";
+  if (lower.includes("document") || lower.includes("doc") || lower.includes("spec"))
+    return "document";
+  if (lower.includes("interview") || lower.includes("feedback") || lower.includes("survey"))
+    return "feedback";
 
   return "feedback"; // Default for feedback_documents
 }
-
-
-

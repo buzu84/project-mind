@@ -22,7 +22,12 @@ export async function POST(req: Request) {
   const { projectId, productName, industry, competitors } = parsed.data;
   const supabase = createClient();
 
-  const { data: project } = await supabase.from("projects").select("id, description, target_users, market, business_model, goals").eq("id", projectId).eq("user_id", user.id).single();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, description, target_users, market, business_model, goals")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const isReal = isRealAI();
@@ -45,7 +50,12 @@ export async function POST(req: Request) {
 
     const { data: decision } = await supabase
       .from("decisions")
-      .insert({ type: "COMPETITIVE_ANALYSIS", input: parsed.data as object, output: { content }, project_id: projectId })
+      .insert({
+        type: "COMPETITIVE_ANALYSIS",
+        input: parsed.data as object,
+        output: { content },
+        project_id: projectId,
+      })
       .select("id")
       .single();
 
@@ -68,10 +78,7 @@ Important rules:
 - Clearly label any assumptions you make.`;
 
   // Build context-enriched user prompt
-  const contextLines: string[] = [
-    `Product: ${productName}`,
-    `Industry: ${industry}`,
-  ];
+  const contextLines: string[] = [`Product: ${productName}`, `Industry: ${industry}`];
   if (competitors) contextLines.push(`Known competitors: ${competitors}`);
   if (project.description) contextLines.push(`Product description: ${project.description}`);
   if (project.target_users) contextLines.push(`Target users: ${project.target_users}`);
@@ -97,7 +104,12 @@ Important rules:
 
     const { data: decision } = await supabase
       .from("decisions")
-      .insert({ type: "COMPETITIVE_ANALYSIS", input: parsed.data as object, output: { content: result.content }, project_id: projectId })
+      .insert({
+        type: "COMPETITIVE_ANALYSIS",
+        input: parsed.data as object,
+        output: { content: result.content },
+        project_id: projectId,
+      })
       .select("id")
       .single();
 

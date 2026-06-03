@@ -25,6 +25,7 @@ Set `USE_REAL_AI=false` for mock-only testing (skips OpenAI calls, returns deter
 ### Migrations
 
 All migrations in `supabase/migrations/` must be applied, including:
+
 - `20260504_decision_engine.sql` — creates `product_*` tables
 - `20260505_decision_review_hardening.sql` — adds `generated_by` columns
 - `20260520_decision_review_schema_alignment.sql` — adds `claim`, `source_id`, `relevance_score`, `type`, `evidence_status` columns
@@ -118,6 +119,7 @@ SELECT id, title, confidence_score FROM product_decisions WHERE id = '<DID>';
 ```
 
 Checklist:
+
 - [ ] All AI-generated records have `generated_by = 'decision_review_v1'`.
 - [ ] `confidence_score` on `product_decisions` matches the recommendation's confidence.
 - [ ] `next_validation_steps` contains an array of strings (rendered as "Next Steps" in UI).
@@ -142,15 +144,16 @@ FROM ai_usage WHERE feature = 'decision_review' ORDER BY created_at DESC LIMIT 3
 - [ ] `retry_count = '0'` (clean first-pass success).
 
 **Related telemetry rows** (may also appear from the same analysis):
+
 - `feature = 'query_embedding'` — embedding the decision text for RAG search. Has token usage.
 - `feature = 'rag_search'` — database retrieval telemetry. `prompt_tokens = 0, completion_tokens = 0`. This is expected — it's a DB lookup, not an LLM call.
 
 ### Verify — Dev Logs
 
-| Log prefix | Expected |
-|---|---|
+| Log prefix                          | Expected                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
 | `[decision-review] Evidence stats:` | `retrieved` ≥ 0, `used` ≥ 0, `hasRelevantEvidence: true` if feedback ingested |
-| `[rag] Vector search OK:` | `rpcResults` ≥ 1, `projectId` matches |
+| `[rag] Vector search OK:`           | `rpcResults` ≥ 1, `projectId` matches                                         |
 
 ---
 
@@ -298,32 +301,32 @@ WHERE pdel.decision_id = '<QUANTUM_DID>';
 
 These are expected behaviors, **not bugs**:
 
-| Observation | Explanation |
-|---|---|
-| `next_steps` column is `NULL` or `[]` in `product_decision_recommendations` | **Dead column** — never written by Decision Review. `next_validation_steps` is the active column, rendered as "Next Steps" in UI. |
-| `product_assumptions.result` is always `NULL` | Intended for future human validation tracking. Not populated by AI. |
-| `product_assumptions` has both `type` and `assumption_type` | Known duplicate from schema alignment migration. Both store the same value. |
-| `rag_search` in `ai_usage` shows 0 tokens | Expected — this is DB retrieval telemetry, not an LLM call. |
-| `query_embedding` in `ai_usage` shows token usage | Expected — this is the embedding API call for the search query. |
-| `product_decision_agent_reviews` table is empty | Unused/reserved table. No code writes to it. |
-| Some stored fields (`expected_impact`, `supporting_evidence`, `alternatives`, `risks` on recommendation) are not shown in UI | Intentionally hidden — they overlap with other UI sections. |
-| `generated_by = NULL` on old records | Records created before the `generated_by` migration. The cleanup logic treats `NULL` same as `'decision_review_v1'`. |
-| Assumption type might differ between runs | AI output is non-deterministic; normalization maps ~30 aliases (e.g., "legal"→"business") to 8 valid types. |
+| Observation                                                                                                                  | Explanation                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `next_steps` column is `NULL` or `[]` in `product_decision_recommendations`                                                  | **Dead column** — never written by Decision Review. `next_validation_steps` is the active column, rendered as "Next Steps" in UI. |
+| `product_assumptions.result` is always `NULL`                                                                                | Intended for future human validation tracking. Not populated by AI.                                                               |
+| `product_assumptions` has both `type` and `assumption_type`                                                                  | Known duplicate from schema alignment migration. Both store the same value.                                                       |
+| `rag_search` in `ai_usage` shows 0 tokens                                                                                    | Expected — this is DB retrieval telemetry, not an LLM call.                                                                       |
+| `query_embedding` in `ai_usage` shows token usage                                                                            | Expected — this is the embedding API call for the search query.                                                                   |
+| `product_decision_agent_reviews` table is empty                                                                              | Unused/reserved table. No code writes to it.                                                                                      |
+| Some stored fields (`expected_impact`, `supporting_evidence`, `alternatives`, `risks` on recommendation) are not shown in UI | Intentionally hidden — they overlap with other UI sections.                                                                       |
+| `generated_by = NULL` on old records                                                                                         | Records created before the `generated_by` migration. The cleanup logic treats `NULL` same as `'decision_review_v1'`.              |
+| Assumption type might differ between runs                                                                                    | AI output is non-deterministic; normalization maps ~30 aliases (e.g., "legal"→"business") to 8 valid types.                       |
 
 ---
 
 ## Pass/Fail Checklist
 
-| # | Test | Key Assertion | Pass? |
-|---|---|---|---|
-| 1a | Happy path — UI | Recommendation, 3-4 options, assumptions, evidence visible | ☐ |
-| 1b | Happy path — DB | All records have `generated_by = 'decision_review_v1'` | ☐ |
-| 1c | Happy path — Evidence | At least 1 evidence card references project feedback | ☐ |
-| 1d | Happy path — Usage | `ai_usage` row with `decision_review`, `status = 'success'` | ☐ |
-| 2a | No evidence — UI | Analysis generated, lower confidence, empty evidence section | ☐ |
-| 2b | No evidence — DB | 0 evidence links | ☐ |
-| 3 | Re-analysis | No duplicate records, exactly 1 recommendation | ☐ |
-| 4a | Failure safety — UI | Error shown, previous analysis intact | ☐ |
-| 4b | Failure safety — DB | Old records unchanged | ☐ |
-| 5 | Rate limit | 6th request returns 429 | ☐ |
-| 6 | Cross-project | No Nebula CRM content in Orion analysis | ☐ |
+| #   | Test                  | Key Assertion                                                | Pass? |
+| --- | --------------------- | ------------------------------------------------------------ | ----- |
+| 1a  | Happy path — UI       | Recommendation, 3-4 options, assumptions, evidence visible   | ☐     |
+| 1b  | Happy path — DB       | All records have `generated_by = 'decision_review_v1'`       | ☐     |
+| 1c  | Happy path — Evidence | At least 1 evidence card references project feedback         | ☐     |
+| 1d  | Happy path — Usage    | `ai_usage` row with `decision_review`, `status = 'success'`  | ☐     |
+| 2a  | No evidence — UI      | Analysis generated, lower confidence, empty evidence section | ☐     |
+| 2b  | No evidence — DB      | 0 evidence links                                             | ☐     |
+| 3   | Re-analysis           | No duplicate records, exactly 1 recommendation               | ☐     |
+| 4a  | Failure safety — UI   | Error shown, previous analysis intact                        | ☐     |
+| 4b  | Failure safety — DB   | Old records unchanged                                        | ☐     |
+| 5   | Rate limit            | 6th request returns 429                                      | ☐     |
+| 6   | Cross-project         | No Nebula CRM content in Orion analysis                      | ☐     |
