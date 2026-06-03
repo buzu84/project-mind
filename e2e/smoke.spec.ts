@@ -118,7 +118,7 @@ test.describe("smoke tests", () => {
 
     // Navigate to the project detail page
     await page.getByRole("link", { name: projectName }).click();
-    await expect(page).toHaveURL(/\/projects\/.+/);
+    await expect(page).toHaveURL(/\/projects\/.+/, { timeout: 10_000 });
     await expect(
       page.getByRole("heading", { name: projectName, level: 1 }),
     ).toBeVisible();
@@ -245,7 +245,91 @@ test.describe("smoke tests", () => {
     await expectAccessible(page);
   });
 
-  test("create a decision, verify it in the list, and delete it", async ({
+  test("edit a feature name and delete a feature from the table", async ({
+    page,
+  }) => {
+    await createProjectAndOpenDetail(page, "E2E Feature Edit Project");
+
+    const featureName = `E2E Edit Feature ${Date.now()}`;
+    const featureDesc =
+      "This feature has a detailed description that exceeds the minimum length for E2E testing.";
+    const updatedFeatureName = `${featureName} Updated`;
+
+    // Navigate to the Feature Prioritizer
+    await page.getByRole("link", { name: "Feature Prioritizer" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Feature Ideas", level: 1 }),
+    ).toBeVisible();
+
+    // Add a feature
+    await page
+      .getByRole("button", { name: "Add Feature" })
+      .first()
+      .click();
+    await page.getByLabel("Feature Name *").fill(featureName);
+    await page.getByLabel("Description *").fill(featureDesc);
+    await page
+      .locator("form")
+      .getByRole("button", { name: "Add Feature" })
+      .click();
+
+    // Wait for the feature to appear in the table
+    await expect(page.getByText(featureName)).toBeVisible({ timeout: 10_000 });
+
+    // Locate the feature row and hover to reveal action buttons
+    const featureRow = page.getByRole("row").filter({ hasText: featureName });
+    await featureRow.hover();
+
+    // Click the scoped Edit button (aria-label includes the feature name)
+    await featureRow
+      .getByRole("button", { name: `Edit ${featureName}` })
+      .click();
+
+    // Verify the inline edit form appears with the original name pre-filled
+    await expect(page.getByLabel("Feature Name *")).toHaveValue(featureName);
+
+    // Update the feature name
+    await page.getByLabel("Feature Name *").fill(updatedFeatureName);
+    await page.getByRole("button", { name: "Save" }).click();
+
+    // Verify the updated name appears in the table
+    await expect(page.getByText(updatedFeatureName)).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Locate the updated feature row and hover to reveal actions
+    const updatedRow = page
+      .getByRole("row")
+      .filter({ hasText: updatedFeatureName });
+    await updatedRow.hover();
+
+    // Click the scoped Delete button (aria-label now uses the updated name)
+    await updatedRow
+      .getByRole("button", { name: `Delete ${updatedFeatureName}` })
+      .click();
+
+    // Confirm deletion in the dialog
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Delete" }).click();
+
+    // Verify the feature is gone
+    await expect(page.getByText(updatedFeatureName)).not.toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Wait for any active toasts to finish their slide-up animation and
+    // auto-dismiss before the axe scan. Every toast renders a dismiss button
+    // with aria-label="Dismiss notification" — waiting for zero such buttons
+    // ensures no toast is in the DOM regardless of message text.
+    await expect(
+      page.getByRole("button", { name: "Dismiss notification" }),
+    ).toHaveCount(0, { timeout: 10_000 });
+
+    await expectAccessible(page);
+  });
+
+  test("create a decision, edit it, verify the update, and delete it", async ({
     page,
   }) => {
     await createProjectAndOpenDetail(page, "E2E Decision Project");
@@ -276,11 +360,38 @@ test.describe("smoke tests", () => {
       timeout: 10_000,
     });
 
-    // Delete the decision.
-    // Scope the Delete button to the card containing our decision title
-    // so this locator survives even if multiple decisions exist.
-    const decisionCard = page
+    // ── Edit the decision ──
+    const updatedDecisionTitle = `${decisionTitle} Updated`;
+
+    // Scope the Edit button to the card containing our decision title
+    const decisionCardForEdit = page
       .getByRole("link", { name: decisionTitle })
+      .locator("..");
+    await decisionCardForEdit.getByRole("button", { name: "Edit" }).click();
+
+    // Verify the edit form loaded with the correct heading and pre-filled values
+    await expect(
+      page.getByRole("heading", { name: "Edit Decision" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue(decisionTitle);
+    await expect(page.getByLabel("Problem Statement")).toHaveValue(
+      problemStatement,
+    );
+
+    // Update the title and save
+    await page.getByLabel("Title").fill(updatedDecisionTitle);
+    await page.getByRole("button", { name: "Save Changes" }).click();
+
+    // Verify the updated title appears in the list (proves PATCH executed,
+    // updateDecision returned success, refreshDecisions ran, list re-rendered)
+    await expect(page.getByText(updatedDecisionTitle)).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // ── Delete the updated decision ──
+    // Scope the Delete button to the card with the UPDATED title
+    const decisionCard = page
+      .getByRole("link", { name: updatedDecisionTitle })
       .locator("..");
     await decisionCard.getByRole("button", { name: "Delete" }).click();
 
@@ -292,9 +403,17 @@ test.describe("smoke tests", () => {
     await dialog.getByRole("button", { name: "Delete" }).click();
 
     // The decision should no longer appear in the list
-    await expect(page.getByText(decisionTitle)).not.toBeVisible({
+    await expect(page.getByText(updatedDecisionTitle)).not.toBeVisible({
       timeout: 10_000,
     });
+
+    // Wait for any active toasts (created/updated/deleted) to auto-dismiss
+    // before the axe scan. Toasts mid-animation can cause transient contrast
+    // violations. Uses the structural "Dismiss notification" button pattern
+    // proven in the feature edit test.
+    await expect(
+      page.getByRole("button", { name: "Dismiss notification" }),
+    ).toHaveCount(0, { timeout: 10_000 });
 
     await expectAccessible(page);
   });
