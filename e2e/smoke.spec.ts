@@ -235,8 +235,10 @@ test.describe("smoke tests", () => {
     const featureRow = page.getByRole("row").filter({ hasText: featureName });
     await featureRow.hover();
 
-    // Click the scoped Edit button (aria-label includes the feature name)
-    await featureRow.getByRole("button", { name: `Edit ${featureName}` }).click();
+    // Wait for the hover-revealed Edit button to become visible (opacity transition)
+    const editButton = featureRow.getByRole("button", { name: `Edit ${featureName}` });
+    await expect(editButton).toBeVisible();
+    await editButton.click();
 
     // Verify the inline edit form appears with the original name pre-filled
     await expect(page.getByLabel("Feature Name *")).toHaveValue(featureName);
@@ -254,8 +256,10 @@ test.describe("smoke tests", () => {
     const updatedRow = page.getByRole("row").filter({ hasText: updatedFeatureName });
     await updatedRow.hover();
 
-    // Click the scoped Delete button (aria-label now uses the updated name)
-    await updatedRow.getByRole("button", { name: `Delete ${updatedFeatureName}` }).click();
+    // Wait for the hover-revealed Delete button to become visible (opacity transition)
+    const deleteButton = updatedRow.getByRole("button", { name: `Delete ${updatedFeatureName}` });
+    await expect(deleteButton).toBeVisible();
+    await deleteButton.click();
 
     // Confirm deletion in the dialog
     const dialog = page.getByRole("dialog");
