@@ -244,4 +244,58 @@ test.describe("smoke tests", () => {
 
     await expectAccessible(page);
   });
+
+  test("create a decision, verify it in the list, and delete it", async ({
+    page,
+  }) => {
+    await createProjectAndOpenDetail(page, "E2E Decision Project");
+
+    const decisionTitle = `E2E Decision ${Date.now()}`;
+    const problemStatement =
+      "Should we migrate the authentication layer to a passwordless flow based on passkeys and magic links?";
+
+    // Navigate to the Decisions page from the project detail
+    await page.getByRole("link", { name: "Decisions" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Decisions", level: 1 }),
+    ).toBeVisible();
+
+    // Click "New Decision" to open the form
+    await page.getByRole("button", { name: "New Decision" }).first().click();
+
+    // Fill the decision form
+    await page.getByLabel("Title").fill(decisionTitle);
+    await page.getByLabel("Problem Statement").fill(problemStatement);
+
+    // Submit the form
+    await page.getByRole("button", { name: "Create Decision" }).click();
+
+    // After creation, the form closes and the list updates via client-side fetch.
+    // Wait for the decision title to appear in the list.
+    await expect(page.getByText(decisionTitle)).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Delete the decision.
+    // Scope the Delete button to the card containing our decision title
+    // so this locator survives even if multiple decisions exist.
+    const decisionCard = page
+      .getByRole("link", { name: decisionTitle })
+      .locator("..");
+    await decisionCard.getByRole("button", { name: "Delete" }).click();
+
+    // The ConfirmDialog should open
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Confirm the deletion (scoped to dialog)
+    await dialog.getByRole("button", { name: "Delete" }).click();
+
+    // The decision should no longer appear in the list
+    await expect(page.getByText(decisionTitle)).not.toBeVisible({
+      timeout: 10_000,
+    });
+
+    await expectAccessible(page);
+  });
 });
